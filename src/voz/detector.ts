@@ -19,6 +19,8 @@ export interface Referencia {
   explicito: boolean;
   /** O artigo não foi dito; veio do contexto (último artigo citado). */
   contexto: boolean;
+  /** O parágrafo também veio do contexto ("parágrafo 1º do 489" ... "inciso 5º"). */
+  parDoContexto?: boolean;
   /** Posição (em palavras normalizadas) onde a referência começa e termina. */
   inicio: number;
   fim: number;
@@ -29,7 +31,7 @@ export interface Referencia {
 export interface ResultadoDeteccao {
   referencias: Referencia[];
   /** Referências descartadas porque eram de outro diploma ("art. 5º da Constituição"). */
-  outros: { trecho: string; diploma: string; fim: number }[];
+  outros: { trecho: string; diploma: string; fim: number; art: number | null }[];
   palavras: string[];
 }
 
@@ -92,11 +94,17 @@ function lerParte(palavras: string[], i: number): { parte: Parte; fim: number } 
 
 export class Detector {
   /** Último artigo citado (para "e o inciso sétimo"). */
-  private ultimoArtigo: { art: number; em: number } | null = null;
+  private ultimoArtigo: { art: number; par?: string; em: number } | null = null;
   /** Por quanto tempo o artigo citado vale como contexto (ms). */
   contextoMs = 90_000;
 
-  detectar(texto: string, agora = Date.now()): ResultadoDeteccao {
+  /**
+   * @param opcoes.parcial texto provisório (ainda pode mudar): uma referência
+   *   só vale se já houver alguma palavra depois dela que não seja "do", "da"...
+   *   Assim "o artigo 5º da" espera a palavra seguinte ("Constituição"?) e
+   *   "o artigo 4" espera para ver se não vira "48" ou "489".
+   */
+  detectar(texto: string, agora = Date.now(), opcoes: { parcial?: boolean } = {}): ResultadoDeteccao {
     const palavras = normalizarFala(texto);
     const referencias: Referencia[] = [];
     const outros: ResultadoDeteccao['outros'] = [];
@@ -105,12 +113,13 @@ export class Detector {
     while (i < palavras.length) {
       const r = this.tentar(palavras, i, agora);
       if (!r) { i++; continue; }
-      if (r.tipo === 'outro') outros.push({ trecho: r.trecho, diploma: r.diploma, fim: r.fim });
-      else referencias.push(...r.refs);
+      const incompleto = opcoes.parcial && pularConectores(palavras, r.fim, Infinity) >= palavras.length;
+      if (r.tipo === 'outro') outros.push({ trecho: r.trecho, diploma: r.diploma, fim: r.fim, art: r.art });
+      else if (!incompleto) referencias.push(...r.refs);
       i = Math.max(r.fim, i + 1);
     }
     for (const r of referencias) {
-      if (!r.contexto) this.ultimoArtigo = { art: r.art, em: agora };
+      if (!r.contexto) this.ultimoArtigo = { art: r.art, par: r.par, em: agora };
     }
     return { referencias, outros, palavras };
   }
@@ -126,7 +135,7 @@ export class Detector {
     agora: number,
   ):
     | { tipo: 'refs'; refs: Referencia[]; fim: number }
-    | { tipo: 'outro'; trecho: string; diploma: string; fim: number }
+    | { tipo: 'outro'; trecho: string; diploma: string; fim: number; art: number | null }
     | null {
     const partes: Parte[] = [];
     let j = i;
@@ -174,13 +183,23 @@ export class Detector {
       explicito = true;
       j = k + 1;
     } else if (palavras[k] === PALAVRA_OUTRO_DIPLOMA) {
-      return { tipo: 'outro', trecho: palavras.slice(i, k + 2).join(' ').replace(/§(outro )?/g, ''), diploma: palavras[k + 1] ?? '?', fim: k + 2 };
+      // "código" no fim da fala ainda pode virar "código de processo civil" no trecho seguinte.
+      if (palavras[k + 1] === 'codigo' && k + 2 >= palavras.length) return null;
+      const artDito = artNu ?? partes.find((x) => x.nivel === 'art' && x.valores.length)?.valores[0] ?? null;
+      return {
+        tipo: 'outro',
+        trecho: palavras.slice(i, k + 2).join(' ').replace(/§(outro )?/g, ''),
+        diploma: palavras[k + 1] ?? '?',
+        fim: k + 2,
+        art: artDito ? parseInt(artDito, 10) : null,
+      };
     }
 
     const valoresDe = (n: Nivel) => partes.filter((p) => p.nivel === n).flatMap((p) => p.valores);
     let arts = valoresDe('art');
     if (artNu) arts = [artNu];
     let contexto = false;
+    let parContexto: string | undefined;
     if (arts.length === 0) {
       // Pelo contexto, só parágrafo ou inciso (alínea sozinha é ambígua demais).
       const temSub = valoresDe('par').length || valoresDe('inc').length;
@@ -190,9 +209,11 @@ export class Detector {
       if (!this.ultimoArtigo || agora - this.ultimoArtigo.em > this.contextoMs) return null;
       arts = [String(this.ultimoArtigo.art)];
       contexto = true;
+      // "inciso 5º" logo depois de "parágrafo 1º do artigo 489": inciso do § 1º.
+      if (!valoresDe('par').length && this.ultimoArtigo.par) parContexto = this.ultimoArtigo.par;
     }
 
-    const pars = valoresDe('par');
+    const pars = parContexto ? [parContexto] : valoresDe('par');
     const incs = valoresDe('inc');
     const alis = valoresDe('ali');
     const refs: Referencia[] = [];
@@ -210,6 +231,7 @@ export class Detector {
               ali: al,
               explicito,
               contexto,
+              parDoContexto: parContexto ? true : undefined,
               inicio: i,
               fim: j,
               trecho,

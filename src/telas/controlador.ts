@@ -21,6 +21,8 @@ export interface Candidato {
   criadoEm: number;
   origem: 'parcial' | 'final';
   contexto: boolean;
+  /** Trecho de fala (resultado do reconhecedor) que gerou o candidato. */
+  trechoId: string;
 }
 
 export interface FalaFinal {
@@ -33,7 +35,7 @@ export interface Detectado {
   id: number;
   em: number;
   titulo: string;
-  situacao: 'novo' | 'refinado' | 'repetido' | 'fora do acervo' | 'outro diploma';
+  situacao: 'novo' | 'refinado' | 'repetido' | 'fora do acervo' | 'outro diploma' | 'retirado';
 }
 
 export type ModoRoda = 'candidatos' | 'rolar';
@@ -180,21 +182,53 @@ export class ControladorAula {
     // Comandos de voz
     for (const c of detectarComandos(texto)) this.comandoVoz(c, chave, texto);
 
-    // Referências: inclui o fim da fala anterior ("inciso sexto do" | "485")
+    // Referências: inclui o fim da fala anterior ("inciso sexto do" | "485").
     const comCauda = this.cauda ? `${this.cauda} ${texto}` : texto;
-    const nCauda = this.cauda ? normalizarFala(this.cauda).length : 0;
-    const r = this.detector.detectar(comCauda);
+    const r = this.detector.detectar(comCauda, Date.now(), { parcial: origem === 'parcial' });
+    // Onde começa o texto novo (em palavras normalizadas). Calculado pelo fim, porque
+    // uma expressão pode atravessar a emenda ("artigo segundo do código" | "de processo civil").
+    const inicioNovo = this.cauda ? r.palavras.length - normalizarFala(texto).length : 0;
     for (const o of r.outros) {
-      if (origem !== 'final' || o.fim <= nCauda) continue;
-      registrar('outro_diploma', o.trecho.replace('§outro ', ''), { diploma: o.diploma });
-      this.anotar(o.trecho.replace('§outro ', ''), 'outro diploma');
+      if (o.fim <= inicioNovo) continue;
+      // Se um candidato acabou de surgir do texto provisório ("artigo 5º…") e agora
+      // apareceu "…da Constituição", ele sai da lista.
+      if (o.art !== null) this.retirarPorOutroDiploma(o.art, o.trecho, chave);
+      if (origem !== 'final') continue;
+      registrar('outro_diploma', o.trecho, { diploma: o.diploma });
+      this.anotar(o.trecho, 'outro diploma');
     }
     for (const ref of r.referencias) {
-      if (ref.fim <= nCauda) continue; // já tratado na fala anterior
-      // Parcial: se a referência termina na última palavra, o número pode estar incompleto ("artigo 4…85")
-      if (origem === 'parcial' && ref.fim >= r.palavras.length) continue;
-      this.aoDetectar(ref, origem);
+      if (ref.fim <= inicioNovo) continue; // já tratado na fala anterior
+      this.aoDetectar(ref, origem, chave);
     }
+  }
+
+  /** Só retira o candidato que nasceu do mesmo trecho de fala, ainda provisório. */
+  private retirarPorOutroDiploma(art: number, trecho: string, trechoId: string) {
+    const sai = this.estado.candidatos.filter(
+      (c) =>
+        (c.chave === `cpc:${art}` || c.chave.startsWith(`cpc:${art}:`)) &&
+        c.origem === 'parcial' &&
+        c.trechoId === trechoId &&
+        c.id !== this.estado.projetado?.id,
+    );
+    if (!sai.length) return;
+    const candidatos = this.estado.candidatos.filter((c) => !sai.includes(c));
+    const selecionadoId = candidatos.some((c) => c.id === this.estado.selecionadoId) ? this.estado.selecionadoId : (candidatos[0]?.id ?? null);
+    for (const c of sai) {
+      registrar('detectado', c.titulo, { chave: c.chave, acao: 'retirado (era de outro diploma)', trecho });
+      this.anotar(c.titulo, 'retirado');
+    }
+    this.mudar({ candidatos, selecionadoId });
+  }
+
+  /** Evita repetir no registro o mesmo aviso a cada atualização do texto provisório. */
+  private ultimosAvisos = new Map<string, number>();
+  private registrarUmaVez(chave: string, ...args: Parameters<typeof registrar>) {
+    const agora = Date.now();
+    if (agora - (this.ultimosAvisos.get(chave) ?? 0) < 60_000) return;
+    this.ultimosAvisos.set(chave, agora);
+    void registrar(...args);
   }
 
   private anotar(titulo: string, situacao: Detectado['situacao']) {
@@ -202,7 +236,19 @@ export class ControladorAula {
     this.mudar({ detectados });
   }
 
-  private aoDetectar(ref: Referencia, origem: 'parcial' | 'final') {
+  private aoDetectar(refDita: Referencia, origem: 'parcial' | 'final', trechoId: string) {
+    const id = `c${seq++}`;
+    let ref = refDita;
+    let res = resolver(ref, this.indice, id);
+    // Parágrafo vindo do contexto que não tem esse inciso: tenta o inciso do caput.
+    if (res?.aviso && ref.parDoContexto) {
+      const semPar = { ...ref, par: undefined, parDoContexto: undefined };
+      const res2 = resolver(semPar, this.indice, id);
+      if (res2 && !res2.aviso) {
+        ref = semPar;
+        res = res2;
+      }
+    }
     const chave = chaveReferencia(ref);
     const agora = Date.now();
     const lista = this.estado.candidatos;
@@ -214,8 +260,6 @@ export class ControladorAula {
     // Menos específico que um recente ("485" depois de "485, VI"): ignora.
     if (lista.some((c) => c.chave.startsWith(chave + ':') && agora - c.criadoEm < REFINO_MS)) return;
 
-    const id = `c${seq++}`;
-    const res = resolver(ref, this.indice, id);
     if (!res) {
       const titulo = `art. ${ref.art} CPC`;
       if (!this.estado.detectados.some((d) => d.titulo === titulo && agora - d.em < REPETIDO_MS)) {
@@ -226,7 +270,7 @@ export class ControladorAula {
     }
     // Pelo contexto e inexistente (ex.: "inciso sexto" logo depois do art. 70): descarta.
     if (ref.contexto && res.aviso) {
-      registrar('detectado', res.titulo, { ...dadosLog, acao: 'descartado', aviso: res.aviso });
+      this.registrarUmaVez(`descartado:${chave}`, 'detectado', res.titulo, { ...dadosLog, acao: 'descartado', aviso: res.aviso });
       return;
     }
     const novo: Candidato = {
@@ -239,6 +283,7 @@ export class ControladorAula {
       criadoEm: agora,
       origem,
       contexto: ref.contexto,
+      trechoId,
     };
 
     // Mais específico que um recente ("485" -> "485, VI"): substitui.

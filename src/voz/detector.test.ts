@@ -75,6 +75,11 @@ describe('detector', () => {
     ['é importante nos entendermos O que que está previsto no artigo 70 do Código de Processo Civil', ['cpc:70']],
     ['diz ali o artigo 70 toda pessoa que se encontra em exercício dos seus direitos', ['cpc:70']],
     ['a gente precisa dar uma olhadinha lá no artigo 103 do Código de Processo Civil', ['cpc:103']],
+    // segundo teste (21/10/2026, 14h12)
+    ['esse elemento da sentença o dispositivo ele Tá previsto no artigo 489 inciso 3', ['cpc:489:i3']],
+    ['para isso eu preciso ir no parágrafo primeiro do artigo 489 que eu já havia citado', ['cpc:489:p1']],
+    ['muito cuidado pessoal para que vocês nunca confundam por exemplo o artigo 489 do Código Civil', []],
+    ['ou o artigo segundo do Código Civil que é algo que a gente às vezes estuda', []],
   ];
   for (const [frase, esperado] of casos) {
     it(`"${frase}"`, () => expect(chaves(frase)).toEqual(esperado));
@@ -116,6 +121,35 @@ describe('detector', () => {
     d.detectar('artigo 70', 1000);
     expect(d.detectar('ali a parte pode pedir', 2000).referencias).toEqual([]);
     expect(d.detectar('o que diz ali o inciso segundo', 3000).referencias.map(chaveReferencia)).toEqual(['cpc:70:i2']);
+  });
+
+  it('texto provisório: espera a palavra seguinte antes de sugerir', () => {
+    const d = new Detector();
+    const p = (t: string) => d.detectar(t, 1000, { parcial: true }).referencias.map(chaveReferencia);
+    expect(p('lá no artigo 5º')).toEqual([]);
+    expect(p('lá no artigo 5º da')).toEqual([]);
+    expect(p('lá no artigo 5º da Constituição')).toEqual([]);
+    expect(p('o artigo segundo do')).toEqual([]);
+    expect(p('o artigo 489 essa sentença')).toEqual(['cpc:489']);
+  });
+
+  it('texto provisório incompleto não muda o contexto ("artigo 4" que vira "489")', () => {
+    const d = new Detector();
+    d.detectar('parágrafo primeiro do artigo 489 que', 1000, { parcial: true });
+    d.detectar('violando o artigo 4', 2000, { parcial: true });
+    const r = d.detectar('é o que tá no inciso 5º além disso', 3000, { parcial: true }).referencias;
+    expect(r.map(chaveReferencia)).toEqual(['cpc:489:p1:i5']);
+    expect(r[0].parDoContexto).toBe(true);
+  });
+
+  it('"código" no fim da fala não é tratado como outro diploma (pode virar "de processo civil")', () => {
+    const r = new Detector().detectar('e o artigo segundo do código');
+    expect(r.outros).toEqual([]);
+    expect(r.referencias).toEqual([]);
+  });
+
+  it('outro diploma informa o número do artigo', () => {
+    expect(new Detector().detectar('artigo 5º da Constituição').outros[0].art).toBe(5);
   });
 
   it('não usa o contexto quando a frase termina em "do" (o número vem depois)', () => {
