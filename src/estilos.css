@@ -195,3 +195,14 @@ table.tabela th, table.tabela td { text-align: left; padding: 6px 8px; border-bo
 .proj-material.oculto { visibility: hidden; }
 .projecao-folha.lateral { left: 58%; box-shadow: -0.6vw 0 0 0 var(--destaque); animation: deslizar-lateral 0.35s ease-out; }
 @keyframes deslizar-lateral { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+/* Deslize suave do artigo sobre o material (substitui a animação anterior) */
+.proj-material { transition: none; }
+.proj-material-slide { position: absolute; inset: 0; transform-origin: 50% 50%; transition: transform 0.65s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.projecao-folha.lateral {
+  left: 58%; animation: none; box-shadow: -0.5vw 0 0 0 var(--destaque), -2vw 0 4vw rgba(0, 0, 0, 0.35);
+  transform: translateX(0); transition: transform 0.65s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.projecao-folha.lateral.fora { transform: translateX(105%); }
+.projecao-folha.cheia { opacity: 1; transition: opacity 0.35s ease; }
+.projecao-folha.cheia.fora { opacity: 0; }

@@ -239,6 +239,18 @@ export function Aula({ ativa }: { ativa: boolean }) {
         {e.totalAcervo === 0 && (
           <div className="aviso" data-ui>O acervo está vazio. Vá na aba <strong>Acervo</strong> e importe o CPC antes da aula.</div>
         )}
+        {e.projecao.conectada && e.projecao.versao !== __VERSAO__ && (
+          <div className="aviso" data-ui>
+            A janela de projeção está com uma versão antiga do Vide. <strong>Feche a janela de projeção</strong> e clique em{' '}
+            <strong>Abrir projeção</strong> de novo.
+          </div>
+        )}
+        {e.projecao.conectada && e.projecao.versao === __VERSAO__ && e.material && !e.telaPreta && e.projecao.materialCarregado !== e.material.id && (
+          <div className="aviso" data-ui>
+            O projetor ainda não abriu o material "{e.material.nome}". Se este aviso não sumir em alguns segundos, feche a janela
+            de projeção e clique em <strong>Abrir projeção</strong> de novo.
+          </div>
+        )}
         {e.aviso && (
           <div className="aviso" data-ui onClick={() => ctl.fecharAviso()}>{e.aviso}</div>
         )}

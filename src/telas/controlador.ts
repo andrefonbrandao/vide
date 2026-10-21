@@ -70,7 +70,17 @@ export interface EstadoAula {
   modoRoda: ModoRoda;
   projetado: Candidato | null;
   escala: number;
-  projecao: { conectada: boolean; telaCheia: boolean; fracao: number; rolavel: boolean; aspecto: number };
+  projecao: {
+    conectada: boolean;
+    telaCheia: boolean;
+    fracao: number;
+    rolavel: boolean;
+    aspecto: number;
+    /** Versão do app na janela de projeção ('?' = antiga, de antes deste aviso existir). */
+    versao: string;
+    /** Material que a janela de projeção conseguiu abrir. */
+    materialCarregado: string | null;
+  };
   detectados: Detectado[];
   totalAcervo: number;
   aviso: string | null;
@@ -107,7 +117,7 @@ export class ControladorAula {
     modoRoda: 'candidatos',
     projetado: null,
     escala: 1,
-    projecao: { conectada: false, telaCheia: false, fracao: 0, rolavel: false, aspecto: 16 / 9 },
+    projecao: { conectada: false, telaCheia: false, fracao: 0, rolavel: false, aspecto: 16 / 9, versao: __VERSAO__, materialCarregado: null },
     detectados: [],
     totalAcervo: 0,
     aviso: null,
@@ -125,6 +135,7 @@ export class ControladorAula {
   private cauda = '';
   private ultimaInteracao = 0;
   private ultimoPong = 0;
+  private ultimoPedidoRecarga = 0;
   private comandosFeitos = new Set<string>();
 
   constructor() {
@@ -587,8 +598,24 @@ export class ControladorAula {
     } else if (m.t === 'pong') {
       this.ultimoPong = Date.now();
       const p = this.estado.projecao;
-      if (!p.conectada || p.telaCheia !== m.telaCheia || Math.abs(p.aspecto - m.aspecto) > 0.01)
-        this.mudar({ projecao: { ...p, conectada: true, telaCheia: m.telaCheia, aspecto: m.aspecto } });
+      const versao = m.versao ?? '?';
+      const materialCarregado = m.materialCarregado ?? null;
+      // Janela de projeção com versão antiga do app: pede para ela se recarregar.
+      if (versao !== __VERSAO__ && Date.now() - this.ultimoPedidoRecarga > 15_000) {
+        this.ultimoPedidoRecarga = Date.now();
+        this.canal.enviar({ t: 'recarregar' });
+        registrar('sessao', 'janela de projeção desatualizada', { versao_projecao: versao, versao_app: __VERSAO__ });
+      }
+      if (
+        !p.conectada ||
+        p.telaCheia !== m.telaCheia ||
+        Math.abs(p.aspecto - (m.aspecto ?? p.aspecto)) > 0.01 ||
+        p.versao !== versao ||
+        p.materialCarregado !== materialCarregado
+      )
+        this.mudar({
+          projecao: { ...p, conectada: true, telaCheia: m.telaCheia, aspecto: m.aspecto ?? p.aspecto, versao, materialCarregado },
+        });
     } else if (m.t === 'rolagem') {
       this.mudar({ projecao: { ...this.estado.projecao, fracao: m.fracao, rolavel: m.rolavel } });
     }

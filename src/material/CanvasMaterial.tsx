@@ -12,9 +12,11 @@ interface Props {
   children?: ReactNode;
   /** Recebe o elemento da página desenhada (para converter cliques em frações). */
   paginaRef?: (el: HTMLDivElement | null) => void;
+  /** Avisa o tamanho (em pixels de tela) em que a página foi desenhada. */
+  onTamanho?: (t: { largura: number; altura: number }) => void;
 }
 
-export function CanvasMaterial({ documento, pagina, regiao, children, paginaRef }: Props) {
+export function CanvasMaterial({ documento, pagina, regiao, children, paginaRef, onTamanho }: Props) {
   const caixaRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [caixa, setCaixa] = useState({ w: 0, h: 0 });
@@ -43,7 +45,12 @@ export function CanvasMaterial({ documento, pagina, regiao, children, paginaRef 
     let vivo = true;
     documento
       .desenhar(c, pagina, regiao, caixa.w, caixa.h)
-      .then((t) => vivo && (setTam(t), setErro(null)))
+      .then((t) => {
+        if (!vivo) return;
+        setTam(t);
+        setErro(null);
+        onTamanho?.(t);
+      })
       .catch((e) => vivo && setErro(String(e?.message ?? e)));
     return () => {
       vivo = false;
