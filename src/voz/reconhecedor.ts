@@ -107,6 +107,30 @@ export class Reconhecedor {
     this.eventos.onStatus('parado');
   }
 
+  /**
+   * Descarta o que está sendo ouvido agora (sem entregar o texto provisório)
+   * e reabre a escuta. Usado ao começar uma nova sessão: assim a fala dita
+   * antes do clique não reaparece na tela nova.
+   */
+  descartarEReiniciar(): void {
+    if (!this.desejado) return;
+    const C = obterConstrutor();
+    const antigo = this.rec;
+    this.parcialPendente = null;
+    this.sessao++; // eventos da sessão antiga passam a ser ignorados
+    this.rec = null;
+    try {
+      antigo?.abort();
+    } catch {
+      /* ignore */
+    }
+    const sessao = this.sessao;
+    this.eventos.onStatus('reiniciando');
+    window.setTimeout(() => {
+      if (this.desejado && C && this.sessao === sessao) this.abrir(C);
+    }, 400);
+  }
+
   private abrir(C: Construtor): void {
     const rec = new C();
     rec.lang = this.idioma;

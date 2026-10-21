@@ -5,7 +5,7 @@ import { carregarIndice } from '../dados/db';
 import type { Item } from '../dados/modelo';
 import { abrirCanal, type Mensagem } from '../comum/canal';
 import { inicioDoTexto, resolver, type Projetavel } from '../comum/legislacao';
-import { novaSessao, registrar } from '../comum/registro';
+import { inicioSessaoAtual, novaSessao, registrar } from '../comum/registro';
 import { detectarComandos, type Comando } from '../voz/comandos';
 import { Detector, chaveReferencia, type Referencia } from '../voz/detector';
 import { normalizarFala } from '../voz/normalizar';
@@ -56,6 +56,8 @@ export interface EstadoAula {
   detectados: Detectado[];
   totalAcervo: number;
   aviso: string | null;
+  /** Quando a sessão atual do registro começou (ms). */
+  sessaoInicio: number;
 }
 
 const MAX_CANDIDATOS = 5;
@@ -84,6 +86,7 @@ export class ControladorAula {
     detectados: [],
     totalAcervo: 0,
     aviso: null,
+    sessaoInicio: inicioSessaoAtual(),
   };
   private ouvintes = new Set<() => void>();
   private indice = new Map<string, Item>();
@@ -442,6 +445,8 @@ export class ControladorAula {
   async novaSessao(): Promise<void> {
     this.recolher('nova sessão');
     novaSessao();
+    // A fala que estava em andamento no clique pertence à sessão anterior: descarta.
+    this.voz.descartarEReiniciar();
     this.cauda = '';
     this.detector.limparContexto();
     this.comandosFeitos.clear();
@@ -456,6 +461,7 @@ export class ControladorAula {
       escala: 1,
       saiu: false,
       aviso: 'Nova sessão iniciada: a tela foi limpa.',
+      sessaoInicio: inicioSessaoAtual(),
     });
     window.setTimeout(() => this.estado.aviso === 'Nova sessão iniciada: a tela foi limpa.' && this.mudar({ aviso: null }), 3_000);
     await registrar('sessao', 'nova sessão iniciada', { escuta_ativa: this.estado.escutando, itens_no_acervo: this.indice.size });

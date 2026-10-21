@@ -10,6 +10,8 @@ const INTERVALO_NOVA_SESSAO = 3 * 60 * 60 * 1000;
 
 interface SessaoGuardada {
   id: string;
+  /** Quando a sessão começou (ms). */
+  inicio?: number;
   ultimo: number;
 }
 
@@ -28,8 +30,9 @@ export function sessaoAtual(): string {
   const agora = Date.now();
   let s = sessaoMemoria ?? lerSessao();
   if (!s || agora - s.ultimo > INTERVALO_NOVA_SESSAO) {
-    s = { id: novoId(), ultimo: agora };
+    s = { id: novoId(), inicio: agora, ultimo: agora };
   }
+  s.inicio ??= agora;
   s.ultimo = agora;
   sessaoMemoria = s;
   try {
@@ -41,13 +44,19 @@ export function sessaoAtual(): string {
 }
 
 export function novaSessao(): string {
-  sessaoMemoria = { id: novoId(), ultimo: Date.now() };
+  sessaoMemoria = { id: novoId(), inicio: Date.now(), ultimo: Date.now() };
   try {
     localStorage.setItem(CHAVE_SESSAO, JSON.stringify(sessaoMemoria));
   } catch {
     /* ignore */
   }
   return sessaoMemoria.id;
+}
+
+/** Quando a sessão atual começou (ms). */
+export function inicioSessaoAtual(): number {
+  sessaoAtual();
+  return sessaoMemoria?.inicio ?? Date.now();
 }
 
 export function registrar(tipo: EventoRegistro['tipo'], texto: string, dados?: Record<string, unknown>): Promise<void> {

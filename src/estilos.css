@@ -147,3 +147,6 @@ table.tabela th, table.tabela td { text-align: left; padding: 6px 8px; border-bo
   font-size: 26px; line-height: 1.5; max-width: 760px; cursor: pointer; border: none;
 }
 .projecao-convite .caixa strong { display: block; font-size: 34px; margin: 18px 0 8px; }
+
+.sessao-info { margin: 0; font-size: 14px; color: var(--tinta-2); }
+.sessao-info strong { color: var(--tinta); }

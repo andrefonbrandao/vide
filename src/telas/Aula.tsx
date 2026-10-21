@@ -247,6 +247,12 @@ export function Aula({ ativa }: { ativa: boolean }) {
       <aside className="aula-dir">
         <div className="secao-dir">
           <h3>Transcrição bruta (ao vivo)</h3>
+          <p className="sessao-info">
+            Sessão iniciada às{' '}
+            <strong>{new Date(e.sessaoInicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</strong>
+            {new Date(e.sessaoInicio).toDateString() !== new Date().toDateString() &&
+              ` de ${new Date(e.sessaoInicio).toLocaleDateString('pt-BR')}`}
+          </p>
         </div>
         <div className="transcricao" ref={transcricaoRef}>
           {e.finais.length === 0 && !e.parcial && (
