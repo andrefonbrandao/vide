@@ -184,17 +184,6 @@ export function Aula({ ativa }: { ativa: boolean }) {
           <div className="aviso" data-ui onClick={() => ctl.fecharAviso()}>{e.aviso}</div>
         )}
 
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span className={`modo-roda${e.modoRoda === 'rolar' ? ' rolar' : ''}`}>
-            Roda: {e.modoRoda === 'rolar' ? 'ROLAR O TEXTO PROJETADO' : 'PERCORRER CANDIDATOS'}
-          </span>
-          {e.modoRoda === 'rolar' && e.projecao.rolavel && (
-            <span className="ajuda" style={{ margin: 0 }}>posição: {Math.round(e.projecao.fracao * 100)}%</span>
-          )}
-          {e.modoRoda === 'rolar' && e.projetado && !e.projecao.rolavel && (
-            <span className="ajuda" style={{ margin: 0 }}>o texto projetado cabe inteiro na tela</span>
-          )}
-        </div>
 
         {e.candidatos.length === 0 ? (
           <div className="vazio">
@@ -232,6 +221,11 @@ export function Aula({ ativa }: { ativa: boolean }) {
             <span>
               No projetor: <span className="titulo">{e.projetado.titulo}</span>
               {e.escala !== 1 && <span className="ajuda"> · fonte {Math.round(e.escala * 100)}%</span>}
+              {e.modoRoda === 'rolar' && (
+                <span className="ajuda">
+                  {' '}· a roda está rolando o texto{e.projecao.rolavel ? ` (${Math.round(e.projecao.fracao * 100)}%)` : ' (já cabe inteiro na tela)'}
+                </span>
+              )}
             </span>
           ) : (
             <span>Projetor em tela neutra (preta)</span>

@@ -28,7 +28,7 @@ function App() {
           ))}
         </nav>
         <span className="espaco" />
-        <span className="ajuda" style={{ margin: 0, fontSize: 13 }}>protótipo de teste · v0.2</span>
+        <span className="ajuda" style={{ margin: 0, fontSize: 13 }}>protótipo de teste · v0.3</span>
       </header>
       <main className="conteudo">
         {/* A aula continua montada (e ouvindo) mesmo em outra aba. */}
