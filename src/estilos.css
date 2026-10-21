@@ -19,9 +19,10 @@ html, body, #root { margin: 0; height: 100%; }
 body { background: var(--fundo); }
 button, input, textarea, select { font: inherit; color: inherit; }
 
-.logo { display: inline-flex; align-items: baseline; gap: 0.04em; line-height: 1; }
-.logo svg { align-self: center; transform: translateY(0.06em); }
-.logo-ide { font-weight: 800; letter-spacing: -0.03em; }
+/* Logotipo: símbolo + "ide". A base do símbolo (o vértice) fica na linha de base do texto. */
+.logo { display: inline-block; line-height: 1; white-space: nowrap; color: var(--tinta); }
+.logo-simbolo { display: inline-block; width: 0.6em; height: 0.6em; vertical-align: baseline; margin-right: 0.03em; }
+.logo-ide { font-family: 'Manrope', system-ui, sans-serif; font-weight: 800; letter-spacing: -0.03em; color: #1e3a34; }
 
 /* ---------- Botões ---------- */
 .botao {

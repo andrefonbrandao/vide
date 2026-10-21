@@ -61,5 +61,6 @@ Para conferir se deu certo: abra o endereço no Chrome. A tela com o logo "vide"
 | `src/dados/` | Modelo do "item genérico" e o banco local (IndexedDB) |
 | `src/telas/` | Telas: Aula (apresentador), Projeção, Acervo e Registro |
 | `supabase/` | Esquema previsto para a sincronização (ainda não usado) |
+| `public/vide-simbolo.svg`, `public/vide-icone-app.svg` | Símbolo do logo (cabeçalho) e ícone do app (favicon). Regras de uso em `marca/LEIA-ME.md` |
 
 Os testes automáticos ficam em `src/**/*.test.ts` e rodam com `npm test`. Eles cobrem o detector (dezenas de frases) e o fatiador. Não é preciso rodá-los no seu notebook.
