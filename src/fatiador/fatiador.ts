@@ -207,6 +207,17 @@ export function fatiar(linhas: string[], diploma = 'cpc'): ResultadoFatiador {
   return { artigos, duplicidades, ignoradas, lacunas, avisos };
 }
 
+/**
+ * A página da Constituição no Planalto traz também o ADCT, cujos artigos
+ * recomeçam do 1º. Separa os dois textos.
+ */
+export function dividirConstituicao(linhas: string[]): { cf: string[]; adct: string[] | null } {
+  const inicio = linhas.findIndex((l) => /^Art\.?\s*1/.test(l));
+  const k = linhas.findIndex((l, i) => i > inicio && /^ATO DAS DISPOSI[ÇC][ÕO]ES CONSTITUCIONAIS TRANSIT[ÓO]RIAS\s*$/.test(l));
+  if (inicio < 0 || k < 0) return { cf: linhas, adct: null };
+  return { cf: linhas.slice(0, k), adct: linhas.slice(k + 1) };
+}
+
 export function chaveArtigo(a: { artigo: number; sufixo: string }): string {
   return a.sufixo ? `${a.artigo}-${a.sufixo}` : String(a.artigo);
 }

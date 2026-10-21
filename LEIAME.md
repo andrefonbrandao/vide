@@ -8,7 +8,7 @@ Este protótipo serve para **testar em sala se o reconhecimento de voz funciona*
 
 - **Voz contínua em português** (Chrome ou Edge), com reinício automático quando a sessão cai.
 - **Transcrição bruta ao vivo** na tela do apresentador: em preto o texto definitivo, em cinza o provisório.
-- **Importação do CPC** a partir do HTML salvo do Planalto (ou de um .txt). O app:
+- **Importação de leis** a partir do HTML salvo do Planalto (ou de um .txt): CPC, CF (com o ADCT separado), Código Civil, LINDB, CDC, Leis 9.099, 12.016, 7.347, 6.830 e 9.307, e qualquer **outra lei** cadastrada pelo professor (abreviação, número e apelidos falados). Uma **lei principal** (padrão: CPC) vale quando a lei não é dita. O app:
   - fatia o texto em artigo, parágrafo, inciso e alínea;
   - descarta a redação revogada (texto tachado);
   - lista as duplicidades encontradas.
@@ -32,7 +32,7 @@ O acervo e o registro ficam no **IndexedDB**, um banco interno do navegador. Fic
 
 ## Material do professor (slides, PDFs, imagens)
 
-- Carregue PDFs (slides exportados do PowerPoint, acórdãos, textos) ou imagens na aba **Acervo** ou pelo seletor **Material** da aula. Ficam guardados no navegador.
+- Carregue PDFs (slides exportados do PowerPoint, acórdãos, textos) ou imagens na aba **Acervo** ou pelo seletor **Material** da aula. Ficam guardados no navegador, organizados em **pastas** (com subpastas, "Processo Civil II/Sentença") e **etiquetas**. O seletor da aula tem **busca** (nome, pasta, etiqueta) e mostra os usados recentemente.
 - Com material na tela: **roda** passa as páginas; **arrastar** sobre a miniatura amplia um trecho (o zoom completa a proporção da tela do projetor); **clique esquerdo** projeta o candidato mais recente, que **desliza ao lado do slide**; **clique direito** recolhe o artigo e o slide volta.
 - O PDF é desenhado pelo pdf.js (edição "legacy", compatível com navegadores um pouco mais antigos), carregado só quando é usado.
 - Limitação: o PDF não tem as animações nem os vídeos do PowerPoint.

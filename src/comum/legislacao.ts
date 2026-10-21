@@ -1,6 +1,7 @@
 // Liga uma referência detectada ao item do acervo e monta o que vai para a tela.
 import type { ConteudoLegislacao, Dispositivo, Item } from '../dados/modelo';
 import { formatarNumeroArtigo } from '../fatiador/fatiador';
+import { abreviacaoDe } from '../dados/diplomas';
 import { numeroParaRomano } from '../voz/numeros';
 import type { Referencia } from '../voz/detector';
 
@@ -76,7 +77,7 @@ function blocosDoArtigo(c: ConteudoLegislacao, destacar: Set<Dispositivo>): Bloc
  * Devolve null se o artigo não estiver no acervo.
  */
 export function resolver(ref: Referencia, indice: Map<string, Item>, idCandidato: string): Resolucao | null {
-  const item = indice.get(chaveItemArtigo(ref.diploma, ref.art));
+  const item = indice.get(chaveItemArtigo(ref.diploma, ref.art, ref.sufixo ?? ''));
   if (!item) return null;
   const c = item.conteudo;
   const partes: string[] = [];
@@ -113,7 +114,8 @@ export function resolver(ref: Referencia, indice: Map<string, Item>, idCandidato
 
   const numero = formatarNumeroArtigo(c.artigo, c.sufixo);
   const id = [numero, ...partes].join(', ');
-  const titulo = `art. ${id} CPC`;
+  const abrev = abreviacaoDe(ref.diploma);
+  const titulo = `art. ${id} ${abrev}`;
 
   let blocos: Bloco[];
   if (caminho.length === 0) {
@@ -152,7 +154,7 @@ export function resolver(ref: Referencia, indice: Map<string, Item>, idCandidato
       id: idCandidato,
       tipo: item.tipo,
       titulo: `Art. ${id}`,
-      fonte: 'CPC',
+      fonte: abrev,
       blocos,
     },
   };

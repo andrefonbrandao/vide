@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { controlador, type EstadoAula } from './controlador';
 import { PainelMaterial } from './PainelMaterial';
 import { importarMaterial } from '../material/documento';
+import { SeletorMaterial, marcarUsado } from './Materiais';
 import type { StatusVoz } from '../voz/reconhecedor';
 import { obterConstrutor } from '../voz/reconhecedor';
 
@@ -62,7 +63,8 @@ export function Aula({ ativa }: { ativa: boolean }) {
     let acumulado = 0;
     let ultimoPasso = 0;
     const roda = (ev: WheelEvent) => {
-      if (ehInterface(ev.target) && (ev.target as Element).closest('textarea')) return;
+      // Listas com rolagem própria (ex.: seletor de material) rolam normalmente.
+      if (ev.target instanceof Element && ev.target.closest('textarea, [data-rolavel]')) return;
       ev.preventDefault();
       // Um "dente" da roda = um passo. Touchpads mandam muitos eventos pequenos.
       acumulado += ev.deltaY;
@@ -154,8 +156,15 @@ export function Aula({ ativa }: { ativa: boolean }) {
     if (!arquivo) return;
     setCarregando(true);
     try {
-      const m = await importarMaterial(arquivo);
+      let pasta = '';
+      try {
+        pasta = localStorage.getItem('vide.ultimaPasta') ?? '';
+      } catch {
+        /* ignore */
+      }
+      const m = await importarMaterial(arquivo, { pasta });
       await ctl.recarregarMateriais();
+      marcarUsado(m.id);
       ctl.escolherMaterial(m.id);
     } catch (err) {
       alert(`Não foi possível carregar o arquivo: ${(err as Error).message}`);
@@ -196,25 +205,12 @@ export function Aula({ ativa }: { ativa: boolean }) {
           >
             Nova sessão
           </button>
-          <label className="seletor-material">
-            <span>Material:</span>
-            <select
-              value={e.material?.id ?? ''}
-              onChange={(ev) => {
-                if (ev.target.value === '__novo') arquivoRef.current?.click();
-                else ctl.escolherMaterial(ev.target.value || null);
-              }}
-              disabled={carregando}
-            >
-              <option value="">nenhum (só os artigos)</option>
-              {e.materiais.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.nome} ({m.paginas} {m.paginas === 1 ? 'página' : 'páginas'})
-                </option>
-              ))}
-              <option value="__novo">+ carregar PDF ou imagem…</option>
-            </select>
-          </label>
+          <SeletorMaterial
+            atual={e.material}
+            aoEscolher={(id) => ctl.escolherMaterial(id)}
+            aoCarregar={() => arquivoRef.current?.click()}
+            carregando={carregando}
+          />
           <input
             ref={arquivoRef}
             type="file"
@@ -237,7 +233,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
           <div className="aviso" data-ui>Este navegador não tem reconhecimento de voz. Abra o Vide no Chrome ou no Edge.</div>
         )}
         {e.totalAcervo === 0 && (
-          <div className="aviso" data-ui>O acervo está vazio. Vá na aba <strong>Acervo</strong> e importe o CPC antes da aula.</div>
+          <div className="aviso" data-ui>O acervo está vazio. Vá na aba <strong>Acervo</strong> e importe as leis antes da aula.</div>
         )}
         {e.projecao.conectada && e.projecao.versao !== __VERSAO__ && (
           <div className="aviso" data-ui>
@@ -258,9 +254,11 @@ export function Aula({ ativa }: { ativa: boolean }) {
 
         {e.candidatos.length === 0 ? (
           <div className="vazio">
-            Os candidatos aparecem aqui quando você citar um dispositivo do CPC, por exemplo:
+            Os candidatos aparecem aqui quando você citar um dispositivo de lei, por exemplo:
             <br />
             <em>"artigo 70"</em>, <em>"inciso sexto do 485"</em>, <em>"parágrafo primeiro do artigo 300"</em>.
+            <br />
+            Sem dizer a lei, vale a lei principal: <strong>{e.leis.find((l) => l.sigla === e.principal)?.abreviacao ?? e.principal.toUpperCase()}</strong>.
             <br />
             {e.material
               ? 'Roda passa as páginas · clique esquerdo projeta o candidato mais recente (ou clique num candidato) · clique direito recolhe o artigo · clique na roda: a roda rola o artigo.'

@@ -120,7 +120,7 @@ export function tipoDoArquivo(arquivo: File): Material['tipo'] | null {
 }
 
 /** Guarda um PDF ou imagem no acervo de materiais. */
-export async function importarMaterial(arquivo: File): Promise<Material> {
+export async function importarMaterial(arquivo: File, org: { pasta?: string; etiquetas?: string[] } = {}): Promise<Material> {
   const tipo = tipoDoArquivo(arquivo);
   if (!tipo) throw new Error('Formato não aceito. Use PDF, PNG, JPG ou WebP.');
   const id = novoId();
@@ -138,6 +138,8 @@ export async function importarMaterial(arquivo: File): Promise<Material> {
     tamanho: arquivo.size,
     paginas: doc.paginas,
     arquivo,
+    pasta: limparPasta(org.pasta ?? ''),
+    etiquetas: limparEtiquetas(org.etiquetas ?? []),
   };
   await db.materiais.add(material);
   window.dispatchEvent(new Event('vide-materiais-mudou'));
@@ -147,6 +149,42 @@ export async function importarMaterial(arquivo: File): Promise<Material> {
 export async function listarMateriais(): Promise<Material[]> {
   const todos = await db.materiais.toArray();
   return todos.filter((m) => !m.excluido_em).sort((a, b) => b.criado_em.localeCompare(a.criado_em));
+}
+
+/** Muda nome, pasta e etiquetas de um material. */
+export async function atualizarMaterial(id: string, dados: { nome?: string; pasta?: string; etiquetas?: string[] }): Promise<void> {
+  const m = await db.materiais.get(id);
+  if (!m) return;
+  await db.materiais.put({
+    ...m,
+    nome: dados.nome?.trim() || m.nome,
+    pasta: dados.pasta !== undefined ? limparPasta(dados.pasta) : (m.pasta ?? ''),
+    etiquetas: dados.etiquetas !== undefined ? limparEtiquetas(dados.etiquetas) : (m.etiquetas ?? []),
+    atualizado_em: agoraISO(),
+  });
+  window.dispatchEvent(new Event('vide-materiais-mudou'));
+}
+
+/** "  Processo Civil II / Sentença/ " -> "Processo Civil II/Sentença" */
+export function limparPasta(p: string): string {
+  return p
+    .split('/')
+    .map((s) => s.trim().replace(/\s+/g, ' '))
+    .filter(Boolean)
+    .join('/');
+}
+
+export function limparEtiquetas(lista: string[]): string[] {
+  const vistas = new Set<string>();
+  const saida: string[] = [];
+  for (const e of lista.flatMap((x) => x.split(','))) {
+    const t = e.trim().replace(/\s+/g, ' ').toLowerCase();
+    if (t && !vistas.has(t)) {
+      vistas.add(t);
+      saida.push(t);
+    }
+  }
+  return saida;
 }
 
 /** Exclusão "suave" (para a sincronização futura) e libera o espaço do arquivo. */

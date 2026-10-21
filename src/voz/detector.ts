@@ -1,21 +1,27 @@
-// Detector de referências ao CPC na fala normalizada.
+// Detector de referências a dispositivos de lei na fala normalizada.
 //
 // Reconhece, por exemplo:
 //   "artigo 70 do CPC", "art 70", "artigo setenta", "artigo mil e quinze",
+//   "artigo 5º da Constituição", "art. 186 do Código Civil", "artigo 3º da Lei 9.099",
 //   "parágrafo primeiro do artigo 300", "artigo 300 parágrafo primeiro",
 //   "inciso sexto do 485", "alínea b do inciso segundo do artigo 1.015",
 //   "o 485 do CPC", "artigos 70 e 71",
-//   e, depois de citar um artigo, "e o inciso sétimo" (usa o artigo citado antes).
+//   e, depois de citar um artigo, "e o inciso sétimo" (usa o artigo e a lei citados antes).
+// Quando a lei não é dita, usa a "lei principal" da aula (normalmente o CPC).
+import { CATALOGO, type DefDiploma } from '../dados/diplomas';
 import { lerNumero, ehPalavraNumero } from './numeros';
-import { KW, normalizarFala, PALAVRA_OUTRO_DIPLOMA } from './normalizar';
+import { KW, PALAVRA_OUTRO_DIPLOMA, criarNormalizador, ehDiploma, siglaDe, type Normalizador } from './normalizar';
 
 export interface Referencia {
-  diploma: 'cpc';
+  /** Sigla da lei: "cpc", "cf", "l9099". */
+  diploma: string;
   art: number;
+  /** Letra do artigo ("A" em 103-A). */
+  sufixo?: string;
   par?: string; // "1", "2", "unico"
   inc?: number;
   ali?: string; // "a", "b"...
-  /** Falou "do CPC" (ou equivalente) logo depois. */
+  /** A lei foi dita ("do CPC", "da Constituição"). */
   explicito: boolean;
   /** O artigo não foi dito; veio do contexto (último artigo citado). */
   contexto: boolean;
@@ -30,7 +36,7 @@ export interface Referencia {
 
 export interface ResultadoDeteccao {
   referencias: Referencia[];
-  /** Referências descartadas porque eram de outro diploma ("art. 5º da Constituição"). */
+  /** Referências descartadas porque eram de uma lei fora do catálogo ("art. 7º da CLT"). */
   outros: { trecho: string; diploma: string; fim: number; art: number | null }[];
   palavras: string[];
 }
@@ -41,6 +47,8 @@ const LETRAS_FALADAS: Record<string, string> = {
   ge: 'g', g: 'g', aga: 'h', h: 'h', i: 'i', jota: 'j', j: 'j', k: 'k', l: 'l', ele: 'l',
   m: 'm', eme: 'm', n: 'n', ene: 'n', o: 'o', p: 'p', pe: 'p',
 };
+/** Maior número de artigo aceito antes de saber a lei (o Código Civil vai até 2.046). */
+const MAX_ARTIGO_GERAL = 2100;
 
 type Nivel = 'art' | 'par' | 'inc' | 'ali';
 
@@ -58,9 +66,14 @@ function lerValor(nivel: Nivel, palavras: string[], i: number): [string, number]
     return letra ? [letra, 1] : null;
   }
   if (nivel === 'par' && p === 'unico') return ['unico', 1];
+  // Artigo com letra escrito pelo reconhecedor: "103a" (de "103-A").
+  if (nivel === 'art') {
+    const m = /^(\d{1,4})([a-h])$/.exec(p);
+    if (m && +m[1] > 0 && +m[1] <= MAX_ARTIGO_GERAL) return [`${+m[1]}-${m[2].toUpperCase()}`, 1];
+  }
   const n = lerNumero(palavras, i, { ordinal: true, romano: nivel === 'inc' });
   if (!n || n.valor <= 0) return null;
-  if (nivel === 'art' && n.valor > 1100) return null; // o CPC vai até o art. 1.072
+  if (nivel === 'art' && n.valor > MAX_ARTIGO_GERAL) return null;
   return [String(n.valor), n.tamanho];
 }
 
@@ -85,18 +98,44 @@ function lerParte(palavras: string[], i: number): { parte: Parte; fim: number } 
   while (palavras[j] === 'e' && valores.length < 4) {
     const prox = lerValor(nivel, palavras, j + 1);
     if (!prox) break;
-    // "e" seguido de palavra-chave é outra coisa ("art 70 e inciso..." não chega aqui)
     valores.push(prox[0]);
     j = j + 1 + prox[1];
   }
   return { parte: { nivel, valores }, fim: j };
 }
 
+function separarArtigo(v: string): { art: number; sufixo?: string } {
+  const [n, suf] = v.split('-');
+  return { art: parseInt(n, 10), sufixo: suf || undefined };
+}
+
+export interface OpcoesDetector {
+  /** Leis conhecidas (catálogo + cadastradas pelo professor). */
+  diplomas?: DefDiploma[];
+  /** Lei usada quando o professor não diz qual ("artigo 70"). */
+  principal?: string;
+}
+
 export class Detector {
   /** Último artigo citado (para "e o inciso sétimo"). */
-  private ultimoArtigo: { art: number; par?: string; em: number } | null = null;
+  private ultimoArtigo: { diploma: string; art: number; sufixo?: string; par?: string; em: number } | null = null;
   /** Por quanto tempo o artigo citado vale como contexto (ms). */
   contextoMs = 90_000;
+  private normalizar: Normalizador;
+  private maximos: Map<string, number>;
+  readonly principal: string;
+
+  constructor(opcoes: OpcoesDetector = {}) {
+    const diplomas = opcoes.diplomas ?? CATALOGO;
+    this.normalizar = criarNormalizador(diplomas);
+    this.maximos = new Map(diplomas.map((d) => [d.sigla, d.maxArtigo]));
+    this.principal = opcoes.principal ?? 'cpc';
+  }
+
+  /** Converte a fala em palavras normalizadas (com as leis deste detector). */
+  palavrasDe(texto: string): string[] {
+    return this.normalizar(texto);
+  }
 
   /**
    * @param opcoes.parcial texto provisório (ainda pode mudar): uma referência
@@ -105,7 +144,7 @@ export class Detector {
    *   "o artigo 4" espera para ver se não vira "48" ou "489".
    */
   detectar(texto: string, agora = Date.now(), opcoes: { parcial?: boolean } = {}): ResultadoDeteccao {
-    const palavras = normalizarFala(texto);
+    const palavras = this.normalizar(texto);
     const referencias: Referencia[] = [];
     const outros: ResultadoDeteccao['outros'] = [];
 
@@ -119,7 +158,7 @@ export class Detector {
       i = Math.max(r.fim, i + 1);
     }
     for (const r of referencias) {
-      if (!r.contexto) this.ultimoArtigo = { art: r.art, par: r.par, em: agora };
+      if (!r.contexto) this.ultimoArtigo = { diploma: r.diploma, art: r.art, sufixo: r.sufixo, par: r.par, em: agora };
     }
     return { referencias, outros, palavras };
   }
@@ -157,7 +196,7 @@ export class Detector {
         // Número solto após conector, quando ainda falta o artigo
         if (k > j && !partes.some((x) => x.nivel === 'art' && x.valores.length) && ehPalavraNumero(palavras[k] ?? '')) {
           const n = lerNumero(palavras, k);
-          if (n && n.valor > 0 && n.valor <= 1100) {
+          if (n && n.valor > 0 && n.valor <= MAX_ARTIGO_GERAL) {
             artNu = String(n.valor);
             j = k + n.tamanho;
           }
@@ -165,25 +204,25 @@ export class Detector {
         break;
       }
     } else {
-      // "o 485 do CPC": número seguido de "do cpc"
+      // "o 485 do CPC": número seguido do nome da lei
       if (!ehPalavraNumero(palavras[i])) return null;
       if (i > 0 && ehPalavraNumero(palavras[i - 1])) return null;
       const n = lerNumero(palavras, i);
-      if (!n || n.valor <= 0 || n.valor > 1100) return null;
+      if (!n || n.valor <= 0 || n.valor > MAX_ARTIGO_GERAL) return null;
       const k = pularConectores(palavras, i + n.tamanho, 1);
-      if (palavras[k] !== 'cpc') return null;
+      if (!ehDiploma(palavras[k])) return null;
       artNu = String(n.valor);
       j = i + n.tamanho;
     }
 
-    // Diploma dito logo depois?
+    // Lei dita logo depois?
     const k = pularConectores(palavras, j);
-    let explicito = false;
-    if (palavras[k] === 'cpc') {
-      explicito = true;
+    let diploma: string | null = null;
+    if (ehDiploma(palavras[k])) {
+      diploma = siglaDe(palavras[k]);
       j = k + 1;
     } else if (palavras[k] === PALAVRA_OUTRO_DIPLOMA) {
-      // "código" no fim da fala ainda pode virar "código de processo civil" no trecho seguinte.
+      // "código" no fim da fala ainda pode virar "código civil" no trecho seguinte.
       if (palavras[k + 1] === 'codigo' && k + 2 >= palavras.length) return null;
       const artDito = artNu ?? partes.find((x) => x.nivel === 'art' && x.valores.length)?.valores[0] ?? null;
       return {
@@ -191,7 +230,7 @@ export class Detector {
         trecho: palavras.slice(i, k + 2).join(' ').replace(/§(outro )?/g, ''),
         diploma: palavras[k + 1] ?? '?',
         fim: k + 2,
-        art: artDito ? parseInt(artDito, 10) : null,
+        art: artDito ? separarArtigo(artDito).art : null,
       };
     }
 
@@ -206,26 +245,36 @@ export class Detector {
       if (!temSub) return null;
       // "inciso sexto do" no fim da fala: o número do artigo deve vir a seguir.
       if (k > j && k >= palavras.length) return null;
-      if (!this.ultimoArtigo || agora - this.ultimoArtigo.em > this.contextoMs) return null;
-      arts = [String(this.ultimoArtigo.art)];
+      const u = this.ultimoArtigo;
+      if (!u || agora - u.em > this.contextoMs) return null;
+      // "inciso 5º da Constituição" com o último artigo sendo de outra lei: não usa o contexto.
+      if (diploma && diploma !== u.diploma) return null;
+      arts = [u.sufixo ? `${u.art}-${u.sufixo}` : String(u.art)];
+      diploma = u.diploma;
       contexto = true;
       // "inciso 5º" logo depois de "parágrafo 1º do artigo 489": inciso do § 1º.
-      if (!valoresDe('par').length && this.ultimoArtigo.par) parContexto = this.ultimoArtigo.par;
+      if (!valoresDe('par').length && u.par) parContexto = u.par;
     }
 
+    const explicito = diploma !== null && !contexto;
+    const lei = diploma ?? this.principal;
+    const max = this.maximos.get(lei) ?? MAX_ARTIGO_GERAL;
     const pars = parContexto ? [parContexto] : valoresDe('par');
     const incs = valoresDe('inc');
     const alis = valoresDe('ali');
     const refs: Referencia[] = [];
-    const trecho = palavras.slice(i, j).join(' ').replace(/§/g, '');
+    const trecho = palavras.slice(i, j).join(' ').replace(/§dip:/g, '').replace(/§/g, '');
     for (const a of arts) {
+      const { art, sufixo } = separarArtigo(a);
+      if (art > max) continue;
       for (const p of pars.length ? pars : [undefined]) {
         for (const inc of incs.length ? incs : [undefined]) {
           for (const al of alis.length && inc ? alis : [undefined]) {
             if (refs.length >= 6) break;
             refs.push({
-              diploma: 'cpc',
-              art: parseInt(a, 10),
+              diploma: lei,
+              art,
+              sufixo,
               par: p,
               inc: inc ? parseInt(inc, 10) : undefined,
               ali: al,
@@ -240,13 +289,14 @@ export class Detector {
         }
       }
     }
+    if (!refs.length) return null;
     return { tipo: 'refs', refs, fim: j };
   }
 }
 
-/** Chave estável de uma referência: "cpc:485:i6", "cpc:300:p1", "cpc:1015:pu". */
-export function chaveReferencia(r: Pick<Referencia, 'diploma' | 'art' | 'par' | 'inc' | 'ali'>): string {
-  let k = `${r.diploma}:${r.art}`;
+/** Chave estável de uma referência: "cpc:485:i6", "cf:5:i78", "cf:103-A", "cpc:1015:pu". */
+export function chaveReferencia(r: Pick<Referencia, 'diploma' | 'art' | 'sufixo' | 'par' | 'inc' | 'ali'>): string {
+  let k = `${r.diploma}:${r.art}${r.sufixo ? `-${r.sufixo}` : ''}`;
   if (r.par) k += r.par === 'unico' ? ':pu' : `:p${r.par}`;
   if (r.inc) k += `:i${r.inc}`;
   if (r.ali) k += `:a${r.ali}`;

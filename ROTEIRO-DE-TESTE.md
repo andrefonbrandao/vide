@@ -7,18 +7,21 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 ## Parte 1 — Preparar (em casa, uns 15 minutos, uma vez só)
 
 1. **Abra o Vide no Chrome** pelo endereço do Cloudflare (veja o LEIAME).
-2. **Importe o CPC:**
-   1. Numa nova aba, abra <https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2015/lei/l13105.htm>.
-   2. Aperte **Ctrl + S** e salve o arquivo (por exemplo, em Downloads).
-   3. Volte ao Vide, clique na aba **Acervo** e depois em **Escolher arquivo**. Selecione o arquivo salvo.
-   4. Confira o resumo. O esperado é **cerca de 1.073 artigos**, dezenas de trechos tachados descartados e **0 duplicidades**.
+2. **Importe as leis** (repita para cada lei; comece pelo CPC):
+   1. Na aba **Acervo**, em **Importar legislação**, escolha a lei em **1. Qual lei você vai importar?**
+   2. Clique no link do Planalto que aparece no passo 2, aperte **Ctrl + S** e salve o arquivo (por exemplo, em Downloads).
+   3. Volte ao Vide e, no passo 3, escolha o arquivo salvo.
+   4. Confira o resumo. No CPC, o esperado é **cerca de 1.073 artigos** e **0 duplicidades**. A Constituição vem em duas partes: **CF** e **ADCT**.
    5. Clique em **Guardar no acervo**.
-3. **Confira dois artigos:** em "Conferir um artigo", digite `485` e depois `1015`. Veja se os incisos e parágrafos estão certos.
+   6. Para uma lei que não está na lista, escolha **Outra lei…** e preencha a abreviação (ex.: "Lei 8.429/1992"), o número e como você a chama na aula (ex.: "lei de improbidade").
+   7. Em **Lei principal da aula**, deixe o **CPC** (é a lei usada quando você diz só "artigo 70").
+3. **Confira alguns artigos:** em "Conferir um artigo", escolha a lei e digite o número (ex.: CPC `485`, CF `5`). Veja se os incisos e parágrafos estão certos.
 4. **Teste o detector sem microfone:** em "Testar o detector", escreva frases como você falaria:
    - "inciso sexto do 485"
    - "parágrafo primeiro do artigo 300"
    - "artigo mil e quinze"
-   - "artigo quinto da Constituição" (esta deve ser **ignorada**)
+   - "artigo quinto da Constituição" (vira art. 5º CF, se a CF estiver no acervo)
+   - "artigo 7º da CLT" (lei fora do catálogo: deve ser **ignorada**)
 5. **Atenção:** o acervo fica no navegador onde você importou. Se for usar outro navegador (por exemplo, o Edge) ou outro computador, importe o CPC de novo nele.
 
 ## Parte 2 — Ensaiar (em casa, uns 10 minutos)
@@ -72,10 +75,10 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 
 **Preparar (em casa):**
 1. No PowerPoint, salve os slides em PDF: **Arquivo › Exportar › Criar PDF**. Também servem PDFs de acórdãos, textos e imagens (PNG, JPG).
-2. No Vide, na aba **Acervo**, use **Materiais (slides e PDFs) › Carregar PDF ou imagem**. Ou, na aba **Aula**, no seletor **Material**, escolha **+ carregar PDF ou imagem…**.
+2. No Vide, na aba **Acervo**, em **Materiais (slides e PDFs)**: preencha a **Pasta** (use "/" para subpastas, ex.: *Processo Civil II/Sentença*) e as **Etiquetas** (ex.: *sentença, recursos*) e escolha os arquivos (pode escolher vários de uma vez). Para mudar depois, use **Organizar** ao lado de cada material.
 
 **Na aula:**
-1. No seletor **Material** (no alto da tela), escolha o arquivo. O projetor mostra a página 1.
+1. Clique no botão **Material** (no alto da tela). Abre uma lista com busca: digite parte do nome, da pasta ou uma etiqueta (ou clique numa etiqueta). Os usados recentemente aparecem no topo. Escolha o arquivo; o projetor mostra a página 1.
 2. **Roda do mouse** passa as páginas. O passador de slides (PageDown/PageUp) também funciona.
 3. **Para ampliar uma parte da página:** na miniatura do centro da sua tela, **arraste o mouse** desenhando um retângulo sobre o trecho. O projetor mostra só aquele trecho, ocupando a tela inteira.
    - Com zoom, a roda **desce dentro da página**; no fim, continua no alto da página seguinte (bom para PDF em pé).

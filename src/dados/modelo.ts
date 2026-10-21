@@ -82,6 +82,12 @@ export interface Diploma extends Sincronizavel {
   /** Data da versão guardada (quando foi importada). */
   versao_em: string;
   total_artigos: number;
+  /** Como aparece na tela ("CF", "Lei 9.099/1995"). */
+  abreviacao?: string;
+  /** Número da lei, só algarismos, para reconhecer "Lei 9.099" na fala. */
+  numero_lei?: string | null;
+  /** Maior número de artigo (para leis cadastradas pelo professor). */
+  max_artigo?: number;
 }
 
 /** Material do professor (slides em PDF ou imagem) para exibir durante a aula. */
@@ -94,6 +100,10 @@ export interface Material extends Sincronizavel {
   paginas: number;
   /** O arquivo em si (fica no aparelho; no futuro, no armazenamento do Supabase). */
   arquivo: Blob;
+  /** Pasta, com subpastas separadas por "/": "Processo Civil II/Sentença". Vazio = sem pasta. */
+  pasta?: string;
+  /** Etiquetas livres para achar o material: ["sentença", "recursos"]. */
+  etiquetas?: string[];
 }
 
 /** Um evento do registro de teste. */

@@ -1,7 +1,8 @@
 // Controlador do modo aula: liga voz -> detector -> candidatos -> projeção,
 // e anota tudo no registro de teste. Fica fora do React para continuar
 // funcionando quando o professor troca de aba (Acervo, Registro).
-import { carregarIndice } from '../dados/db';
+import { carregarIndice, listarDiplomas } from '../dados/db';
+import { abreviacaoDe, definirExtras, diplomaPrincipal, todosDiplomas, type DefDiploma } from '../dados/diplomas';
 import type { Item } from '../dados/modelo';
 import { abrirCanal, type LayoutArtigo, type Mensagem } from '../comum/canal';
 import { listarMateriais } from '../material/documento';
@@ -10,7 +11,6 @@ import { inicioDoTexto, resolver, type Projetavel } from '../comum/legislacao';
 import { inicioSessaoAtual, novaSessao, registrar } from '../comum/registro';
 import { detectarComandos, type Comando } from '../voz/comandos';
 import { Detector, chaveReferencia, type Referencia } from '../voz/detector';
-import { normalizarFala } from '../voz/normalizar';
 import { Reconhecedor, nomeNavegador, type StatusVoz } from '../voz/reconhecedor';
 
 export interface Candidato {
@@ -83,6 +83,9 @@ export interface EstadoAula {
   };
   detectados: Detectado[];
   totalAcervo: number;
+  /** Leis guardadas no acervo (abreviações), e a lei principal da aula. */
+  leis: { sigla: string; abreviacao: string }[];
+  principal: string;
   aviso: string | null;
   /** Quando a sessão atual do registro começou (ms). */
   sessaoInicio: number;
@@ -120,6 +123,8 @@ export class ControladorAula {
     projecao: { conectada: false, telaCheia: false, fracao: 0, rolavel: false, aspecto: 16 / 9, versao: __VERSAO__, materialCarregado: null },
     detectados: [],
     totalAcervo: 0,
+    leis: [],
+    principal: diplomaPrincipal(),
     aviso: null,
     sessaoInicio: inicioSessaoAtual(),
     material: null,
@@ -166,8 +171,28 @@ export class ControladorAula {
   }
 
   async recarregarAcervo() {
-    this.indice = await carregarIndice();
-    this.mudar({ totalAcervo: this.indice.size });
+    const [indice, diplomas] = await Promise.all([carregarIndice(), listarDiplomas()]);
+    this.indice = indice;
+    // Leis cadastradas pelo professor (fora do catálogo) entram no reconhecimento.
+    const extras: DefDiploma[] = diplomas
+      .filter((d) => d.abreviacao)
+      .map((d) => ({
+        sigla: d.sigla,
+        abreviacao: d.abreviacao!,
+        nome: d.nome,
+        apelidos: d.apelidos,
+        numeroLei: d.numero_lei ?? null,
+        maxArtigo: d.max_artigo ?? 3000,
+        url: d.origem_url,
+      }));
+    definirExtras(extras);
+    const principal = diplomaPrincipal();
+    this.detector = new Detector({ diplomas: todosDiplomas(), principal });
+    this.mudar({
+      totalAcervo: this.indice.size,
+      leis: diplomas.map((d) => ({ sigla: d.sigla, abreviacao: abreviacaoDe(d.sigla) })),
+      principal,
+    });
   }
 
   // ---------- material (slides/PDF) ----------
@@ -332,7 +357,7 @@ export class ControladorAula {
     const r = this.detector.detectar(comCauda, Date.now(), { parcial: origem === 'parcial' });
     // Onde começa o texto novo (em palavras normalizadas). Calculado pelo fim, porque
     // uma expressão pode atravessar a emenda ("artigo segundo do código" | "de processo civil").
-    const inicioNovo = this.cauda ? r.palavras.length - normalizarFala(texto).length : 0;
+    const inicioNovo = this.cauda ? r.palavras.length - this.detector.palavrasDe(texto).length : 0;
     for (const o of r.outros) {
       if (o.fim <= inicioNovo) continue;
       // Se um candidato acabou de surgir do texto provisório ("artigo 5º…") e agora
@@ -352,7 +377,7 @@ export class ControladorAula {
   private retirarPorOutroDiploma(art: number, trecho: string, trechoId: string) {
     const sai = this.estado.candidatos.filter(
       (c) =>
-        (c.chave === `cpc:${art}` || c.chave.startsWith(`cpc:${art}:`)) &&
+        (c.chave === `${this.detector.principal}:${art}` || c.chave.startsWith(`${this.detector.principal}:${art}:`)) &&
         c.origem === 'parcial' &&
         c.trechoId === trechoId &&
         c.id !== this.estado.projetado?.id,
@@ -397,7 +422,7 @@ export class ControladorAula {
     const chave = chaveReferencia(ref);
     const agora = Date.now();
     const lista = this.estado.candidatos;
-    const dadosLog = { chave, trecho: ref.trecho, origem, contexto: ref.contexto, cpc_dito: ref.explicito };
+    const dadosLog = { chave, trecho: ref.trecho, origem, contexto: ref.contexto, lei_dita: ref.explicito };
 
     // Repetido há pouco: ignora.
     const igual = lista.find((c) => c.chave === chave);
@@ -406,7 +431,7 @@ export class ControladorAula {
     if (lista.some((c) => c.chave.startsWith(chave + ':') && agora - c.criadoEm < REFINO_MS)) return;
 
     if (!res) {
-      const titulo = `art. ${ref.art} CPC`;
+      const titulo = `art. ${ref.art}${ref.sufixo ? `-${ref.sufixo}` : ''} ${abreviacaoDe(ref.diploma)}`;
       if (!this.estado.detectados.some((d) => d.titulo === titulo && agora - d.em < REPETIDO_MS)) {
         registrar('nao_encontrado', titulo, dadosLog);
         this.anotar(titulo, 'fora do acervo');

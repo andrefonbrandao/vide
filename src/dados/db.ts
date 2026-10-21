@@ -22,6 +22,18 @@ class BancoVide extends Dexie {
     this.version(2).stores({
       materiais: 'id, nome, atualizado_em, excluido_em',
     });
+    // Versão 3: pastas e etiquetas dos materiais.
+    this.version(3)
+      .stores({ materiais: 'id, nome, pasta, *etiquetas, atualizado_em, excluido_em' })
+      .upgrade((tx) =>
+        tx
+          .table('materiais')
+          .toCollection()
+          .modify((m: { pasta?: string; etiquetas?: string[] }) => {
+            m.pasta ??= '';
+            m.etiquetas ??= [];
+          }),
+      );
   }
 }
 
@@ -56,6 +68,23 @@ export async function salvarDiploma(diploma: Diploma, itens: Item[]): Promise<vo
     }
     await db.diplomas.add(diploma);
     await db.itens.bulkAdd(itens);
+  });
+}
+
+/** Leis guardadas (ativas), da mais recente para a mais antiga. */
+export async function listarDiplomas(): Promise<Diploma[]> {
+  const todos = await db.diplomas.toArray();
+  return todos.filter((d) => !d.excluido_em).sort((a, b) => a.sigla.localeCompare(b.sigla));
+}
+
+/** Remove uma lei do acervo (exclusão "suave", para a sincronização futura). */
+export async function excluirDiploma(sigla: string): Promise<void> {
+  const agora = agoraISO();
+  await db.transaction('rw', db.itens, db.diplomas, async () => {
+    const itens = await db.itens.where('chave').startsWith(`${sigla}:`).toArray();
+    for (const i of itens) if (!i.excluido_em) await db.itens.put({ ...i, excluido_em: agora, atualizado_em: agora });
+    const ds = await db.diplomas.where('sigla').equals(sigla).toArray();
+    for (const d of ds) if (!d.excluido_em) await db.diplomas.put({ ...d, excluido_em: agora, atualizado_em: agora });
   });
 }
 

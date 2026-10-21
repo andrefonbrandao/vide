@@ -36,9 +36,18 @@ describe('números', () => {
 
 describe('normalização', () => {
   it('unifica CPC', () => {
-    expect(normalizarFala('código de processo civil')).toEqual(['cpc']);
-    expect(normalizarFala('C P C')).toEqual(['cpc']);
-    expect(normalizarFala('c.p.c.')).toEqual(['cpc']);
+    expect(normalizarFala('código de processo civil')).toEqual(['§dip:cpc']);
+    expect(normalizarFala('C P C')).toEqual(['§dip:cpc']);
+    expect(normalizarFala('c.p.c.')).toEqual(['§dip:cpc']);
+  });
+  it('reconhece outras leis pelo nome e pelo número', () => {
+    expect(normalizarFala('da Constituição Federal')).toEqual(['da', '§dip:cf']);
+    expect(normalizarFala('do Código Civil')).toEqual(['do', '§dip:cc']);
+    expect(normalizarFala('da Lei 9.099/95')).toEqual(['da', '§dip:l9099']);
+    expect(normalizarFala('da lei nove mil e noventa e nove')).toEqual(['da', '§dip:l9099']);
+    expect(normalizarFala('da Lei 12.016 de 2009')).toEqual(['da', '§dip:l12016']);
+    expect(normalizarFala('do ADCT')).toEqual(['do', '§dip:adct']);
+    expect(normalizarFala('da lei 11.419')).toEqual(['da', '§outro', 'lei']);
   });
   it('milhar e ordinal', () => {
     expect(normalizarFala('Art. 1.015')).toEqual(['§art', '1015']);
@@ -78,17 +87,31 @@ describe('detector', () => {
     // segundo teste (21/10/2026, 14h12)
     ['esse elemento da sentença o dispositivo ele Tá previsto no artigo 489 inciso 3', ['cpc:489:i3']],
     ['para isso eu preciso ir no parágrafo primeiro do artigo 489 que eu já havia citado', ['cpc:489:p1']],
-    ['muito cuidado pessoal para que vocês nunca confundam por exemplo o artigo 489 do Código Civil', []],
-    ['ou o artigo segundo do Código Civil que é algo que a gente às vezes estuda', []],
+    ['muito cuidado pessoal para que vocês nunca confundam por exemplo o artigo 489 do Código Civil', ['cc:489']],
+    ['ou o artigo segundo do Código Civil que é algo que a gente às vezes estuda', ['cc:2']],
+    // outras leis
+    ['o artigo quinto da constituição', ['cf:5']],
+    ['artigo 5 da Constituição Federal', ['cf:5']],
+    ['inciso setenta e oito do artigo quinto da Constituição', ['cf:5:i78']],
+    ['art 186 do código civil', ['cc:186']],
+    ['o artigo mil novecentos e oitenta e oito do código civil', ['cc:1988']],
+    ['artigo 1.228 do Código Civil', ['cc:1228']],
+    ['artigo 3º da Lei 9.099', ['l9099:3']],
+    ['artigo terceiro da lei dos juizados', ['l9099:3']],
+    ['artigo primeiro da lei do mandado de segurança', ['l12016:1']],
+    ['artigo 103-A da Constituição', ['cf:103-A']],
+    ['artigo 1º do ADCT', ['adct:1']],
+    ['artigo 6º do CDC', ['cdc:6']],
+    ['artigo 4º da LINDB', ['lindb:4']],
+    ['artigo 1.500 do CPC', []], // o CPC não chega ao 1.500
   ];
   for (const [frase, esperado] of casos) {
     it(`"${frase}"`, () => expect(chaves(frase)).toEqual(esperado));
   }
 
   const negativos = [
-    'o artigo quinto da constituição',
-    'artigo 5 da Constituição Federal',
-    'art 186 do código civil',
+    'artigo 7º da CLT',
+    'artigo 121 do código penal',
     'artigo 7 da lei 11.419',
     'súmula 410 do STJ',
     'houve preclusão',
@@ -101,7 +124,7 @@ describe('detector', () => {
   }
 
   it('reconhece outro diploma e registra', () => {
-    const r = new Detector().detectar('artigo 5º da Constituição');
+    const r = new Detector().detectar('artigo 7º da CLT');
     expect(r.outros).toHaveLength(1);
   });
 
@@ -149,7 +172,20 @@ describe('detector', () => {
   });
 
   it('outro diploma informa o número do artigo', () => {
-    expect(new Detector().detectar('artigo 5º da Constituição').outros[0].art).toBe(5);
+    expect(new Detector().detectar('artigo 7º da CLT').outros[0].art).toBe(7);
+  });
+
+  it('lei principal: sem dizer a lei, usa a principal da aula', () => {
+    expect(chaves('artigo 5º', new Detector({ principal: 'cf' }))).toEqual(['cf:5']);
+    expect(chaves('artigo 70', new Detector())).toEqual(['cpc:70']);
+  });
+
+  it('contexto lembra a lei citada', () => {
+    const d = new Detector();
+    d.detectar('artigo quinto da Constituição', 1000);
+    expect(d.detectar('e o inciso trinta e cinco', 2000).referencias.map(chaveReferencia)).toEqual(['cf:5:i35']);
+    // inciso de outra lei não usa o contexto
+    expect(d.detectar('e o inciso quarto do CPC', 3000).referencias).toEqual([]);
   });
 
   it('não usa o contexto quando a frase termina em "do" (o número vem depois)', () => {
