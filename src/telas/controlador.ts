@@ -5,7 +5,7 @@ import { carregarIndice } from '../dados/db';
 import type { Item } from '../dados/modelo';
 import { abrirCanal, type Mensagem } from '../comum/canal';
 import { inicioDoTexto, resolver, type Projetavel } from '../comum/legislacao';
-import { registrar } from '../comum/registro';
+import { novaSessao, registrar } from '../comum/registro';
 import { detectarComandos, type Comando } from '../voz/comandos';
 import { Detector, chaveReferencia, type Referencia } from '../voz/detector';
 import { normalizarFala } from '../voz/normalizar';
@@ -293,7 +293,7 @@ export class ControladorAula {
     this.mudar({ projetado: c, escala: 1 });
   }
 
-  recolher(origem: 'mouse' | 'voz' | 'teclado' | 'sair') {
+  recolher(origem: 'mouse' | 'voz' | 'teclado' | 'sair' | 'nova sessão') {
     if (!this.estado.projetado) {
       this.canal.enviar({ t: 'recolher' });
       return;
@@ -388,6 +388,32 @@ export class ControladorAula {
       const sel = vivos.some((c) => c.id === this.estado.selecionadoId) ? this.estado.selecionadoId : (vivos[0]?.id ?? null);
       this.mudar({ candidatos: vivos, selecionadoId: sel });
     }
+  }
+
+  /**
+   * Começa uma nova sessão do registro e limpa a tela de trabalho
+   * (transcrição, candidatos e referências). A escuta continua como estava.
+   */
+  async novaSessao(): Promise<void> {
+    this.recolher('nova sessão');
+    novaSessao();
+    this.cauda = '';
+    this.detector.limparContexto();
+    this.comandosFeitos.clear();
+    this.ultimaInteracao = 0;
+    this.mudar({
+      finais: [],
+      parcial: '',
+      candidatos: [],
+      selecionadoId: null,
+      detectados: [],
+      modoRoda: 'candidatos',
+      escala: 1,
+      saiu: false,
+      aviso: 'Nova sessão iniciada: a tela foi limpa.',
+    });
+    window.setTimeout(() => this.estado.aviso === 'Nova sessão iniciada: a tela foi limpa.' && this.mudar({ aviso: null }), 3_000);
+    await registrar('sessao', 'nova sessão iniciada', { escuta_ativa: this.estado.escutando, itens_no_acervo: this.indice.size });
   }
 
   fecharAviso() {

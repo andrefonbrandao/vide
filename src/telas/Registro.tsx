@@ -1,6 +1,7 @@
 // Registro de teste: lista as sessões e exporta em .txt e .csv.
 import { useEffect, useState } from 'react';
 import type { EventoRegistro } from '../dados/modelo';
+import { controlador } from './controlador';
 import {
   apagarSessao,
   baixar,
@@ -9,7 +10,6 @@ import {
   exportarTxt,
   listarSessoes,
   nomeArquivo,
-  novaSessao,
   sessaoAtual,
   type ResumoSessao,
 } from '../comum/registro';
@@ -40,14 +40,16 @@ export function Registro() {
       <p className="ajuda">
         Tudo o que acontece no modo aula fica anotado com horário: a transcrição, as referências detectadas, o que foi projetado
         e recolhido, os comandos de voz e as quedas do reconhecimento. Cada aula vira uma <strong>sessão</strong> (uma nova
-        começa sozinha depois de 3 horas sem uso).
+        começa sozinha depois de 3 horas sem uso). O botão abaixo começa uma sessão nova na hora e limpa a tela da aula
+        (transcrição, candidatos e referências); as sessões anteriores continuam guardadas aqui.
       </p>
       <p>
         <button
           className="botao"
-          onClick={() => {
-            setAtual(novaSessao());
-            void recarregar();
+          onClick={async () => {
+            await controlador().novaSessao();
+            setAtual(sessaoAtual());
+            await recarregar();
           }}
         >
           Começar uma nova sessão agora

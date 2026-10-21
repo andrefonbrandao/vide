@@ -37,7 +37,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
    - **Clique direito:** volta à tela preta.
    - **Clique na roda:** o selo muda para "ROLAR O TEXTO PROJETADO". Agora a roda rola o texto no projetor. Experimente com "artigo mil e quinze". Clique na roda de novo para voltar.
 6. Com algo projetado, diga **"aumenta a fonte"**, depois **"diminui a fonte"** e depois **"tira da tela"**.
-7. Abra a aba **Registro**, clique em **Ver** e confira se tudo ficou anotado. Depois clique em **Começar uma nova sessão agora**, para o ensaio não se misturar com a aula.
+7. Abra a aba **Registro**, clique em **Ver** e confira se tudo ficou anotado. Depois clique em **Começar uma nova sessão agora** (ou em **Nova sessão**, na tela da Aula). A tela de trabalho fica limpa e o ensaio não se mistura com a aula; o registro do ensaio continua guardado.
 8. (Opcional) Repita os passos 1 a 3 no **Edge**, para comparar. Lembre-se de importar o CPC nele também.
 
 ## Parte 3 — Na aula

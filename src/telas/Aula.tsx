@@ -155,6 +155,17 @@ export function Aula({ ativa }: { ativa: boolean }) {
           <button className="botao" onClick={() => ctl.marcar()} title="Anota no registro que algo deu errado aqui (tecla M)">
             Marcar momento
           </button>
+          <button
+            className="botao"
+            title="Limpa a tela e começa uma nova sessão no registro (a anterior fica guardada)"
+            onClick={() => {
+              if (confirm('Começar uma nova sessão? A tela será limpa; o registro da sessão anterior continua guardado.')) {
+                void ctl.novaSessao();
+              }
+            }}
+          >
+            Nova sessão
+          </button>
           <span className="espaco" />
           <span className={classeStatus(e.status)} title={e.statusDetalhe}>
             <span className="luz" />

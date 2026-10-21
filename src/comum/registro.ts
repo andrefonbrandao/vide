@@ -50,9 +50,12 @@ export function novaSessao(): string {
   return sessaoMemoria.id;
 }
 
-export function registrar(tipo: EventoRegistro['tipo'], texto: string, dados?: Record<string, unknown>): void {
+export function registrar(tipo: EventoRegistro['tipo'], texto: string, dados?: Record<string, unknown>): Promise<void> {
   const ev: EventoRegistro = { sessao_id: sessaoAtual(), em: agoraISO(), tipo, texto, dados };
-  db.registro.add(ev).catch((e) => console.error('Falha ao registrar', e));
+  return db.registro
+    .add(ev)
+    .then(() => undefined)
+    .catch((e) => console.error('Falha ao registrar', e));
 }
 
 export interface ResumoSessao {
