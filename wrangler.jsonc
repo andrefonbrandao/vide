@@ -1,0 +1,10 @@
+// Configuração para publicar no Cloudflare (Workers com arquivos estáticos).
+// O Cloudflare roda "npm run build" e publica a pasta "dist".
+{
+  "name": "vide",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
