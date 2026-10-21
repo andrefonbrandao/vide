@@ -1,8 +1,12 @@
 // Tela do apresentador (modo aula).
-// Controles: roda = percorre candidatos (ou rola o texto projetado);
-// clique esquerdo = projeta; clique direito = recolhe; clique na roda = alterna a roda.
+// Sem material: roda = percorre candidatos; clique esquerdo = projeta o selecionado.
+// Com material (slides/PDF): roda = passa as páginas; clique esquerdo = projeta o
+// candidato mais recente (ou clique direto num candidato).
+// Sempre: clique direito = recolhe o artigo; clique na roda = a roda passa a rolar o artigo.
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { controlador, type EstadoAula } from './controlador';
+import { PainelMaterial } from './PainelMaterial';
+import { importarMaterial } from '../material/documento';
 import type { StatusVoz } from '../voz/reconhecedor';
 import { obterConstrutor } from '../voz/reconhecedor';
 
@@ -67,9 +71,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
       const passo = acumulado > 0 ? 1 : -1;
       acumulado = 0;
       ultimoPasso = agora;
-      const est = ctl.obter();
-      if (est.modoRoda === 'rolar') ctl.rolar(passo);
-      else ctl.mover(passo);
+      ctl.roda(passo);
     };
     const botao = (ev: MouseEvent) => {
       if (ev.button === 1) {
@@ -80,8 +82,10 @@ export function Aula({ ativa }: { ativa: boolean }) {
         ev.preventDefault();
         ctl.recolher('mouse');
       } else if (ev.button === 0) {
+        const card = ev.target instanceof Element ? ev.target.closest<HTMLElement>('[data-candidato]') : null;
+        if (card?.dataset.candidato) return ctl.projetarCandidato(card.dataset.candidato);
         if (ehInterface(ev.target)) return;
-        ctl.projetar('mouse');
+        ctl.cliqueProjetar();
       }
     };
     const semMenu = (ev: MouseEvent) => ev.preventDefault();
@@ -92,14 +96,24 @@ export function Aula({ ativa }: { ativa: boolean }) {
       if (ehInterface(ev.target) && (ev.target as Element).matches('input, textarea')) return;
       const est = ctl.obter();
       const k = ev.key;
-      if (k === 'ArrowDown' || k === 'PageDown' || k === 'ArrowUp' || k === 'PageUp') {
+      if (k === 'PageDown' || k === 'PageUp') {
+        // Passador de slides: com material, sempre passa a página.
         ev.preventDefault();
-        const passo = k === 'ArrowDown' || k === 'PageDown' ? 1 : -1;
-        if (est.modoRoda === 'rolar') ctl.rolar(passo);
-        else ctl.mover(passo);
+        const passo = k === 'PageDown' ? 1 : -1;
+        if (est.material) ctl.passoMaterial(passo);
+        else ctl.roda(passo);
+      } else if (k === 'ArrowDown' || k === 'ArrowUp' || k === 'ArrowRight' || k === 'ArrowLeft') {
+        ev.preventDefault();
+        ctl.roda(k === 'ArrowDown' || k === 'ArrowRight' ? 1 : -1);
       } else if (k === 'Enter' || k === ' ') {
         ev.preventDefault();
-        ctl.projetar('teclado');
+        ctl.cliqueProjetar();
+      } else if (k === '.' && est.material) {
+        ctl.alternarTelaPreta();
+      } else if ((k === 'l' || k === 'L') && est.material) {
+        ctl.alternarLayout();
+      } else if (k === '0' && est.material) {
+        ctl.paginaInteira();
       } else if (k === 'b' || k === 'B' || k === 'Delete' || k === 'Backspace') {
         ev.preventDefault();
         ctl.recolher('teclado');
@@ -133,11 +147,27 @@ export function Aula({ ativa }: { ativa: boolean }) {
   };
 
   const agora = Date.now();
+  const arquivoRef = useRef<HTMLInputElement>(null);
+  const [carregando, setCarregando] = useState(false);
+
+  const carregarMaterial = async (arquivo: File | undefined) => {
+    if (!arquivo) return;
+    setCarregando(true);
+    try {
+      const m = await importarMaterial(arquivo);
+      await ctl.recarregarMateriais();
+      ctl.escolherMaterial(m.id);
+    } catch (err) {
+      alert(`Não foi possível carregar o arquivo: ${(err as Error).message}`);
+    } finally {
+      setCarregando(false);
+      if (arquivoRef.current) arquivoRef.current.value = '';
+    }
+  };
 
   return (
-    <div className="aula">
-      <div className="aula-esq">
-        <div data-ui style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+    <div className={`aula${e.material ? ' com-material' : ''}`}>
+      <div className="aula-topo" data-ui>
           {!e.escutando ? (
             <button className="botao primario" onClick={() => ctl.iniciar()} disabled={!suporte}>
               {e.saiu ? 'Retomar a aula' : 'Iniciar escuta'}
@@ -166,13 +196,42 @@ export function Aula({ ativa }: { ativa: boolean }) {
           >
             Nova sessão
           </button>
+          <label className="seletor-material">
+            <span>Material:</span>
+            <select
+              value={e.material?.id ?? ''}
+              onChange={(ev) => {
+                if (ev.target.value === '__novo') arquivoRef.current?.click();
+                else ctl.escolherMaterial(ev.target.value || null);
+              }}
+              disabled={carregando}
+            >
+              <option value="">nenhum (só os artigos)</option>
+              {e.materiais.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nome} ({m.paginas} {m.paginas === 1 ? 'página' : 'páginas'})
+                </option>
+              ))}
+              <option value="__novo">+ carregar PDF ou imagem…</option>
+            </select>
+          </label>
+          <input
+            ref={arquivoRef}
+            type="file"
+            accept="application/pdf,.pdf,image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+            hidden
+            onChange={(ev) => void carregarMaterial(ev.target.files?.[0])}
+          />
+          {carregando && <span className="ajuda" style={{ margin: 0 }}>carregando…</span>}
           <span className="espaco" />
           <span className={classeStatus(e.status)} title={e.statusDetalhe}>
             <span className="luz" />
             {TEXTO_STATUS[e.status]}
             {e.statusDetalhe && e.status !== 'ouvindo' ? ` — ${e.statusDetalhe}` : ''}
           </span>
-        </div>
+      </div>
+
+      <div className="aula-esq">
 
         {!suporte && (
           <div className="aviso" data-ui>Este navegador não tem reconhecimento de voz. Abra o Vide no Chrome ou no Edge.</div>
@@ -191,13 +250,16 @@ export function Aula({ ativa }: { ativa: boolean }) {
             <br />
             <em>"artigo 70"</em>, <em>"inciso sexto do 485"</em>, <em>"parágrafo primeiro do artigo 300"</em>.
             <br />
-            Roda do mouse escolhe · clique esquerdo projeta · clique direito recolhe · clique na roda alterna a roda.
+            {e.material
+              ? 'Roda passa as páginas · clique esquerdo projeta o candidato mais recente (ou clique num candidato) · clique direito recolhe o artigo · clique na roda: a roda rola o artigo.'
+              : 'Roda do mouse escolhe · clique esquerdo projeta · clique direito recolhe · clique na roda: a roda rola o artigo.'}
           </div>
         ) : (
           <ol className="candidatos">
             {e.candidatos.map((c) => (
               <li
                 key={c.id}
+                data-candidato={c.id}
                 className={`candidato${c.id === e.selecionadoId ? ' selecionado' : ''}${c.id === e.projetado?.id ? ' no-ar' : ''}`}
               >
                 <span className="ponto" aria-hidden="true" />
@@ -227,6 +289,10 @@ export function Aula({ ativa }: { ativa: boolean }) {
                 </span>
               )}
             </span>
+          ) : e.material && !e.telaPreta ? (
+            <span>
+              No projetor: <span className="titulo">{e.material.nome}</span> <span className="ajuda">p. {e.material.pagina}</span>
+            </span>
           ) : (
             <span>Projetor em tela neutra (preta)</span>
           )}
@@ -237,6 +303,8 @@ export function Aula({ ativa }: { ativa: boolean }) {
           )}
         </div>
       </div>
+
+      {e.material && <PainelMaterial e={e} ctl={ctl} />}
 
       <aside className="aula-dir">
         <div className="secao-dir">

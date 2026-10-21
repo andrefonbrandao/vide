@@ -1,13 +1,14 @@
 // Banco local no navegador (IndexedDB), usando a biblioteca Dexie.
 // Tudo fica no aparelho: a aula não depende de internet para o acervo.
 import Dexie, { type Table } from 'dexie';
-import type { Diploma, EventoRegistro, Item } from './modelo';
+import type { Diploma, EventoRegistro, Item, Material } from './modelo';
 import { agoraISO } from './modelo';
 
 class BancoVide extends Dexie {
   itens!: Table<Item, string>;
   diplomas!: Table<Diploma, string>;
   registro!: Table<EventoRegistro, number>;
+  materiais!: Table<Material, string>;
 
   constructor() {
     super('vide');
@@ -16,6 +17,10 @@ class BancoVide extends Dexie {
       itens: 'id, chave, tipo, atualizado_em, excluido_em, *gatilhos',
       diplomas: 'id, sigla, atualizado_em',
       registro: '++seq, sessao_id, em, tipo',
+    });
+    // Versão 2: materiais do professor (PDF e imagens).
+    this.version(2).stores({
+      materiais: 'id, nome, atualizado_em, excluido_em',
     });
   }
 }

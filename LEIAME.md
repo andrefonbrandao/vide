@@ -30,6 +30,13 @@ Este protótipo serve para **testar em sala se o reconhecimento de voz funciona*
 
 O acervo e o registro ficam no **IndexedDB**, um banco interno do navegador. Ficam neste navegador, neste computador. Login e sincronização (Supabase) ficam para a próxima etapa. O modelo de dados já está pronto para isso; veja `supabase/esquema.sql`.
 
+## Material do professor (slides, PDFs, imagens)
+
+- Carregue PDFs (slides exportados do PowerPoint, acórdãos, textos) ou imagens na aba **Acervo** ou pelo seletor **Material** da aula. Ficam guardados no navegador.
+- Com material na tela: **roda** passa as páginas; **arrastar** sobre a miniatura amplia um trecho (o zoom completa a proporção da tela do projetor); **clique esquerdo** projeta o candidato mais recente, que **desliza ao lado do slide**; **clique direito** recolhe o artigo e o slide volta.
+- O PDF é desenhado pelo pdf.js (edição "legacy", compatível com navegadores um pouco mais antigos), carregado só quando é usado.
+- Limitação: o PDF não tem as animações nem os vídeos do PowerPoint.
+
 ## Publicar no Cloudflare (sem instalar nada no notebook)
 
 Você faz isso **uma vez só**, pelo navegador. Depois, cada atualização que eu enviar ao GitHub é publicada sozinha.
@@ -60,6 +67,7 @@ Para conferir se deu certo: abra o endereço no Chrome. A tela com o logo "vide"
 | `src/comum/` | Montagem do que vai para a tela, canal entre as janelas, registro de teste e logo |
 | `src/dados/` | Modelo do "item genérico" e o banco local (IndexedDB) |
 | `src/telas/` | Telas: Aula (apresentador), Projeção, Acervo e Registro |
+| `src/material/` | Leitura de PDF/imagem, zoom e passagem de páginas do material do professor |
 | `supabase/` | Esquema previsto para a sincronização (ainda não usado) |
 | `public/vide-simbolo.svg`, `public/vide-icone-app.svg` | Símbolo do logo (cabeçalho) e ícone do app (favicon). Regras de uso em `marca/LEIA-ME.md` |
 

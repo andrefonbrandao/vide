@@ -82,9 +82,43 @@ table.tabela th, table.tabela td { text-align: left; padding: 6px 8px; border-bo
 .mono { font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
 
 /* ---------- Tela do apresentador (modo aula) ---------- */
-.aula { display: grid; grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr); height: 100%; user-select: none; }
-.aula-esq { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.aula {
+  display: grid; height: 100%; user-select: none;
+  grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.aula-topo {
+  grid-column: 1 / -1; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  padding: 12px 20px; border-bottom: 1px solid var(--linha);
+}
+.aula-esq { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: auto; }
 .aula-dir { border-left: 2px solid var(--linha); display: flex; flex-direction: column; min-height: 0; background: var(--papel); }
+.seletor-material { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; }
+.seletor-material select {
+  border: 2px solid var(--tinta); border-radius: 999px; padding: 6px 12px; background: var(--fundo);
+  font-weight: 700; max-width: 260px; min-height: 40px;
+}
+
+/* Com material: candidatos | página | transcrição */
+.aula.com-material { grid-template-columns: minmax(280px, 1fr) minmax(0, 1.7fr) minmax(260px, 0.9fr); }
+.aula.com-material .aula-esq { padding: 12px 14px; }
+.aula.com-material .candidato { padding: 10px 12px; gap: 2px 10px; }
+.aula.com-material .candidato .ident { font-size: 22px; }
+.aula.com-material .candidato .trecho { font-size: 15px; }
+.aula.com-material .no-projetor .titulo { font-size: 17px; }
+.aula.com-material .vazio { font-size: 15px; padding: 18px; }
+.painel-material { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-left: 2px solid var(--linha); min-height: 0; }
+.painel-material-topo { display: flex; align-items: center; gap: 8px; }
+.painel-material-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.painel-material-pag { font-weight: 700; white-space: nowrap; }
+.painel-material-pagina { position: relative; flex: 1; min-height: 0; background: #000; border-radius: 10px; overflow: hidden; }
+.painel-material-pagina.apagado canvas { opacity: 0.35; }
+.painel-material-aviso { position: absolute; top: 10px; left: 10px; background: var(--tinta); color: var(--fundo); padding: 4px 10px; border-radius: 999px; font-weight: 700; font-size: 13px; }
+.painel-material-botoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.painel-material-dica { margin: 0; font-size: 13px; }
+.zoom-alvo { position: absolute; inset: 0; cursor: crosshair; touch-action: none; }
+.zoom-atual, .zoom-novo { position: absolute; pointer-events: none; border: 3px solid var(--destaque); box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35); }
+.zoom-novo { border-style: dashed; box-shadow: none; }
 .modo-roda {
   display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 15px;
   padding: 6px 14px; border-radius: 999px; border: 2px solid var(--tinta); align-self: flex-start;
@@ -150,3 +184,14 @@ table.tabela th, table.tabela td { text-align: left; padding: 6px 8px; border-bo
 
 .sessao-info { margin: 0; font-size: 14px; color: var(--tinta-2); }
 .sessao-info strong { color: var(--tinta); }
+
+/* ---------- Material (slides/PDF) ---------- */
+.mat-caixa { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.mat-pagina { position: relative; flex: none; }
+.mat-pagina canvas { display: block; }
+.mat-erro { position: absolute; bottom: 8px; left: 8px; right: 8px; margin: 0; background: var(--tinta); color: var(--fundo); padding: 8px 12px; border-radius: 8px; }
+.proj-material { position: absolute; top: 0; bottom: 0; left: 0; right: 0; background: #000; transition: right 0.35s ease; }
+.proj-material.encolhido { right: 42%; }
+.proj-material.oculto { visibility: hidden; }
+.projecao-folha.lateral { left: 58%; box-shadow: -0.6vw 0 0 0 var(--destaque); animation: deslizar-lateral 0.35s ease-out; }
+@keyframes deslizar-lateral { from { transform: translateX(100%); } to { transform: translateX(0); } }

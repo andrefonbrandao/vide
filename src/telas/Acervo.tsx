@@ -17,6 +17,8 @@ import { chaveItemArtigo, resolver } from '../comum/legislacao';
 import { Detector, chaveReferencia } from '../voz/detector';
 import { normalizarFala } from '../voz/normalizar';
 import { Folha } from './Projecao';
+import { excluirMaterial, importarMaterial, listarMateriais } from '../material/documento';
+import type { Material } from '../dados/modelo';
 
 interface Previa {
   arquivo: string;
@@ -228,6 +230,7 @@ export function Acervo() {
         </>
       )}
 
+      <Materiais />
       <Conferir />
       <TestarDetector />
     </div>
@@ -313,6 +316,82 @@ function TestarDetector() {
           <li key={`o${i}`}>ignorado (outro diploma): <span className="mono">{o.trecho}</span></li>
         ))}
       </ul>
+    </>
+  );
+}
+
+/** Materiais do professor (slides em PDF, imagens) para exibir durante a aula. */
+function Materiais() {
+  const [lista, setLista] = useState<Material[]>([]);
+  const [msg, setMsg] = useState<string | null>(null);
+  const recarregar = () => void listarMateriais().then(setLista);
+  useEffect(() => {
+    recarregar();
+    window.addEventListener('vide-materiais-mudou', recarregar);
+    return () => window.removeEventListener('vide-materiais-mudou', recarregar);
+  }, []);
+  const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
+  return (
+    <>
+      <h2>Materiais (slides e PDFs)</h2>
+      <p className="ajuda">
+        Seus slides ou documentos para exibir no projetor durante a aula. No PowerPoint: <strong>Arquivo › Exportar › PDF</strong>.
+        Também aceita imagens (PNG, JPG). Ficam guardados neste navegador. Na aula, escolha o material no seletor{' '}
+        <strong>Material</strong>, no alto da tela.
+      </p>
+      <div className="cartao">
+        <div className="campo">
+          <label htmlFor="material">Carregar PDF ou imagem</label>
+          <input
+            id="material"
+            type="file"
+            accept="application/pdf,.pdf,image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+            onChange={async (ev) => {
+              const f = ev.target.files?.[0];
+              ev.target.value = '';
+              if (!f) return;
+              setMsg('Carregando…');
+              try {
+                const m = await importarMaterial(f);
+                setMsg(`"${m.nome}" guardado (${m.paginas} ${m.paginas === 1 ? 'página' : 'páginas'}).`);
+              } catch (err) {
+                setMsg(`Não foi possível carregar: ${(err as Error).message}`);
+              }
+            }}
+          />
+        </div>
+        {msg && <p className="ajuda">{msg}</p>}
+        {lista.length === 0 ? (
+          <p className="ajuda">Nenhum material guardado.</p>
+        ) : (
+          <table className="tabela">
+            <thead>
+              <tr><th>Nome</th><th>Páginas</th><th>Tamanho</th><th>Guardado em</th><th></th></tr>
+            </thead>
+            <tbody>
+              {lista.map((m) => (
+                <tr key={m.id}>
+                  <td><strong>{m.nome}</strong> <span className="ajuda">({m.tipo === 'pdf' ? 'PDF' : 'imagem'})</span></td>
+                  <td>{m.paginas}</td>
+                  <td>{mb(m.tamanho)}</td>
+                  <td>{new Date(m.criado_em).toLocaleString('pt-BR')}</td>
+                  <td>
+                    <button
+                      className="botao pequeno"
+                      onClick={async () => {
+                        if (!confirm(`Apagar "${m.nome}" dos materiais?`)) return;
+                        await excluirMaterial(m.id);
+                      }}
+                    >
+                      Apagar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </>
   );
 }

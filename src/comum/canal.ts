@@ -1,17 +1,25 @@
 // Comunicação entre a janela do apresentador e a de projeção (BroadcastChannel).
 // Funciona só entre janelas do mesmo navegador, no mesmo aparelho.
 import type { Projetavel } from './legislacao';
+import type { Regiao } from '../material/regiao';
+
+/** Como o artigo aparece quando há material na tela: ao lado ou por cima de tudo. */
+export type LayoutArtigo = 'lateral' | 'cheia';
 
 export type Mensagem =
   // apresentador -> projeção
-  | { t: 'projetar'; item: Projetavel; escala: number }
+  | { t: 'projetar'; item: Projetavel; escala: number; layout: LayoutArtigo }
   | { t: 'recolher' }
   | { t: 'rolar'; delta: number }
   | { t: 'escala'; escala: number }
+  | { t: 'layout'; layout: LayoutArtigo }
+  /** Material de fundo (slides/PDF). `id: null` = sem material (tela preta). */
+  | { t: 'material'; id: string | null; pagina: number; regiao: Regiao; preta: boolean }
   | { t: 'ping' }
   // projeção -> apresentador
   | { t: 'ola' }
-  | { t: 'pong'; telaCheia: boolean }
+  /** `aspecto` = largura/altura da janela de projeção. */
+  | { t: 'pong'; telaCheia: boolean; aspecto: number }
   | { t: 'rolagem'; fracao: number; rolavel: boolean };
 
 const NOME = 'vide-projecao';

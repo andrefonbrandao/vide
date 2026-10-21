@@ -68,6 +68,25 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 3. Clique em **Exportar .csv (Excel)**. É a mesma informação em tabela, boa para contar.
 4. Os dois arquivos vão para a pasta **Downloads**.
 
+## Usar seus slides ou PDFs junto com os artigos
+
+**Preparar (em casa):**
+1. No PowerPoint, salve os slides em PDF: **Arquivo › Exportar › Criar PDF**. Também servem PDFs de acórdãos, textos e imagens (PNG, JPG).
+2. No Vide, na aba **Acervo**, use **Materiais (slides e PDFs) › Carregar PDF ou imagem**. Ou, na aba **Aula**, no seletor **Material**, escolha **+ carregar PDF ou imagem…**.
+
+**Na aula:**
+1. No seletor **Material** (no alto da tela), escolha o arquivo. O projetor mostra a página 1.
+2. **Roda do mouse** passa as páginas. O passador de slides (PageDown/PageUp) também funciona.
+3. **Para ampliar uma parte da página:** na miniatura do centro da sua tela, **arraste o mouse** desenhando um retângulo sobre o trecho. O projetor mostra só aquele trecho, ocupando a tela inteira.
+   - Com zoom, a roda **desce dentro da página**; no fim, continua no alto da página seguinte (bom para PDF em pé).
+   - **Duplo clique** na miniatura (ou o botão **Página inteira**, ou a tecla **0**) volta à página inteira.
+4. Quando um artigo aparecer na lista, o **clique esquerdo** projeta **o mais recente**. Para projetar outro, **clique direto nele**.
+   - O artigo **desliza da direita** e ocupa cerca de 40% da tela; o slide continua visível ao lado.
+   - Botão **Artigo: ao lado do slide / em tela cheia** (ou tecla **L**) troca entre os dois jeitos.
+   - Artigo longo: **clique na roda** e a roda passa a rolar o artigo; clique na roda de novo para voltar às páginas.
+5. **Clique direito** (ou "tira da tela") recolhe o artigo, e o slide volta a ocupar a tela, no mesmo ponto.
+6. **Tela preta** (botão ou tecla **.** ponto) esconde o material por um momento; clique de novo para voltar.
+
 ## Como medir os acertos
 
 Com o .csv aberto no Excel, use a coluna **tipo** para filtrar. Anote:

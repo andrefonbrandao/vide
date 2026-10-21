@@ -84,6 +84,18 @@ export interface Diploma extends Sincronizavel {
   total_artigos: number;
 }
 
+/** Material do professor (slides em PDF ou imagem) para exibir durante a aula. */
+export interface Material extends Sincronizavel {
+  nome: string;
+  tipo: 'pdf' | 'imagem';
+  mime: string;
+  /** Tamanho do arquivo em bytes. */
+  tamanho: number;
+  paginas: number;
+  /** O arquivo em si (fica no aparelho; no futuro, no armazenamento do Supabase). */
+  arquivo: Blob;
+}
+
 /** Um evento do registro de teste. */
 export interface EventoRegistro {
   /** Número sequencial local (o IndexedDB gera). */
@@ -101,7 +113,8 @@ export interface EventoRegistro {
     | 'recolhido'
     | 'comando_voz'
     | 'voz'
-    | 'marcacao';
+    | 'marcacao'
+    | 'material';
   /** Texto principal (fala, identificação do item etc.). */
   texto: string;
   /** Detalhes livres (trecho, origem do clique etc.). */

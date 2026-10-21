@@ -3,7 +3,9 @@
 // funcionando quando o professor troca de aba (Acervo, Registro).
 import { carregarIndice } from '../dados/db';
 import type { Item } from '../dados/modelo';
-import { abrirCanal, type Mensagem } from '../comum/canal';
+import { abrirCanal, type LayoutArtigo, type Mensagem } from '../comum/canal';
+import { listarMateriais } from '../material/documento';
+import { PAGINA_INTEIRA, ajustarRegiao, ehInteira, passo, type Regiao } from '../material/regiao';
 import { inicioDoTexto, resolver, type Projetavel } from '../comum/legislacao';
 import { inicioSessaoAtual, novaSessao, registrar } from '../comum/registro';
 import { detectarComandos, type Comando } from '../voz/comandos';
@@ -38,7 +40,23 @@ export interface Detectado {
   situacao: 'novo' | 'refinado' | 'repetido' | 'fora do acervo' | 'outro diploma' | 'retirado';
 }
 
-export type ModoRoda = 'candidatos' | 'rolar';
+/** O que a roda do mouse faz: escolher candidato, rolar o artigo projetado ou passar o material. */
+export type ModoRoda = 'candidatos' | 'rolar' | 'material';
+
+export interface MaterialNaTela {
+  id: string;
+  nome: string;
+  paginas: number;
+  pagina: number;
+  regiao: Regiao;
+}
+
+export interface MaterialResumo {
+  id: string;
+  nome: string;
+  tipo: 'pdf' | 'imagem';
+  paginas: number;
+}
 
 export interface EstadoAula {
   status: StatusVoz;
@@ -52,12 +70,19 @@ export interface EstadoAula {
   modoRoda: ModoRoda;
   projetado: Candidato | null;
   escala: number;
-  projecao: { conectada: boolean; telaCheia: boolean; fracao: number; rolavel: boolean };
+  projecao: { conectada: boolean; telaCheia: boolean; fracao: number; rolavel: boolean; aspecto: number };
   detectados: Detectado[];
   totalAcervo: number;
   aviso: string | null;
   /** Quando a sessão atual do registro começou (ms). */
   sessaoInicio: number;
+  /** Material (slides/PDF) exibido no projetor, se houver. */
+  material: MaterialNaTela | null;
+  /** Material escondido temporariamente (projetor preto). */
+  telaPreta: boolean;
+  /** Com material na tela, o artigo aparece ao lado (lateral) ou por cima de tudo (cheia). */
+  layoutArtigo: LayoutArtigo;
+  materiais: MaterialResumo[];
 }
 
 const MAX_CANDIDATOS = 5;
@@ -82,11 +107,15 @@ export class ControladorAula {
     modoRoda: 'candidatos',
     projetado: null,
     escala: 1,
-    projecao: { conectada: false, telaCheia: false, fracao: 0, rolavel: false },
+    projecao: { conectada: false, telaCheia: false, fracao: 0, rolavel: false, aspecto: 16 / 9 },
     detectados: [],
     totalAcervo: 0,
     aviso: null,
     sessaoInicio: inicioSessaoAtual(),
+    material: null,
+    telaPreta: false,
+    layoutArtigo: 'lateral',
+    materiais: [],
   };
   private ouvintes = new Set<() => void>();
   private indice = new Map<string, Item>();
@@ -109,7 +138,9 @@ export class ControladorAula {
     window.setInterval(() => this.canal.enviar({ t: 'ping' }), 2_000);
     window.setInterval(() => this.manutencao(), 2_000);
     window.addEventListener('vide-acervo-mudou', () => void this.recarregarAcervo());
+    window.addEventListener('vide-materiais-mudou', () => void this.recarregarMateriais());
     void this.recarregarAcervo();
+    void this.recarregarMateriais(true);
   }
 
   // ---------- estado / React ----------
@@ -128,6 +159,102 @@ export class ControladorAula {
     this.mudar({ totalAcervo: this.indice.size });
   }
 
+  // ---------- material (slides/PDF) ----------
+  async recarregarMateriais(restaurar = false) {
+    const lista = await listarMateriais();
+    const materiais: MaterialResumo[] = lista.map((m) => ({ id: m.id, nome: m.nome, tipo: m.tipo, paginas: m.paginas }));
+    this.mudar({ materiais });
+    const atual = this.estado.material;
+    if (atual && !materiais.some((m) => m.id === atual.id)) this.escolherMaterial(null);
+    // Ao abrir o app, retoma o último material usado.
+    if (restaurar && !atual) {
+      let ultimo: string | null = null;
+      try {
+        ultimo = localStorage.getItem('vide.material');
+      } catch {
+        /* ignore */
+      }
+      if (ultimo && materiais.some((m) => m.id === ultimo)) this.escolherMaterial(ultimo, false);
+    }
+  }
+
+  /** Escolhe o material exibido no projetor (null = sem material). */
+  escolherMaterial(id: string | null, registrarUso = true) {
+    const m = id ? this.estado.materiais.find((x) => x.id === id) : undefined;
+    try {
+      if (m) localStorage.setItem('vide.material', m.id);
+      else localStorage.removeItem('vide.material');
+    } catch {
+      /* ignore */
+    }
+    const material: MaterialNaTela | null = m ? { id: m.id, nome: m.nome, paginas: m.paginas, pagina: 1, regiao: PAGINA_INTEIRA } : null;
+    const modoRoda: ModoRoda = material ? 'material' : 'candidatos';
+    this.mudar({ material, modoRoda, telaPreta: false });
+    this.enviarMaterial();
+    if (registrarUso) registrar('material', m ? `abriu: ${m.nome}` : 'sem material', m ? { paginas: m.paginas } : undefined);
+  }
+
+  private irPara(pagina: number, regiao: Regiao) {
+    const atual = this.estado.material;
+    if (!atual) return;
+    const mudouPagina = pagina !== atual.pagina;
+    this.mudar({ material: { ...atual, pagina, regiao } });
+    this.enviarMaterial();
+    if (mudouPagina) this.registrarUmaVez(`pag:${atual.id}:${pagina}`, 'material', `${atual.nome} — página ${pagina}`);
+  }
+
+  passoMaterial(delta: number) {
+    const m = this.estado.material;
+    if (!m) return;
+    const p = passo({ pagina: m.pagina, regiao: m.regiao }, delta, m.paginas);
+    this.irPara(p.pagina, p.regiao);
+  }
+
+  irPagina(pagina: number) {
+    const m = this.estado.material;
+    if (!m) return;
+    this.irPara(Math.min(m.paginas, Math.max(1, pagina)), PAGINA_INTEIRA);
+  }
+
+  /** Zoom: mostra só esta região da página (frações de 0 a 1). */
+  definirRegiao(regiao: Regiao) {
+    const m = this.estado.material;
+    if (!m) return;
+    const r = ajustarRegiao(regiao);
+    this.irPara(m.pagina, r);
+    registrar('material', `${m.nome} — zoom na página ${m.pagina}`, {
+      regiao: `${Math.round(r.x * 100)},${Math.round(r.y * 100)} ${Math.round(r.w * 100)}x${Math.round(r.h * 100)}%`,
+    });
+  }
+
+  paginaInteira() {
+    const m = this.estado.material;
+    if (m && !ehInteira(m.regiao)) this.irPara(m.pagina, PAGINA_INTEIRA);
+  }
+
+  alternarTelaPreta() {
+    this.mudar({ telaPreta: !this.estado.telaPreta });
+    this.enviarMaterial();
+    registrar('material', this.estado.telaPreta ? 'tela preta' : 'material de volta');
+  }
+
+  alternarLayout() {
+    const layoutArtigo: LayoutArtigo = this.estado.layoutArtigo === 'lateral' ? 'cheia' : 'lateral';
+    this.mudar({ layoutArtigo });
+    this.canal.enviar({ t: 'layout', layout: layoutArtigo });
+  }
+
+  private enviarMaterial() {
+    const m = this.estado.material;
+    this.canal.enviar({
+      t: 'material',
+      id: m?.id ?? null,
+      pagina: m?.pagina ?? 1,
+      regiao: m?.regiao ?? PAGINA_INTEIRA,
+      preta: this.estado.telaPreta,
+    });
+  }
+
   // ---------- escuta ----------
   iniciar() {
     registrar('sessao', this.estado.saiu ? 'retomou a aula' : 'escuta iniciada', {
@@ -136,7 +263,9 @@ export class ControladorAula {
       itens_no_acervo: this.indice.size,
     });
     this.voz.iniciar();
-    this.mudar({ escutando: this.voz.ativo, saiu: false });
+    const voltando = this.estado.saiu;
+    this.mudar({ escutando: this.voz.ativo, saiu: false, telaPreta: voltando ? false : this.estado.telaPreta });
+    if (voltando) this.enviarMaterial();
   }
 
   pausar() {
@@ -151,7 +280,9 @@ export class ControladorAula {
     this.cauda = '';
     this.recolher('sair');
     registrar('sessao', 'saiu para outro material');
-    this.mudar({ escutando: false, saiu: true, parcial: '' });
+    // "Sair" libera o projetor: tela preta, inclusive sem o material do Vide.
+    this.mudar({ escutando: false, saiu: true, parcial: '', telaPreta: true });
+    this.enviarMaterial();
   }
 
   marcar() {
@@ -322,13 +453,35 @@ export class ControladorAula {
     this.mudar({ selecionadoId: id });
   }
 
+  /**
+   * Clique esquerdo. Com material na tela, a roda passa as páginas; então o clique
+   * projeta o candidato mais recente. Sem material, projeta o selecionado (escolhido pela roda).
+   */
+  cliqueProjetar() {
+    if (this.estado.material && this.estado.candidatos.length) {
+      this.mudar({ selecionadoId: this.estado.candidatos[0].id });
+    }
+    this.projetar('mouse');
+  }
+
+  /** Clique direto num candidato da lista: projeta aquele. */
+  projetarCandidato(id: string) {
+    if (!this.estado.candidatos.some((c) => c.id === id)) return;
+    this.mudar({ selecionadoId: id });
+    this.projetar('mouse');
+  }
+
+  private layoutAtual(): LayoutArtigo {
+    return this.estado.material && !this.estado.telaPreta ? this.estado.layoutArtigo : 'cheia';
+  }
+
   projetar(origem: 'mouse' | 'teclado' = 'mouse') {
     const lista = this.estado.candidatos;
     const idx = lista.findIndex((c) => c.id === this.estado.selecionadoId);
     const c = lista[idx];
     if (!c) return;
     this.ultimaInteracao = Date.now();
-    this.canal.enviar({ t: 'projetar', item: c.projetavel, escala: 1 });
+    this.canal.enviar({ t: 'projetar', item: c.projetavel, escala: 1, layout: this.layoutAtual() });
     registrar('projetado', c.titulo, {
       chave: c.chave,
       posicao: `${idx + 1} de ${lista.length}`,
@@ -337,6 +490,7 @@ export class ControladorAula {
       substituiu: this.estado.projetado?.titulo,
       via: origem,
       projecao_conectada: this.estado.projecao.conectada,
+      sobre_material: this.estado.material && !this.estado.telaPreta ? `${this.estado.material.nome} p. ${this.estado.material.pagina} (${this.estado.layoutArtigo})` : undefined,
     });
     this.mudar({ projetado: c, escala: 1 });
   }
@@ -348,11 +502,21 @@ export class ControladorAula {
     }
     this.canal.enviar({ t: 'recolher' });
     registrar('recolhido', this.estado.projetado.titulo, { via: origem });
-    this.mudar({ projetado: null, modoRoda: 'candidatos' });
+    this.mudar({ projetado: null, modoRoda: this.estado.material ? 'material' : 'candidatos' });
   }
 
+  /** Clique na roda: alterna entre rolar o artigo projetado e o uso normal da roda. */
   alternarModo() {
-    this.mudar({ modoRoda: this.estado.modoRoda === 'candidatos' ? 'rolar' : 'candidatos' });
+    const normal: ModoRoda = this.estado.material ? 'material' : 'candidatos';
+    this.mudar({ modoRoda: this.estado.modoRoda === 'rolar' ? normal : 'rolar' });
+  }
+
+  /** Um "dente" da roda, conforme o modo. */
+  roda(delta: number) {
+    const modo = this.estado.modoRoda;
+    if (modo === 'rolar') this.rolar(delta);
+    else if (modo === 'material' && this.estado.material) this.passoMaterial(delta);
+    else this.mover(delta);
   }
 
   rolar(delta: number) {
@@ -417,11 +581,14 @@ export class ControladorAula {
 
   private aoMensagem(m: Mensagem) {
     if (m.t === 'ola') {
-      if (this.estado.projetado) this.canal.enviar({ t: 'projetar', item: this.estado.projetado.projetavel, escala: this.estado.escala });
+      this.enviarMaterial();
+      if (this.estado.projetado)
+        this.canal.enviar({ t: 'projetar', item: this.estado.projetado.projetavel, escala: this.estado.escala, layout: this.layoutAtual() });
     } else if (m.t === 'pong') {
       this.ultimoPong = Date.now();
       const p = this.estado.projecao;
-      if (!p.conectada || p.telaCheia !== m.telaCheia) this.mudar({ projecao: { ...p, conectada: true, telaCheia: m.telaCheia } });
+      if (!p.conectada || p.telaCheia !== m.telaCheia || Math.abs(p.aspecto - m.aspecto) > 0.01)
+        this.mudar({ projecao: { ...p, conectada: true, telaCheia: m.telaCheia, aspecto: m.aspecto } });
     } else if (m.t === 'rolagem') {
       this.mudar({ projecao: { ...this.estado.projecao, fracao: m.fracao, rolavel: m.rolavel } });
     }
@@ -457,7 +624,7 @@ export class ControladorAula {
       candidatos: [],
       selecionadoId: null,
       detectados: [],
-      modoRoda: 'candidatos',
+      modoRoda: this.estado.material ? 'material' : 'candidatos',
       escala: 1,
       saiu: false,
       aviso: 'Nova sessão iniciada: a tela foi limpa.',

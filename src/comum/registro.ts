@@ -120,6 +120,7 @@ const ROTULOS: Record<EventoRegistro['tipo'], string> = {
   comando_voz: 'COMANDO DE VOZ',
   voz: 'voz',
   marcacao: '*** MARCAÇÃO',
+  material: 'material',
 };
 
 /** Texto legível: a transcrição com as projeções marcadas no ponto em que ocorreram. */
