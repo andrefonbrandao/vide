@@ -43,11 +43,11 @@ export async function salvarDiploma(diploma: Diploma, itens: Item[]): Promise<vo
   await db.transaction('rw', db.itens, db.diplomas, async () => {
     const antigos = await db.itens.where('chave').startsWith(`${diploma.sigla}:`).toArray();
     for (const a of antigos) {
-      if (!a.excluido_em) await db.itens.update(a.id, { excluido_em: agora, atualizado_em: agora });
+      if (!a.excluido_em) await db.itens.put({ ...a, excluido_em: agora, atualizado_em: agora });
     }
     const diplomasAntigos = await db.diplomas.where('sigla').equals(diploma.sigla).toArray();
     for (const d of diplomasAntigos) {
-      if (!d.excluido_em) await db.diplomas.update(d.id, { excluido_em: agora, atualizado_em: agora });
+      if (!d.excluido_em) await db.diplomas.put({ ...d, excluido_em: agora, atualizado_em: agora });
     }
     await db.diplomas.add(diploma);
     await db.itens.bulkAdd(itens);

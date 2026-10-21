@@ -1,0 +1,65 @@
+# Vide — protótipo de risco
+
+App pessoal para aulas expositivas. Ele ouve a fala do professor, reconhece citações ao CPC ("artigo 70", "inciso sexto do 485") e mostra os dispositivos citados como candidatos na tela do apresentador. Um candidato só vai para o projetor quando o professor clica.
+
+Este protótipo serve para **testar em sala se o reconhecimento de voz funciona**. A especificação completa está em [ESPECIFICACAO.md](ESPECIFICACAO.md). O roteiro de teste para a aula está em [ROTEIRO-DE-TESTE.md](ROTEIRO-DE-TESTE.md).
+
+## O que o protótipo faz
+
+- **Voz contínua em português** (Chrome ou Edge), com reinício automático quando a sessão cai.
+- **Transcrição bruta ao vivo** na tela do apresentador: em preto o texto definitivo, em cinza o provisório.
+- **Importação do CPC** a partir do HTML salvo do Planalto (ou de um .txt). O app:
+  - fatia o texto em artigo, parágrafo, inciso e alínea;
+  - descarta a redação revogada (texto tachado);
+  - lista as duplicidades encontradas.
+- **Detecção de referências**, por exemplo:
+  - "artigo 70 do CPC", "art 70", "artigo setenta", "artigo mil e quinze";
+  - "c p c", "código de processo civil";
+  - "parágrafo primeiro do artigo 300", "inciso sexto do 485", "alínea b do inciso segundo do artigo 1.015";
+  - "e o inciso sétimo", logo depois de citar um artigo.
+- **Frases de outra lei são ignoradas**, como "artigo 5º da Constituição" e "art. 186 do Código Civil".
+- **Duas janelas.** A do apresentador mostra de 3 a 5 candidatos, os mais recentes no topo. A de projeção usa letra grande e alto contraste. As duas conversam pelo próprio navegador (BroadcastChannel).
+- **Controles por mouse:**
+  - roda: percorre os candidatos;
+  - clique esquerdo: projeta o candidato selecionado;
+  - clique direito: volta à tela preta;
+  - clique na roda: alterna a roda entre "percorrer candidatos" e "rolar o texto projetado".
+- **Comandos de voz** (só quando há algo projetado): "tira da tela", "aumenta a fonte" e "diminui a fonte".
+- **Atalhos de teclado** (opcionais): setas ou PageUp/PageDown = roda; Enter = projetar; B = recolher; R = alternar a roda; M = marcar momento; + e − mudam a fonte.
+- **Registro de teste** com horário: falas, referências detectadas, projeções, recolhimentos, comandos de voz, quedas da voz e momentos marcados. Exporta em **.txt** e **.csv** (abre no Excel).
+
+O acervo e o registro ficam no **IndexedDB**, um banco interno do navegador. Ficam neste navegador, neste computador. Login e sincronização (Supabase) ficam para a próxima etapa. O modelo de dados já está pronto para isso; veja `supabase/esquema.sql`.
+
+## Publicar no Cloudflare (sem instalar nada no notebook)
+
+Você faz isso **uma vez só**, pelo navegador. Depois, cada atualização que eu enviar ao GitHub é publicada sozinha.
+
+1. Entre em <https://dash.cloudflare.com> com a mesma conta do Serestapp.
+2. No menu da esquerda, clique em **Workers & Pages** (às vezes aparece como **Compute (Workers)**).
+3. Clique em **Create** (ou **Create application**).
+4. Escolha **Import a repository** (ou "Connect to Git").
+   - Se o Cloudflare pedir acesso ao GitHub, autorize. Escolha **Only select repositories** e marque **vide**.
+5. Selecione o repositório **andrefonbrandao/vide**.
+6. Confira as configurações. Normalmente o Cloudflare já preenche sozinho:
+   - **Project name:** `vide`
+   - **Build command:** `npm run build`
+   - **Deploy command** (se aparecer): `npx wrangler deploy`
+   - Se aparecer **Build output directory** em vez de "Deploy command" (é a tela antiga, chamada "Pages"), escreva `dist`. Se aparecer **Framework preset**, escolha **React (Vite)**.
+   - **Branch:** `claude/wizardly-clarke-nwd93w`, que é o único branch do repositório e o principal.
+7. Clique em **Deploy** (ou **Save and Deploy**) e espere uns 2 minutos.
+8. No fim, o Cloudflare mostra o endereço do app, algo como `https://vide.SEU-USUARIO.workers.dev` ou `https://vide.pages.dev`. **Guarde esse endereço**: é por ele que você abre o Vide no notebook.
+
+Para conferir se deu certo: abra o endereço no Chrome. A tela com o logo "vide" e as abas **Aula · Acervo · Registro** deve aparecer.
+
+## Como funciona por dentro (para referência)
+
+| Pasta | O que tem |
+| --- | --- |
+| `src/fatiador/` | Leitura do HTML/TXT do Planalto e o fatiador por dispositivo |
+| `src/voz/` | Números por extenso, normalização da fala, detector de referências, reconhecimento de voz e comandos |
+| `src/comum/` | Montagem do que vai para a tela, canal entre as janelas, registro de teste e logo |
+| `src/dados/` | Modelo do "item genérico" e o banco local (IndexedDB) |
+| `src/telas/` | Telas: Aula (apresentador), Projeção, Acervo e Registro |
+| `supabase/` | Esquema previsto para a sincronização (ainda não usado) |
+
+Os testes automáticos ficam em `src/**/*.test.ts` e rodam com `npm test`. Eles cobrem o detector (dezenas de frases) e o fatiador. Não é preciso rodá-los no seu notebook.

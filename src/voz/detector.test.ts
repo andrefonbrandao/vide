@@ -106,4 +106,11 @@ describe('detector', () => {
     // depois de muito tempo, o contexto expira
     expect(d.detectar('e o inciso oitavo', t0 + 10 * 60_000).referencias).toEqual([]);
   });
+
+  it('não usa o contexto quando a frase termina em "do" (o número vem depois)', () => {
+    const d = new Detector();
+    d.detectar('artigo 70', 1000);
+    expect(d.detectar('e agora o inciso sexto do', 2000).referencias).toEqual([]);
+    expect(d.detectar('e agora o inciso sexto do 485', 3000).referencias.map(chaveReferencia)).toEqual(['cpc:485:i6']);
+  });
 });

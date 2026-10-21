@@ -185,9 +185,10 @@ export class ControladorAula {
     const nCauda = this.cauda ? normalizarFala(this.cauda).length : 0;
     const r = this.detector.detectar(comCauda);
     for (const o of r.outros) {
-      if (origem === 'final') registrar('outro_diploma', o.trecho, { diploma: o.diploma });
+      if (origem !== 'final' || o.fim <= nCauda) continue;
+      registrar('outro_diploma', o.trecho.replace('§outro ', ''), { diploma: o.diploma });
+      this.anotar(o.trecho.replace('§outro ', ''), 'outro diploma');
     }
-    for (const o of r.outros) if (origem === 'final') this.anotar(o.trecho, 'outro diploma');
     for (const ref of r.referencias) {
       if (ref.fim <= nCauda) continue; // já tratado na fala anterior
       // Parcial: se a referência termina na última palavra, o número pode estar incompleto ("artigo 4…85")
@@ -221,6 +222,11 @@ export class ControladorAula {
         registrar('nao_encontrado', titulo, dadosLog);
         this.anotar(titulo, 'fora do acervo');
       }
+      return;
+    }
+    // Pelo contexto e inexistente (ex.: "inciso sexto" logo depois do art. 70): descarta.
+    if (ref.contexto && res.aviso) {
+      registrar('detectado', res.titulo, { ...dadosLog, acao: 'descartado', aviso: res.aviso });
       return;
     }
     const novo: Candidato = {

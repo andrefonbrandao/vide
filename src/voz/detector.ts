@@ -29,7 +29,7 @@ export interface Referencia {
 export interface ResultadoDeteccao {
   referencias: Referencia[];
   /** Referências descartadas porque eram de outro diploma ("art. 5º da Constituição"). */
-  outros: { trecho: string; diploma: string }[];
+  outros: { trecho: string; diploma: string; fim: number }[];
   palavras: string[];
 }
 
@@ -104,7 +104,7 @@ export class Detector {
     while (i < palavras.length) {
       const r = this.tentar(palavras, i, agora);
       if (!r) { i++; continue; }
-      if (r.tipo === 'outro') outros.push({ trecho: r.trecho, diploma: r.diploma });
+      if (r.tipo === 'outro') outros.push({ trecho: r.trecho, diploma: r.diploma, fim: r.fim });
       else referencias.push(...r.refs);
       i = Math.max(r.fim, i + 1);
     }
@@ -183,6 +183,8 @@ export class Detector {
     if (arts.length === 0) {
       const temSub = valoresDe('par').length || valoresDe('inc').length || valoresDe('ali').length;
       if (!temSub) return null;
+      // "inciso sexto do" no fim da fala: o número do artigo deve vir a seguir.
+      if (k > j && k >= palavras.length) return null;
       if (!this.ultimoArtigo || agora - this.ultimoArtigo.em > this.contextoMs) return null;
       arts = [String(this.ultimoArtigo.art)];
       contexto = true;
