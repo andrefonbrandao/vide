@@ -41,8 +41,8 @@ describe('normalização', () => {
     expect(normalizarFala('c.p.c.')).toEqual(['cpc']);
   });
   it('milhar e ordinal', () => {
-    expect(normalizarFala('Art. 1.015')).toEqual(['art', '1015']);
-    expect(normalizarFala('artigo 1º')).toEqual(['art', '1']);
+    expect(normalizarFala('Art. 1.015')).toEqual(['§art', '1015']);
+    expect(normalizarFala('artigo 1º')).toEqual(['§art', '1']);
   });
 });
 
@@ -71,6 +71,10 @@ describe('detector', () => {
     ['caput do artigo 70', ['cpc:70']],
     ['o artigo quatrocentos e oitenta e cinco e o artigo setenta', ['cpc:485', 'cpc:70']],
     ['incisos quinto e sexto do 485', ['cpc:485:i5', 'cpc:485:i6']],
+    // frases reais do primeiro teste (21/10/2026)
+    ['é importante nos entendermos O que que está previsto no artigo 70 do Código de Processo Civil', ['cpc:70']],
+    ['diz ali o artigo 70 toda pessoa que se encontra em exercício dos seus direitos', ['cpc:70']],
+    ['a gente precisa dar uma olhadinha lá no artigo 103 do Código de Processo Civil', ['cpc:103']],
   ];
   for (const [frase, esperado] of casos) {
     it(`"${frase}"`, () => expect(chaves(frase)).toEqual(esperado));
@@ -105,6 +109,13 @@ describe('detector', () => {
     expect(r[0].contexto).toBe(true);
     // depois de muito tempo, o contexto expira
     expect(d.detectar('e o inciso oitavo', t0 + 10 * 60_000).referencias).toEqual([]);
+  });
+
+  it('"ali" (advérbio) não vira alínea nem repete o artigo pelo contexto', () => {
+    const d = new Detector();
+    d.detectar('artigo 70', 1000);
+    expect(d.detectar('ali a parte pode pedir', 2000).referencias).toEqual([]);
+    expect(d.detectar('o que diz ali o inciso segundo', 3000).referencias.map(chaveReferencia)).toEqual(['cpc:70:i2']);
   });
 
   it('não usa o contexto quando a frase termina em "do" (o número vem depois)', () => {

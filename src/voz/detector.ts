@@ -7,7 +7,7 @@
 //   "o 485 do CPC", "artigos 70 e 71",
 //   e, depois de citar um artigo, "e o inciso sétimo" (usa o artigo citado antes).
 import { lerNumero, ehPalavraNumero } from './numeros';
-import { normalizarFala, PALAVRA_OUTRO_DIPLOMA } from './normalizar';
+import { KW, normalizarFala, PALAVRA_OUTRO_DIPLOMA } from './normalizar';
 
 export interface Referencia {
   diploma: 'cpc';
@@ -71,9 +71,10 @@ function pularConectores(palavras: string[], i: number, max = 2): number {
 
 function lerParte(palavras: string[], i: number): { parte: Parte; fim: number } | null {
   const kw = palavras[i];
-  if (kw === 'caput') return { parte: { nivel: 'art', valores: [] }, fim: i + 1 };
-  if (kw !== 'art' && kw !== 'par' && kw !== 'inc' && kw !== 'ali') return null;
-  const nivel = kw as Nivel;
+  if (kw === KW.caput) return { parte: { nivel: 'art', valores: [] }, fim: i + 1 };
+  const niveis: Nivel[] = ['art', 'par', 'inc', 'ali'];
+  const nivel = niveis.find((n) => KW[n] === kw);
+  if (!nivel) return null;
   const primeiro = lerValor(nivel, palavras, i + 1);
   if (!primeiro) return null;
   const valores = [primeiro[0]];
@@ -173,7 +174,7 @@ export class Detector {
       explicito = true;
       j = k + 1;
     } else if (palavras[k] === PALAVRA_OUTRO_DIPLOMA) {
-      return { tipo: 'outro', trecho: palavras.slice(i, k + 2).join(' '), diploma: palavras[k + 1] ?? '?', fim: k + 2 };
+      return { tipo: 'outro', trecho: palavras.slice(i, k + 2).join(' ').replace(/§(outro )?/g, ''), diploma: palavras[k + 1] ?? '?', fim: k + 2 };
     }
 
     const valoresDe = (n: Nivel) => partes.filter((p) => p.nivel === n).flatMap((p) => p.valores);
@@ -181,7 +182,8 @@ export class Detector {
     if (artNu) arts = [artNu];
     let contexto = false;
     if (arts.length === 0) {
-      const temSub = valoresDe('par').length || valoresDe('inc').length || valoresDe('ali').length;
+      // Pelo contexto, só parágrafo ou inciso (alínea sozinha é ambígua demais).
+      const temSub = valoresDe('par').length || valoresDe('inc').length;
       if (!temSub) return null;
       // "inciso sexto do" no fim da fala: o número do artigo deve vir a seguir.
       if (k > j && k >= palavras.length) return null;
@@ -194,7 +196,7 @@ export class Detector {
     const incs = valoresDe('inc');
     const alis = valoresDe('ali');
     const refs: Referencia[] = [];
-    const trecho = palavras.slice(i, j).join(' ');
+    const trecho = palavras.slice(i, j).join(' ').replace(/§/g, '');
     for (const a of arts) {
       for (const p of pars.length ? pars : [undefined]) {
         for (const inc of incs.length ? incs : [undefined]) {
