@@ -1,9 +1,10 @@
 // Materiais do professor (PDFs, imagens) organizados em pastas e etiquetas.
-// - <Materiais/>: seção da aba Acervo (carregar, organizar, apagar).
+// - <ListaMateriais/> e <AdicionarMaterial/>: aba Acervo (organizar, apagar, carregar).
 // - <SeletorMaterial/>: botão da tela da aula, com busca, para escolher o material.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Material } from '../dados/modelo';
 import { atualizarMaterial, excluirMaterial, importarMaterial, limparEtiquetas, listarMateriais } from '../material/documento';
+import { IcDocumento, IcMais, IcPasta, IcSetaBaixo } from '../comum/Icones';
 import { agruparPorPasta, filtrarMateriais, nomePasta, todasEtiquetas, todasPastas, type MaterialOrganizavel } from '../material/organizacao';
 
 const CHAVE_ULTIMA_PASTA = 'vide.ultimaPasta';
@@ -108,20 +109,89 @@ function Filtros({
 // Aba Acervo
 // ---------------------------------------------------------------------------
 
-export function Materiais() {
+/** Lista de materiais, agrupada por pasta, com busca e etiquetas. */
+export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
   const lista = useMateriais();
   const [busca, setBusca] = useState('');
   const [etiqueta, setEtiqueta] = useState<string | null>(null);
-  const [pasta, setPasta] = useState(lerLocal(CHAVE_ULTIMA_PASTA, ''));
-  const [etiquetasNovas, setEtiquetasNovas] = useState('');
-  const [msg, setMsg] = useState<string | null>(null);
   const [editando, setEditando] = useState<string | null>(null);
-  const [arquivoKey, setArquivoKey] = useState(0);
 
   const pastas = useMemo(() => todasPastas(lista), [lista]);
   const filtrados = useMemo(() => filtrarMateriais(lista, busca, etiqueta), [lista, busca, etiqueta]);
   const grupos = useMemo(() => agruparPorPasta(filtrados), [filtrados]);
   const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
+
+  if (lista.length === 0) {
+    return (
+      <div className="vazio-acervo">
+        <p>Nenhum material guardado ainda. Seus slides (PDF) e imagens aparecem aqui, organizados em pastas.</p>
+        <button className="botao primario com-icone" onClick={aoAdicionar}>
+          <IcMais /> Adicionar material
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <h2>Materiais</h2>
+      <datalist id="pastas-mat">
+        {pastas.map((p) => (
+          <option key={p} value={p} />
+        ))}
+      </datalist>
+      <div className="cartao">
+        <Filtros lista={lista} busca={busca} setBusca={setBusca} etiqueta={etiqueta} setEtiqueta={setEtiqueta} />
+        {filtrados.length === 0 && <p className="ajuda">Nada encontrado.</p>}
+        {grupos.map((g) => (
+          <details key={g.pasta} open className="pasta-mat">
+            <summary>
+              <span className="pasta-icone" aria-hidden="true">▸</span> <IcPasta tamanho={18} /> {nomePasta(g.pasta)}{' '}
+              <span className="total">{g.itens.length}</span>
+            </summary>
+            <ul className="lista-mat">
+              {g.itens.map((m) =>
+                editando === m.id ? (
+                  <EditarMaterial key={m.id} m={m} aoFechar={() => setEditando(null)} />
+                ) : (
+                  <li key={m.id} className="item-mat">
+                    <div className="item-mat-info">
+                      <strong>{m.nome}</strong>{' '}
+                      <span className="ajuda">
+                        {m.tipo === 'pdf' ? 'PDF' : 'imagem'} · {m.paginas} {m.paginas === 1 ? 'página' : 'páginas'} · {mb(m.tamanho)}
+                      </span>
+                      <Etiquetas lista={m.etiquetas ?? []} ativa={etiqueta} aoEscolher={(e) => setEtiqueta(etiqueta === e ? null : e)} />
+                    </div>
+                    <button className="botao pequeno" onClick={() => setEditando(m.id)}>Organizar</button>
+                    <button
+                      className="botao pequeno"
+                      onClick={async () => {
+                        if (!confirm(`Apagar "${m.nome}" dos materiais?`)) return;
+                        await excluirMaterial(m.id);
+                      }}
+                    >
+                      Apagar
+                    </button>
+                  </li>
+                ),
+              )}
+            </ul>
+          </details>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/** Tela de adicionar material: pasta, etiquetas e arquivos. */
+export function AdicionarMaterial({ aoVer }: { aoVer: () => void }) {
+  const lista = useMateriais();
+  const [pasta, setPasta] = useState(lerLocal(CHAVE_ULTIMA_PASTA, ''));
+  const [etiquetasNovas, setEtiquetasNovas] = useState('');
+  const [msg, setMsg] = useState<string | null>(null);
+  const [concluido, setConcluido] = useState(false);
+  const [arquivoKey, setArquivoKey] = useState(0);
+  const pastas = useMemo(() => todasPastas(lista), [lista]);
 
   const carregar = async (arquivos: FileList | null) => {
     if (!arquivos?.length) return;
@@ -129,6 +199,7 @@ export function Materiais() {
     const etiquetas = limparEtiquetas([etiquetasNovas]);
     const ok: string[] = [];
     const falhas: string[] = [];
+    setConcluido(false);
     for (const f of Array.from(arquivos)) {
       setMsg(`Carregando "${f.name}"…`);
       try {
@@ -139,6 +210,7 @@ export function Materiais() {
       }
     }
     setArquivoKey((k) => k + 1);
+    setConcluido(ok.length > 0);
     setMsg(
       [ok.length ? `${ok.length} guardado(s)${pasta ? ` na pasta "${nomePasta(pasta)}"` : ''}.` : '', falhas.length ? `Não carregados: ${falhas.join('; ')}.` : '']
         .filter(Boolean)
@@ -148,14 +220,11 @@ export function Materiais() {
 
   return (
     <>
-      <h2>Materiais (slides e PDFs)</h2>
+      <h2>Adicionar material</h2>
       <p className="ajuda">
-        Seus slides ou documentos para exibir no projetor durante a aula. No PowerPoint: <strong>Arquivo › Exportar › PDF</strong>.
-        Também aceita imagens (PNG, JPG). Organize em <strong>pastas</strong> (use "/" para subpastas, ex.:{' '}
-        <em>Processo Civil II/Sentença</em>) e <strong>etiquetas</strong>; na aula, a busca do seletor <strong>Material</strong>{' '}
-        encontra pelo nome, pela pasta ou pela etiqueta.
+        Slides ou documentos para exibir no projetor durante a aula. No PowerPoint: <strong>Arquivo › Exportar › PDF</strong>.
+        Também aceita imagens (PNG, JPG). Use "/" para subpastas, ex.: <em>Processo Civil II/Sentença</em>.
       </p>
-
       <div className="cartao">
         <datalist id="pastas-mat">
           {pastas.map((p) => (
@@ -164,16 +233,16 @@ export function Materiais() {
         </datalist>
         <div className="grade-2">
           <div className="campo">
-            <label htmlFor="mat-pasta">Pasta</label>
+            <label htmlFor="mat-pasta">1. Pasta</label>
             <input id="mat-pasta" list="pastas-mat" placeholder="Processo Civil II/Sentença" value={pasta} onChange={(e) => setPasta(e.target.value)} />
           </div>
           <div className="campo">
-            <label htmlFor="mat-etq">Etiquetas (separe por vírgula)</label>
+            <label htmlFor="mat-etq">2. Etiquetas (separe por vírgula)</label>
             <input id="mat-etq" placeholder="sentença, fundamentação" value={etiquetasNovas} onChange={(e) => setEtiquetasNovas(e.target.value)} />
           </div>
         </div>
         <div className="campo">
-          <label htmlFor="material">Carregar PDF ou imagem (pode escolher vários de uma vez)</label>
+          <label htmlFor="material">3. Escolha os arquivos (pode escolher vários de uma vez)</label>
           <input
             key={arquivoKey}
             id="material"
@@ -184,50 +253,12 @@ export function Materiais() {
           />
         </div>
         {msg && <p className="ajuda">{msg}</p>}
+        {concluido && (
+          <button className="botao pequeno com-icone" onClick={aoVer}>
+            <IcPasta tamanho={18} /> Ver materiais
+          </button>
+        )}
       </div>
-
-      {lista.length === 0 ? (
-        <p className="ajuda">Nenhum material guardado.</p>
-      ) : (
-        <div className="cartao" style={{ marginTop: 12 }}>
-          <Filtros lista={lista} busca={busca} setBusca={setBusca} etiqueta={etiqueta} setEtiqueta={setEtiqueta} />
-          {filtrados.length === 0 && <p className="ajuda">Nada encontrado.</p>}
-          {grupos.map((g) => (
-            <details key={g.pasta} open className="pasta-mat">
-              <summary>
-                <span className="pasta-icone" aria-hidden="true">▸</span> {nomePasta(g.pasta)} <span className="total">{g.itens.length}</span>
-              </summary>
-              <ul className="lista-mat">
-                {g.itens.map((m) =>
-                  editando === m.id ? (
-                    <EditarMaterial key={m.id} m={m} aoFechar={() => setEditando(null)} />
-                  ) : (
-                    <li key={m.id} className="item-mat">
-                      <div className="item-mat-info">
-                        <strong>{m.nome}</strong>{' '}
-                        <span className="ajuda">
-                          {m.tipo === 'pdf' ? 'PDF' : 'imagem'} · {m.paginas} {m.paginas === 1 ? 'página' : 'páginas'} · {mb(m.tamanho)}
-                        </span>
-                        <Etiquetas lista={m.etiquetas ?? []} ativa={etiqueta} aoEscolher={(e) => setEtiqueta(etiqueta === e ? null : e)} />
-                      </div>
-                      <button className="botao pequeno" onClick={() => setEditando(m.id)}>Organizar</button>
-                      <button
-                        className="botao pequeno"
-                        onClick={async () => {
-                          if (!confirm(`Apagar "${m.nome}" dos materiais?`)) return;
-                          await excluirMaterial(m.id);
-                        }}
-                      >
-                        Apagar
-                      </button>
-                    </li>
-                  ),
-                )}
-              </ul>
-            </details>
-          ))}
-        </div>
-      )}
     </>
   );
 }
@@ -313,6 +344,7 @@ export function SeletorMaterial({
         .filter((m): m is Material => !!m)
         .slice(0, 4);
 
+  const atualCompleto = atual ? lista.find((m) => m.id === atual.id) : undefined;
   const escolher = (id: string | null) => {
     if (id) marcarUsado(id);
     aoEscolher(id);
@@ -332,9 +364,22 @@ export function SeletorMaterial({
 
   return (
     <div className="seletor-material" ref={caixaRef}>
-      <span>Material:</span>
+      <span className="seletor-material-rotulo">
+        <IcDocumento /> Material
+      </span>
       <button type="button" className="botao-seletor" onClick={() => setAberto(!aberto)} disabled={carregando} aria-expanded={aberto}>
-        <span className="botao-seletor-nome">{carregando ? 'carregando…' : (atual?.nome ?? 'nenhum (só os artigos)')}</span> ▾
+        <span className="botao-seletor-nome">
+          {carregando ? 'carregando…' : (atual?.nome ?? 'Nenhum material — só os artigos')}
+        </span>
+        {atualCompleto && (
+          <span className="botao-seletor-detalhe">
+            {atualCompleto.pasta ? nomePasta(atualCompleto.pasta) + ' · ' : ''}
+            {atualCompleto.paginas} {atualCompleto.paginas === 1 ? 'página' : 'páginas'}
+          </span>
+        )}
+        <span className="botao-seletor-acao">
+          {atual ? 'trocar' : 'escolher'} <IcSetaBaixo tamanho={16} />
+        </span>
       </button>
       {aberto && (
         <div className="popover-mat" role="dialog" aria-label="Escolher material">

@@ -5,6 +5,7 @@ import { CanvasMaterial } from '../material/CanvasMaterial';
 import { abrirDocumentoPorId, type Documento } from '../material/documento';
 import { PAGINA_INTEIRA, ajustarProporcao, ehInteira, regiaoDeArraste, type Regiao } from '../material/regiao';
 import type { ControladorAula, EstadoAula } from './controlador';
+import { IcMostrar, IcOcultar, IcPaginaInteira, IcSetaBaixo, IcSubstituir, IcVisualizacao } from '../comum/Icones';
 
 export function PainelMaterial({ e, ctl }: { e: EstadoAula; ctl: ControladorAula }) {
   const m = e.material!;
@@ -92,20 +93,64 @@ export function PainelMaterial({ e, ctl }: { e: EstadoAula; ctl: ControladorAula
       </div>
 
       <div className="painel-material-botoes">
-        <button className="botao pequeno" onClick={() => ctl.paginaInteira()} disabled={ehInteira(m.regiao)}>
-          Página inteira
+        <button className="botao pequeno com-icone" onClick={() => ctl.paginaInteira()} disabled={ehInteira(m.regiao)} title="Tecla 0 ou duplo clique na página">
+          <IcPaginaInteira tamanho={18} /> Página inteira
         </button>
-        <button className="botao pequeno" onClick={() => ctl.alternarTelaPreta()} title="Tecla . (ponto)">
-          {e.telaPreta ? 'Mostrar material' : 'Tela preta'}
+        <button className={`botao pequeno com-icone${e.telaPreta ? ' escuro' : ''}`} onClick={() => ctl.alternarTelaPreta()} title="Tecla . (ponto)">
+          {e.telaPreta ? <IcMostrar tamanho={18} /> : <IcOcultar tamanho={18} />} {e.telaPreta ? 'Mostrar' : 'Ocultar'}
         </button>
-        <button className="botao pequeno" onClick={() => ctl.alternarLayout()} title="Tecla L">
-          Artigo: {e.layoutArtigo === 'lateral' ? 'ao lado do slide' : 'em tela cheia'}
-        </button>
+        <MenuVisualizacao e={e} ctl={ctl} />
       </div>
       <p className="ajuda painel-material-dica">
         Arraste sobre a página para ampliar uma parte · duplo clique volta à página inteira · a roda passa as páginas
         {ehInteira(m.regiao) ? '' : ' (com zoom, desce dentro da página)'}.
       </p>
+    </div>
+  );
+}
+
+/** Botão "Visualização": como a norma aparece quando há material na tela. */
+function MenuVisualizacao({ e, ctl }: { e: EstadoAula; ctl: ControladorAula }) {
+  const [aberto, setAberto] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!aberto) return;
+    const fora = (ev: MouseEvent) => {
+      if (ref.current && !ref.current.contains(ev.target as Node)) setAberto(false);
+    };
+    window.addEventListener('mousedown', fora);
+    return () => window.removeEventListener('mousedown', fora);
+  }, [aberto]);
+  const opcao = (valor: 'lateral' | 'cheia', rotulo: string, icone: React.ReactNode, descricao: string) => (
+    <button
+      type="button"
+      role="menuitemradio"
+      aria-checked={e.layoutArtigo === valor}
+      className={`opcao-menu${e.layoutArtigo === valor ? ' atual' : ''}`}
+      onClick={() => {
+        ctl.definirLayout(valor);
+        setAberto(false);
+      }}
+    >
+      {icone}
+      <span>
+        <strong>{rotulo}</strong>
+        <span className="opcao-menu-desc">{descricao}</span>
+      </span>
+    </button>
+  );
+  return (
+    <div className="menu-visualizacao" ref={ref}>
+      <button className="botao pequeno com-icone" onClick={() => setAberto(!aberto)} aria-expanded={aberto} title="Tecla L alterna">
+        <IcVisualizacao tamanho={18} /> Visualização: {e.layoutArtigo === 'lateral' ? 'ao lado da norma' : 'substituir pela norma'}{' '}
+        <IcSetaBaixo tamanho={14} />
+      </button>
+      {aberto && (
+        <div className="popover-menu" role="menu">
+          {opcao('lateral', 'Ao lado da norma', <IcVisualizacao />, 'O slide encolhe e a norma entra ao lado.')}
+          {opcao('cheia', 'Substituir pela norma', <IcSubstituir />, 'A norma ocupa a tela; o slide volta ao recolher.')}
+        </div>
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { controlador, type EstadoAula } from './controlador';
 import { PainelMaterial } from './PainelMaterial';
 import { importarMaterial } from '../material/documento';
 import { SeletorMaterial, marcarUsado } from './Materiais';
+import { IcMicrofone, IcNovaSessao, IcPausa, IcPin, IcProjecao, IcSair, IcTelaCheia } from '../comum/Icones';
 import type { StatusVoz } from '../voz/reconhecedor';
 import { obterConstrutor } from '../voz/reconhecedor';
 
@@ -42,7 +43,6 @@ export function Aula({ ativa }: { ativa: boolean }) {
   const e: EstadoAula = useSyncExternalStore(ctl.assinar, ctl.obter);
   const [, setRelogio] = useState(0);
   const transcricaoRef = useRef<HTMLDivElement>(null);
-  const [textoTeste, setTextoTeste] = useState('');
   const suporte = !!obterConstrutor();
 
   // Atualiza a "idade" dos candidatos a cada segundo.
@@ -177,54 +177,48 @@ export function Aula({ ativa }: { ativa: boolean }) {
   return (
     <div className={`aula${e.material ? ' com-material' : ''}`}>
       <div className="aula-topo" data-ui>
-          {!e.escutando ? (
-            <button className="botao primario" onClick={() => ctl.iniciar()} disabled={!suporte}>
-              {e.saiu ? 'Retomar a aula' : 'Iniciar escuta'}
+        {!e.escutando ? (
+          <button className="botao primario com-icone" onClick={() => ctl.iniciar()} disabled={!suporte}>
+            <IcMicrofone /> {e.saiu ? 'Retomar a aula' : 'Iniciar escuta'}
+          </button>
+        ) : (
+          <>
+            <button className="botao com-icone" onClick={() => ctl.pausar()}>
+              <IcPausa /> Pausar escuta
             </button>
-          ) : (
-            <>
-              <button className="botao" onClick={() => ctl.pausar()}>Pausar escuta</button>
-              <button className="botao escuro" onClick={() => ctl.sair()} title="Pausa a escuta e libera o projetor">Sair</button>
-            </>
-          )}
-          <button className="botao" onClick={() => void ctl.abrirProjecao()}>
-            {e.projecao.conectada ? 'Projeção aberta ✓' : 'Abrir projeção'}
-          </button>
-          <button className="botao" onClick={telaCheia}>Tela cheia</button>
-          <button className="botao" onClick={() => ctl.marcar()} title="Anota no registro que algo deu errado aqui (tecla M)">
-            Marcar momento
-          </button>
-          <button
-            className="botao"
-            title="Limpa a tela e começa uma nova sessão no registro (a anterior fica guardada)"
-            onClick={() => {
-              if (confirm('Começar uma nova sessão? A tela será limpa; o registro da sessão anterior continua guardado.')) {
-                void ctl.novaSessao();
-              }
-            }}
-          >
-            Nova sessão
-          </button>
-          <SeletorMaterial
-            atual={e.material}
-            aoEscolher={(id) => ctl.escolherMaterial(id)}
-            aoCarregar={() => arquivoRef.current?.click()}
-            carregando={carregando}
-          />
-          <input
-            ref={arquivoRef}
-            type="file"
-            accept="application/pdf,.pdf,image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
-            hidden
-            onChange={(ev) => void carregarMaterial(ev.target.files?.[0])}
-          />
-          {carregando && <span className="ajuda" style={{ margin: 0 }}>carregando…</span>}
-          <span className="espaco" />
-          <span className={classeStatus(e.status)} title={e.statusDetalhe}>
-            <span className="luz" />
-            {TEXTO_STATUS[e.status]}
-            {e.statusDetalhe && e.status !== 'ouvindo' ? ` — ${e.statusDetalhe}` : ''}
-          </span>
+            <button className="botao escuro com-icone" onClick={() => ctl.sair()} title="Pausa a escuta e deixa o projetor preto (para usar outro material)">
+              <IcSair /> Sair
+            </button>
+          </>
+        )}
+        <button className="botao com-icone" onClick={() => void ctl.abrirProjecao()}>
+          <IcProjecao /> {e.projecao.conectada ? 'Projeção aberta ✓' : 'Abrir projeção'}
+        </button>
+        <button className="botao com-icone" onClick={telaCheia}>
+          <IcTelaCheia /> Tela cheia
+        </button>
+        <span className="espaco" />
+        <span className={classeStatus(e.status)} title={e.statusDetalhe}>
+          <span className="luz" />
+          {TEXTO_STATUS[e.status]}
+          {e.statusDetalhe && e.status !== 'ouvindo' ? ` — ${e.statusDetalhe}` : ''}
+        </span>
+      </div>
+
+      <div className="aula-faixa-material" data-ui>
+        <SeletorMaterial
+          atual={e.material}
+          aoEscolher={(id) => ctl.escolherMaterial(id)}
+          aoCarregar={() => arquivoRef.current?.click()}
+          carregando={carregando}
+        />
+        <input
+          ref={arquivoRef}
+          type="file"
+          accept="application/pdf,.pdf,image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+          hidden
+          onChange={(ev) => void carregarMaterial(ev.target.files?.[0])}
+        />
       </div>
 
       <div className="aula-esq">
@@ -252,16 +246,17 @@ export function Aula({ ativa }: { ativa: boolean }) {
         )}
 
 
+        <h3 className="titulo-alternativas">Alternativas</h3>
         {e.candidatos.length === 0 ? (
           <div className="vazio">
-            Os candidatos aparecem aqui quando você citar um dispositivo de lei, por exemplo:
+            As alternativas aparecem aqui quando você citar um dispositivo de lei, por exemplo:
             <br />
             <em>"artigo 70"</em>, <em>"inciso sexto do 485"</em>, <em>"parágrafo primeiro do artigo 300"</em>.
             <br />
             Sem dizer a lei, vale a lei principal: <strong>{e.leis.find((l) => l.sigla === e.principal)?.abreviacao ?? e.principal.toUpperCase()}</strong>.
             <br />
             {e.material
-              ? 'Roda passa as páginas · clique esquerdo projeta o candidato mais recente (ou clique num candidato) · clique direito recolhe o artigo · clique na roda: a roda rola o artigo.'
+              ? 'Roda passa as páginas · clique esquerdo projeta a alternativa mais recente (ou clique numa alternativa) · clique direito recolhe o artigo · clique na roda: a roda rola o artigo.'
               : 'Roda do mouse escolhe · clique esquerdo projeta · clique direito recolhe · clique na roda: a roda rola o artigo.'}
           </div>
         ) : (
@@ -312,6 +307,11 @@ export function Aula({ ativa }: { ativa: boolean }) {
             <span className="ajuda" style={{ margin: 0 }}>projeção aberta, mas fora da tela cheia</span>
           )}
         </div>
+        <div className="aula-esq-rodape" data-ui>
+          <button className="botao com-icone" onClick={() => ctl.marcar()} title="Anota no registro de teste que algo deu errado aqui (tecla M)">
+            <IcPin /> Registrar momento
+          </button>
+        </div>
       </div>
 
       {e.material && <PainelMaterial e={e} ctl={ctl} />}
@@ -353,26 +353,18 @@ export function Aula({ ativa }: { ativa: boolean }) {
             </ul>
           )}
         </div>
-        <div className="secao-dir" data-ui>
-          <h3>Testar sem microfone</h3>
-          <form
-            onSubmit={(ev) => {
-              ev.preventDefault();
-              if (textoTeste.trim()) ctl.simularFala(textoTeste.trim());
-              setTextoTeste('');
+        <div className="secao-dir rodape-dir" data-ui>
+          <button
+            className="botao com-icone"
+            title="Limpa a tela e começa uma nova sessão no registro (a anterior fica guardada)"
+            onClick={() => {
+              if (confirm('Começar uma nova sessão? A tela será limpa; o registro da sessão anterior continua guardado.')) {
+                void ctl.novaSessao();
+              }
             }}
-            style={{ display: 'flex', gap: 8 }}
           >
-            <input
-              className="mono"
-              style={{ flex: 1, border: '2px solid var(--linha)', borderRadius: 10, padding: '6px 10px', background: '#fff' }}
-              placeholder='digite uma frase, ex.: "inciso sexto do 485"'
-              value={textoTeste}
-              onChange={(ev) => setTextoTeste(ev.target.value)}
-              aria-label="Frase de teste"
-            />
-            <button className="botao pequeno" type="submit">Enviar</button>
-          </form>
+            <IcNovaSessao /> Nova sessão
+          </button>
         </div>
       </aside>
     </div>

@@ -8,15 +8,15 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 
 1. **Abra o Vide no Chrome** pelo endereço do Cloudflare (veja o LEIAME).
 2. **Importe as leis** (repita para cada lei; comece pelo CPC):
-   1. Na aba **Acervo**, em **Importar legislação**, escolha a lei em **1. Qual lei você vai importar?**
+   1. Na aba **Acervo**, clique no botão **+** (à direita) e em **Adicionar norma**. Escolha a lei em **1. Qual lei você vai importar?**
    2. Clique no link do Planalto que aparece no passo 2, aperte **Ctrl + S** e salve o arquivo (por exemplo, em Downloads).
    3. Volte ao Vide e, no passo 3, escolha o arquivo salvo.
    4. Confira o resumo. No CPC, o esperado é **cerca de 1.073 artigos** e **0 duplicidades**. A Constituição vem em duas partes: **CF** e **ADCT**.
    5. Clique em **Guardar no acervo**.
    6. Para uma lei que não está na lista, escolha **Outra lei…** e preencha a abreviação (ex.: "Lei 8.429/1992"), o número e como você a chama na aula (ex.: "lei de improbidade").
-   7. Em **Lei principal da aula**, deixe o **CPC** (é a lei usada quando você diz só "artigo 70").
-3. **Confira alguns artigos:** em "Conferir um artigo", escolha a lei e digite o número (ex.: CPC `485`, CF `5`). Veja se os incisos e parágrafos estão certos.
-4. **Teste o detector sem microfone:** em "Testar o detector", escreva frases como você falaria:
+   7. No botão **Legislação**, em **Lei principal da aula**, deixe o **CPC** (é a lei usada quando você diz só "artigo 70").
+3. **Confira alguns artigos:** no botão **Testes**, em "Conferir um artigo", escolha a lei e digite o número (ex.: CPC `485`, CF `5`). Veja se os incisos e parágrafos estão certos.
+4. **Teste o detector sem microfone:** também em **Testes**, em "Testar o detector", escreva frases como você falaria:
    - "inciso sexto do 485"
    - "parágrafo primeiro do artigo 300"
    - "artigo mil e quinze"
@@ -60,7 +60,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 
 - Dê a aula normalmente e cite os dispositivos do jeito que você costuma citar. **Não fale de um jeito artificial para o app**: o teste é justamente ver se ele entende o seu jeito natural.
 - Quando um candidato útil aparecer, projete-o com o clique esquerdo. Para tirar, use o clique direito ou diga "tira da tela".
-- **Se você citar algo e nada aparecer, ou aparecer errado, aperte "Marcar momento" (ou a tecla M).** Isso deixa uma anotação no registro, com o horário e a última frase ouvida. Essas marcas são o dado mais importante do teste.
+- **Se você citar algo e nada aparecer, ou aparecer errado, aperte "Registrar momento" (ou a tecla M).** Isso deixa uma anotação no registro, com o horário e a última frase ouvida. Essas marcas são o dado mais importante do teste.
 - Para usar outro material (slides, por exemplo), clique em **Sair**. A escuta pausa e o projetor fica preto. Para voltar, clique em **Retomar a aula**.
 - Se a luz da voz ficar **laranja** ("Reconectando…"), espere alguns segundos: o app reconecta sozinho. Se demorar mais de 30 segundos, confira o Wi-Fi.
 
@@ -75,20 +75,20 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 
 **Preparar (em casa):**
 1. No PowerPoint, salve os slides em PDF: **Arquivo › Exportar › Criar PDF**. Também servem PDFs de acórdãos, textos e imagens (PNG, JPG).
-2. No Vide, na aba **Acervo**, em **Materiais (slides e PDFs)**: preencha a **Pasta** (use "/" para subpastas, ex.: *Processo Civil II/Sentença*) e as **Etiquetas** (ex.: *sentença, recursos*) e escolha os arquivos (pode escolher vários de uma vez). Para mudar depois, use **Organizar** ao lado de cada material.
+2. No Vide, na aba **Acervo**, clique em **+** › **Adicionar material**: preencha a **Pasta** (use "/" para subpastas, ex.: *Processo Civil II/Sentença*) e as **Etiquetas** (ex.: *sentença, recursos*) e escolha os arquivos (pode escolher vários de uma vez). Os materiais guardados ficam no botão **Materiais**; para mudar a pasta ou as etiquetas, use **Organizar**.
 
 **Na aula:**
-1. Clique no botão **Material** (no alto da tela). Abre uma lista com busca: digite parte do nome, da pasta ou uma etiqueta (ou clique numa etiqueta). Os usados recentemente aparecem no topo. Escolha o arquivo; o projetor mostra a página 1.
+1. Clique na faixa **Material** (logo abaixo dos botões do alto). Abre uma lista com busca: digite parte do nome, da pasta ou uma etiqueta (ou clique numa etiqueta). Os usados recentemente aparecem no topo. Escolha o arquivo; o projetor mostra a página 1.
 2. **Roda do mouse** passa as páginas. O passador de slides (PageDown/PageUp) também funciona.
 3. **Para ampliar uma parte da página:** na miniatura do centro da sua tela, **arraste o mouse** desenhando um retângulo sobre o trecho. O projetor mostra só aquele trecho, ocupando a tela inteira.
    - Com zoom, a roda **desce dentro da página**; no fim, continua no alto da página seguinte (bom para PDF em pé).
    - **Duplo clique** na miniatura (ou o botão **Página inteira**, ou a tecla **0**) volta à página inteira.
 4. Quando um artigo aparecer na lista, o **clique esquerdo** projeta **o mais recente**. Para projetar outro, **clique direto nele**.
    - O artigo **desliza da direita** e ocupa cerca de 40% da tela; o slide continua visível ao lado.
-   - Botão **Artigo: ao lado do slide / em tela cheia** (ou tecla **L**) troca entre os dois jeitos.
+   - Botão **Visualização** (ou tecla **L**): escolha **ao lado da norma** (padrão) ou **substituir pela norma**.
    - Artigo longo: **clique na roda** e a roda passa a rolar o artigo; clique na roda de novo para voltar às páginas.
 5. **Clique direito** (ou "tira da tela") recolhe o artigo, e o slide volta a ocupar a tela, no mesmo ponto.
-6. **Tela preta** (botão ou tecla **.** ponto) esconde o material por um momento; clique de novo para voltar.
+6. **Ocultar** (ou tecla **.** ponto) deixa o projetor preto por um momento; **Mostrar** traz o material de volta.
 
 ## Como medir os acertos
 
@@ -99,7 +99,7 @@ Com o .csv aberto no Excel, use a coluna **tipo** para filtrar. Anote:
 | Citações feitas | Leia a transcrição (.txt) e conte quantas vezes você citou um dispositivo do CPC |
 | **Acertos** | Linhas `detectado` que correspondem a uma citação real e trazem o dispositivo certo |
 | **Erros** | Linhas `detectado` que trazem o dispositivo errado (ex.: você disse 485 e veio 405) ou que não correspondem a nenhuma citação |
-| **Faltas** | Citações que você fez e que não viraram `detectado`, incluindo os momentos em que você apertou "Marcar momento" |
+| **Faltas** | Citações que você fez e que não viraram `detectado`, incluindo os momentos em que você apertou "Registrar momento" |
 | Transcrição ruim × detector ruim | Em cada falta, veja a linha `fala` daquele horário. Se o texto está certo e o app não detectou, o problema é do detector, e eu corrijo. Se o texto já veio errado, o problema é do reconhecedor de voz |
 | Estabilidade | Conte as linhas `voz` com "voz caiu; reiniciando". Muitas quedas seguidas indicam Wi-Fi instável |
 | Utilidade | Linhas `projetado`. A coluna de detalhes mostra a posição do candidato na lista e quantos segundos ele esperou até o clique |

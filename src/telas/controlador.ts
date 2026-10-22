@@ -275,9 +275,15 @@ export class ControladorAula {
   }
 
   alternarLayout() {
-    const layoutArtigo: LayoutArtigo = this.estado.layoutArtigo === 'lateral' ? 'cheia' : 'lateral';
+    this.definirLayout(this.estado.layoutArtigo === 'lateral' ? 'cheia' : 'lateral');
+  }
+
+  /** Como a norma aparece com material na tela: ao lado do slide ou substituindo-o. */
+  definirLayout(layoutArtigo: LayoutArtigo) {
+    if (layoutArtigo === this.estado.layoutArtigo) return;
     this.mudar({ layoutArtigo });
     this.canal.enviar({ t: 'layout', layout: layoutArtigo });
+    registrar('material', layoutArtigo === 'lateral' ? 'visualização: ao lado da norma' : 'visualização: substituir pela norma');
   }
 
   private enviarMaterial() {

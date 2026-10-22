@@ -1,7 +1,7 @@
 // Acervo: leis (importação do HTML salvo do Planalto ou .txt, revisão de
 // duplicidades), lei principal da aula, materiais (PDFs), conferência de
 // artigos e teste do detector.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { db, excluirDiploma, listarDiplomas, salvarDiploma } from '../dados/db';
 import type { Diploma, Item } from '../dados/modelo';
 import { agoraISO, novoId } from '../dados/modelo';
@@ -28,7 +28,8 @@ import { lerArquivo } from '../fatiador/html';
 import { chaveItemArtigo, resolver } from '../comum/legislacao';
 import { Detector, chaveReferencia } from '../voz/detector';
 import { Folha } from './Projecao';
-import { Materiais } from './Materiais';
+import { AdicionarMaterial, ListaMateriais } from './Materiais';
+import { IcLei, IcMais, IcPasta, IcTeste } from '../comum/Icones';
 
 interface Parte {
   def: DefDiploma;
@@ -62,9 +63,177 @@ function montarItens(artigos: ArtigoFatiado[], def: DefDiploma, arquivo: string,
 
 const OUTRA = '__outra';
 
+type AbaAcervo = 'legislacao' | 'materiais' | 'testes' | 'nova-norma' | 'novo-material';
+
 export function Acervo() {
+  const [aba, setAbaEstado] = useState<AbaAcervo>(() => {
+    try {
+      return (sessionStorage.getItem('vide.abaAcervo') as AbaAcervo) || 'legislacao';
+    } catch {
+      return 'legislacao';
+    }
+  });
+  const setAba = (a: AbaAcervo) => {
+    setAbaEstado(a);
+    try {
+      sessionStorage.setItem('vide.abaAcervo', a);
+    } catch {
+      /* ignore */
+    }
+  };
   const [leis, setLeis] = useState<Diploma[]>([]);
+  const [menuMais, setMenuMais] = useState(false);
+  const maisRef = useRef<HTMLDivElement>(null);
+  const recarregar = async () => setLeis(await listarDiplomas());
+  useEffect(() => {
+    void recarregar();
+    const r = () => void recarregar();
+    window.addEventListener('vide-acervo-mudou', r);
+    return () => window.removeEventListener('vide-acervo-mudou', r);
+  }, []);
+  useEffect(() => {
+    if (!menuMais) return;
+    const fora = (ev: MouseEvent) => {
+      if (maisRef.current && !maisRef.current.contains(ev.target as Node)) setMenuMais(false);
+    };
+    window.addEventListener('mousedown', fora);
+    return () => window.removeEventListener('mousedown', fora);
+  }, [menuMais]);
+
+  const botaoAba = (a: AbaAcervo, rotulo: string, icone: ReactNode) => (
+    <button className="aba-acervo" aria-current={aba === a ? 'page' : undefined} onClick={() => setAba(a)}>
+      {icone} {rotulo}
+    </button>
+  );
+
+  return (
+    <div className="pagina">
+      <h1>Acervo</h1>
+      <p className="ajuda">
+        O acervo fica guardado <strong>neste navegador, neste computador</strong>. A aula não precisa de internet para consultá-lo
+        (só o reconhecimento de voz precisa).
+      </p>
+
+      <nav className="menu-acervo" aria-label="Seções do acervo">
+        {botaoAba('legislacao', 'Legislação', <IcLei />)}
+        {botaoAba('materiais', 'Materiais', <IcPasta />)}
+        {botaoAba('testes', 'Testes', <IcTeste />)}
+        <div className="mais-acervo" ref={maisRef}>
+          <button
+            className={`botao-mais${aba === 'nova-norma' || aba === 'novo-material' ? ' ativo' : ''}`}
+            onClick={() => setMenuMais(!menuMais)}
+            aria-label="Adicionar norma ou material"
+            title="Adicionar norma ou material"
+            aria-expanded={menuMais}
+          >
+            <IcMais tamanho={22} />
+          </button>
+          {menuMais && (
+            <div className="popover-menu para-baixo" role="menu">
+              <button type="button" role="menuitem" className="opcao-menu" onClick={() => { setAba('nova-norma'); setMenuMais(false); }}>
+                <IcLei />
+                <span>
+                  <strong>Adicionar norma</strong>
+                  <span className="opcao-menu-desc">Importar uma lei do Planalto (CPC, CF, CC…).</span>
+                </span>
+              </button>
+              <button type="button" role="menuitem" className="opcao-menu" onClick={() => { setAba('novo-material'); setMenuMais(false); }}>
+                <IcPasta />
+                <span>
+                  <strong>Adicionar material</strong>
+                  <span className="opcao-menu-desc">Carregar slides em PDF ou imagens.</span>
+                </span>
+              </button>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      {aba === 'legislacao' && <LeisNoAcervo leis={leis} recarregar={recarregar} aoAdicionar={() => setAba('nova-norma')} />}
+      {aba === 'materiais' && <ListaMateriais aoAdicionar={() => setAba('novo-material')} />}
+      {aba === 'testes' && (
+        <>
+          <Conferir leis={leis} />
+          <TestarDetector />
+        </>
+      )}
+      {aba === 'nova-norma' && <ImportarLegislacao aoConcluir={() => void recarregar()} aoVer={() => setAba('legislacao')} />}
+      {aba === 'novo-material' && <AdicionarMaterial aoVer={() => setAba('materiais')} />}
+    </div>
+  );
+}
+
+function LeisNoAcervo({ leis, recarregar, aoAdicionar }: { leis: Diploma[]; recarregar: () => Promise<void>; aoAdicionar: () => void }) {
   const [principal, setPrincipal] = useState(diplomaPrincipal());
+  if (!leis.length) {
+    return (
+      <div className="vazio-acervo">
+        <p>Nenhuma lei guardada ainda.</p>
+        <button className="botao primario com-icone" onClick={aoAdicionar}>
+          <IcMais /> Adicionar norma
+        </button>
+      </div>
+    );
+  }
+  return (
+    <>
+      <h2>Leis no acervo</h2>
+      <div className="cartao">
+        <table className="tabela">
+          <thead>
+            <tr><th>Lei</th><th>Artigos</th><th>Versão importada em</th><th></th></tr>
+          </thead>
+          <tbody>
+            {leis.map((l) => (
+              <tr key={l.id}>
+                <td><strong>{abreviacaoDe(l.sigla)}</strong> <span className="ajuda">· {l.nome}</span></td>
+                <td>{l.total_artigos}</td>
+                <td>{new Date(l.versao_em).toLocaleString('pt-BR')}</td>
+                <td>
+                  <button
+                    className="botao pequeno"
+                    onClick={async () => {
+                      if (!confirm(`Apagar ${abreviacaoDe(l.sigla)} do acervo?`)) return;
+                      await excluirDiploma(l.sigla);
+                      window.dispatchEvent(new Event('vide-acervo-mudou'));
+                      await recarregar();
+                    }}
+                  >
+                    Apagar
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="campo" style={{ maxWidth: 520, marginTop: 14 }}>
+          <label htmlFor="principal">Lei principal da aula</label>
+          <select
+            id="principal"
+            className="seletor"
+            value={principal}
+            onChange={(e) => {
+              setPrincipal(e.target.value);
+              definirDiplomaPrincipal(e.target.value);
+            }}
+          >
+            {!leis.some((l) => l.sigla === principal) && <option value={principal}>{abreviacaoDe(principal)}</option>}
+            {leis.map((l) => (
+              <option key={l.sigla} value={l.sigla}>{abreviacaoDe(l.sigla)}</option>
+            ))}
+          </select>
+          <span className="ajuda" style={{ margin: 0 }}>
+            É a lei usada quando você não diz qual: "artigo 70" vira art. 70 {abreviacaoDe(principal)}. Quando você diz a lei
+            ("artigo 5º da Constituição"), vale a lei dita.
+          </span>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ImportarLegislacao({ aoConcluir, aoVer }: { aoConcluir: () => void; aoVer: () => void }) {
+  const [leis, setLeis] = useState<Diploma[]>([]);
   const [escolhida, setEscolhida] = useState('cpc');
   const [outra, setOutra] = useState({ abreviacao: '', nome: '', numero: '', apelidos: '' });
   const [previa, setPrevia] = useState<Previa | null>(null);
@@ -165,6 +334,7 @@ export function Acervo() {
       setPrevia(null);
       setArquivoKey((k) => k + 1);
       await recarregar();
+      aoConcluir();
     } catch (err) {
       setMsg(`Não foi possível salvar: ${String(err)}`);
     } finally {
@@ -173,73 +343,10 @@ export function Acervo() {
   };
 
   const jaGuardada = defEscolhida && leis.some((l) => l.sigla === defEscolhida.sigla);
-  const opcoesPrincipal = leis.length ? leis : [];
 
   return (
-    <div className="pagina">
-      <h1>Acervo</h1>
-      <p className="ajuda">
-        O acervo fica guardado <strong>neste navegador, neste computador</strong>. A aula não precisa de internet para consultá-lo
-        (só o reconhecimento de voz precisa).
-      </p>
-
-      <h2>Leis no acervo</h2>
-      {leis.length === 0 ? (
-        <p className="ajuda">Nenhuma lei guardada ainda. Importe abaixo.</p>
-      ) : (
-        <div className="cartao">
-          <table className="tabela">
-            <thead>
-              <tr><th>Lei</th><th>Artigos</th><th>Versão importada em</th><th></th></tr>
-            </thead>
-            <tbody>
-              {leis.map((l) => (
-                <tr key={l.id}>
-                  <td><strong>{abreviacaoDe(l.sigla)}</strong> <span className="ajuda">· {l.nome}</span></td>
-                  <td>{l.total_artigos}</td>
-                  <td>{new Date(l.versao_em).toLocaleString('pt-BR')}</td>
-                  <td>
-                    <button
-                      className="botao pequeno"
-                      onClick={async () => {
-                        if (!confirm(`Apagar ${abreviacaoDe(l.sigla)} do acervo?`)) return;
-                        await excluirDiploma(l.sigla);
-                        window.dispatchEvent(new Event('vide-acervo-mudou'));
-                        await recarregar();
-                      }}
-                    >
-                      Apagar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="campo" style={{ maxWidth: 520, marginTop: 14 }}>
-            <label htmlFor="principal">Lei principal da aula</label>
-            <select
-              id="principal"
-              className="seletor"
-              value={principal}
-              onChange={(e) => {
-                setPrincipal(e.target.value);
-                definirDiplomaPrincipal(e.target.value);
-              }}
-            >
-              {!opcoesPrincipal.some((l) => l.sigla === principal) && <option value={principal}>{abreviacaoDe(principal)}</option>}
-              {opcoesPrincipal.map((l) => (
-                <option key={l.sigla} value={l.sigla}>{abreviacaoDe(l.sigla)}</option>
-              ))}
-            </select>
-            <span className="ajuda" style={{ margin: 0 }}>
-              É a lei usada quando você não diz qual: "artigo 70" vira art. 70 {abreviacaoDe(principal)}. Quando você diz a lei
-              ("artigo 5º da Constituição"), vale a lei dita.
-            </span>
-          </div>
-        </div>
-      )}
-
-      <h2>Importar legislação</h2>
+    <>
+      <h2>Adicionar norma</h2>
       <div className="cartao">
         <div className="campo" style={{ maxWidth: 520 }}>
           <label htmlFor="qual">1. Qual lei você vai importar?</label>
@@ -306,7 +413,16 @@ export function Acervo() {
         )}
       </div>
 
-      {msg && <div className="aviso">{msg}</div>}
+      {msg && (
+        <div className="aviso">
+          {msg}
+          {msg.startsWith('Pronto') && (
+            <button className="botao pequeno com-icone" style={{ marginLeft: 12 }} onClick={aoVer}>
+              <IcLei tamanho={18} /> Ver legislação
+            </button>
+          )}
+        </div>
+      )}
 
       {previa && (
         <>
@@ -391,10 +507,7 @@ export function Acervo() {
         </>
       )}
 
-      <Materiais />
-      <Conferir leis={leis} />
-      <TestarDetector />
-    </div>
+    </>
   );
 }
 

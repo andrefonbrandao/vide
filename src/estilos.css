@@ -260,3 +260,55 @@ button.etiqueta-mat:hover { background: rgba(30, 58, 52, 0.08); }
 .opcao-mat.atual { background: var(--tinta); color: var(--fundo); }
 .opcao-mat.atual .ajuda, .opcao-mat.atual .etiqueta-mat { color: var(--fundo); border-color: var(--fundo); }
 .opcao-mat-nome { flex: 1; min-width: 160px; }
+
+/* ---------- Navegação v0.7 ---------- */
+.botao.com-icone { display: inline-flex; align-items: center; gap: 8px; }
+.botao .icone { flex: none; }
+.aula { grid-template-rows: auto auto minmax(0, 1fr); }
+.aula-faixa-material {
+  grid-column: 1 / -1; padding: 10px 20px; border-bottom: 1px solid var(--linha); background: var(--papel);
+}
+.aula-faixa-material .seletor-material { display: flex; align-items: center; gap: 12px; width: 100%; }
+.seletor-material-rotulo { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; white-space: nowrap; }
+.aula-faixa-material .botao-seletor {
+  flex: 1; max-width: none; justify-content: flex-start; gap: 14px; border-radius: 12px; min-height: 44px; padding: 8px 16px;
+  background: #fff; text-align: left;
+}
+.aula-faixa-material .botao-seletor-nome { font-size: 17px; font-weight: 800; }
+.botao-seletor-detalhe { color: var(--tinta-2); font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.botao-seletor-acao { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: 14px; color: var(--tinta-2); white-space: nowrap; }
+.aula-faixa-material .popover-mat { width: min(680px, 92vw); left: 96px; }
+.titulo-alternativas { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tinta-2); }
+.aula-esq-rodape { display: flex; gap: 10px; flex-wrap: wrap; }
+.rodape-dir { border-top: 1px solid var(--linha); }
+.menu-visualizacao { position: relative; }
+.popover-menu {
+  position: absolute; bottom: calc(100% + 6px); left: 0; z-index: 50; width: 320px; background: var(--papel);
+  border: 2px solid var(--tinta); border-radius: var(--raio); padding: 6px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.popover-menu.para-baixo { bottom: auto; top: calc(100% + 6px); }
+.opcao-menu {
+  display: flex; align-items: flex-start; gap: 10px; text-align: left; border: none; background: transparent; padding: 8px 10px;
+  border-radius: 10px; cursor: pointer;
+}
+.opcao-menu:hover { background: rgba(30, 58, 52, 0.08); }
+.opcao-menu.atual { background: var(--tinta); color: var(--fundo); }
+.opcao-menu-desc { display: block; font-size: 13px; opacity: 0.85; }
+.menu-acervo { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 18px 0 8px; padding-bottom: 12px; border-bottom: 2px solid var(--linha); }
+.aba-acervo {
+  display: inline-flex; align-items: center; gap: 8px; border: 2px solid var(--tinta); background: transparent; color: var(--tinta);
+  border-radius: 999px; padding: 8px 18px; font-weight: 800; cursor: pointer; min-height: 44px;
+}
+.aba-acervo:hover { background: rgba(30, 58, 52, 0.08); }
+.aba-acervo[aria-current='page'] { background: var(--tinta); color: var(--fundo); }
+.mais-acervo { position: relative; margin-left: auto; }
+.botao-mais {
+  width: 46px; height: 46px; border-radius: 50%; border: none; background: var(--destaque); color: var(--tinta);
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.botao-mais:hover, .botao-mais.ativo { filter: brightness(1.05); box-shadow: 0 0 0 4px rgba(232, 115, 90, 0.3); }
+.mais-acervo .popover-menu { left: auto; right: 0; }
+.vazio-acervo { border: 3px dashed var(--linha); border-radius: var(--raio); padding: 28px; text-align: center; color: var(--tinta-2); margin-top: 16px; }
+.vazio-acervo p { margin: 0 0 14px; font-size: 17px; }
+.pasta-mat summary .icone { vertical-align: -3px; }
