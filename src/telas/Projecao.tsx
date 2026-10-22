@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { abrirCanal, type LayoutArtigo, type Mensagem } from '../comum/canal';
 import type { Projetavel } from '../comum/legislacao';
 import { CanvasMaterial } from '../material/CanvasMaterial';
+import { IcTelaCheia } from '../comum/Icones';
 import { abrirDocumentoPorId, type Documento } from '../material/documento';
 import { PAGINA_INTEIRA, type Regiao } from '../material/regiao';
 
@@ -64,6 +65,8 @@ export function Projecao() {
   const [tamPagina, setTamPagina] = useState<{ largura: number; altura: number } | null>(null);
   const [telaCheia, setTelaCheia] = useState(!!document.fullscreenElement);
   const [mostrarCursor, setMostrarCursor] = useState(false);
+  /** Barra do rodapé com o botão de tela cheia (aparece com o mouse perto da borda de baixo). */
+  const [barra, setBarra] = useState(true);
   const [tela, setTela] = useState({ w: window.innerWidth, h: window.innerHeight });
   const folhaRef = useRef<HTMLDivElement>(null);
   const enviarRef = useRef<(m: Mensagem) => void>(() => {});
@@ -173,21 +176,48 @@ export function Projecao() {
     };
   }, [item, escala, layout]);
 
-  // Cursor aparece só quando o mouse se mexe nesta janela.
+  // Cursor aparece só quando o mouse se mexe nesta janela. A barra de tela cheia
+  // aparece com o mouse perto da borda de baixo (ou em qualquer ponto, fora da tela cheia).
   useEffect(() => {
     let t = 0;
-    const mexeu = () => {
+    let tb = 0;
+    const mexeu = (ev: MouseEvent) => {
       setMostrarCursor(true);
       window.clearTimeout(t);
       t = window.setTimeout(() => setMostrarCursor(false), 1500);
+      const perto = ev.clientY > window.innerHeight - 160 || !document.fullscreenElement;
+      if (perto) {
+        setBarra(true);
+        window.clearTimeout(tb);
+        tb = window.setTimeout(() => setBarra(false), 2500);
+      }
     };
+    // Ao abrir, a barra fica visível alguns segundos.
+    tb = window.setTimeout(() => setBarra(false), 5000);
     window.addEventListener('mousemove', mexeu);
-    return () => window.removeEventListener('mousemove', mexeu);
+    return () => {
+      window.removeEventListener('mousemove', mexeu);
+      window.clearTimeout(t);
+      window.clearTimeout(tb);
+    };
   }, []);
 
   const entrarTelaCheia = () => {
     document.documentElement.requestFullscreen?.().catch(() => {});
   };
+  const alternarTelaCheia = () => {
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+    else entrarTelaCheia();
+  };
+
+  // Tecla F (com o mouse sobre esta janela) liga e desliga a tela cheia.
+  useEffect(() => {
+    const tecla = (ev: KeyboardEvent) => {
+      if (ev.key === 'f' || ev.key === 'F') alternarTelaCheia();
+    };
+    window.addEventListener('keydown', tecla);
+    return () => window.removeEventListener('keydown', tecla);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const comMaterial = !!material.id && !material.preta && !!documento;
   const lateral = !!item && comMaterial && layout === 'lateral';
@@ -207,7 +237,11 @@ export function Projecao() {
   const fonte = item ? (lateral ? Math.max(1.6, tamanhoBase(item) * 0.55) : tamanhoBase(item)) * escala : 0;
 
   return (
-    <div className={`projecao${mostrarCursor ? ' com-cursor' : ''}`} onContextMenu={(e) => e.preventDefault()}>
+    <div
+      className={`projecao${mostrarCursor ? ' com-cursor' : ''}`}
+      onContextMenu={(e) => e.preventDefault()}
+      onDoubleClick={alternarTelaCheia}
+    >
       {comMaterial && (
         <div className={`proj-material${item && !lateral && painelDentro ? ' oculto' : ''}`}>
           <div className="proj-material-slide" style={{ transform: transformSlide }}>
@@ -225,12 +259,18 @@ export function Projecao() {
         </div>
       )}
       {!item && <div ref={folhaRef} />}
+      <div className={`proj-barra${barra ? ' visivel' : ''}`} onDoubleClick={(e) => e.stopPropagation()}>
+        <button className="proj-barra-botao" onClick={alternarTelaCheia}>
+          <IcTelaCheia tamanho={22} /> {telaCheia ? 'Sair da tela cheia' : 'Tela cheia'}
+        </button>
+        <span className="proj-barra-dica">ou duplo clique na tela · tecla F</span>
+      </div>
       {!telaCheia && !item && !comMaterial && (
         <div className="projecao-convite">
           <button className="caixa" onClick={entrarTelaCheia}>
             Esta é a janela de projeção.
             <strong>Clique aqui para tela cheia</strong>
-            (ou aperte F11). Depois, volte o mouse para a tela do notebook.
+            (ou duplo clique, tecla F ou F11). Depois, volte o mouse para a tela do notebook.
           </button>
         </div>
       )}

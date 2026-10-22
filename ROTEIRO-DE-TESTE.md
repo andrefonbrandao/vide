@@ -51,7 +51,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 2. Conecte-se ao **Wi-Fi** da sala. O reconhecimento de voz precisa de internet.
 3. Abra o Vide e clique em **Abrir projeção**.
    - Se a janela abrir no notebook, arraste-a para a tela do projetor. Para isso, leve-a para além da borda da tela.
-   - Na janela de projeção, clique em **"Clique aqui para tela cheia"** ou aperte **F11**. A tela do projetor fica preta.
+   - Para pôr (ou tirar) a janela de projeção em tela cheia: leve o mouse até a **parte de baixo** dela e clique no botão **Tela cheia** que aparece; ou dê **duplo clique** em qualquer ponto dela; ou aperte a tecla **F** (ou **F11**) com o mouse sobre ela.
 4. Volte com o mouse para o notebook e clique em **Tela cheia** na tela do apresentador. Assim nenhum clique cai em outra janela.
 5. Clique em **Iniciar escuta** e confira se aparece **"Ouvindo"**.
 6. **Avise a turma** de que a aula está sendo transcrita para teste (LGPD).

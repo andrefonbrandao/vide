@@ -312,3 +312,18 @@ button.etiqueta-mat:hover { background: rgba(30, 58, 52, 0.08); }
 .vazio-acervo { border: 3px dashed var(--linha); border-radius: var(--raio); padding: 28px; text-align: center; color: var(--tinta-2); margin-top: 16px; }
 .vazio-acervo p { margin: 0 0 14px; font-size: 17px; }
 .pasta-mat summary .icone { vertical-align: -3px; }
+
+/* Barra de tela cheia da janela de projeção (aparece com o mouse perto da borda de baixo) */
+.proj-barra {
+  position: fixed; left: 50%; bottom: 18px; transform: translate(-50%, 140%); z-index: 20;
+  display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 8px; border-radius: 999px;
+  background: var(--fundo); color: var(--tinta); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  transition: transform 0.25s ease, opacity 0.25s ease; opacity: 0; pointer-events: none;
+}
+.proj-barra.visivel { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+.proj-barra-botao {
+  display: inline-flex; align-items: center; gap: 8px; border: none; border-radius: 999px; cursor: pointer;
+  background: var(--tinta); color: var(--fundo); font-weight: 800; font-size: 18px; padding: 10px 20px;
+}
+.proj-barra-dica { font-weight: 700; font-size: 14px; padding-right: 8px; }
+.projecao-convite { z-index: 15; }
