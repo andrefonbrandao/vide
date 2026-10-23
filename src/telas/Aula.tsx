@@ -8,7 +8,8 @@ import { controlador, type EstadoAula } from './controlador';
 import { PainelMaterial } from './PainelMaterial';
 import { importarMaterial } from '../material/documento';
 import { SeletorMaterial, marcarUsado } from './Materiais';
-import { IcMicrofone, IcNovaSessao, IcPausa, IcPin, IcProjecao, IcSair, IcTelaCheia } from '../comum/Icones';
+import { IcCelular, IcMicrofone, IcNovaSessao, IcPausa, IcPin, IcProjecao, IcSair, IcTelaCheia } from '../comum/Icones';
+import { PareamentoCelular } from './PareamentoCelular';
 import type { StatusVoz } from '../voz/reconhecedor';
 import { obterConstrutor } from '../voz/reconhecedor';
 
@@ -150,6 +151,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
 
   const agora = Date.now();
   const arquivoRef = useRef<HTMLInputElement>(null);
+  const [verCelular, setVerCelular] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
   const carregarMaterial = async (arquivo: File | undefined) => {
@@ -198,11 +200,26 @@ export function Aula({ ativa }: { ativa: boolean }) {
           <IcTelaCheia /> Tela cheia
         </button>
         <span className="espaco" />
-        <span className={classeStatus(e.status)} title={e.statusDetalhe}>
-          <span className="luz" />
-          {TEXTO_STATUS[e.status]}
-          {e.statusDetalhe && e.status !== 'ouvindo' ? ` — ${e.statusDetalhe}` : ''}
-        </span>
+        <button
+          className={`botao pequeno com-icone${e.remoto.celularPresente ? ' escuro' : ''}`}
+          onClick={() => setVerCelular(true)}
+          title="Usar o celular como microfone e controle remoto"
+        >
+          <IcCelular tamanho={18} /> {e.remoto.celularPresente ? 'Celular conectado' : 'Celular'}
+        </button>
+        {e.remoto.vozCelular ? (
+          <span className={classeStatus(e.remoto.vozCelular)} title={e.remoto.vozCelularDetalhe}>
+            <span className="luz" />
+            Microfone do celular: {TEXTO_STATUS[e.remoto.vozCelular].toLowerCase()}
+            {e.remoto.vozCelularDetalhe && e.remoto.vozCelular !== 'ouvindo' ? ` — ${e.remoto.vozCelularDetalhe}` : ''}
+          </span>
+        ) : (
+          <span className={classeStatus(e.status)} title={e.statusDetalhe}>
+            <span className="luz" />
+            {TEXTO_STATUS[e.status]}
+            {e.statusDetalhe && e.status !== 'ouvindo' ? ` — ${e.statusDetalhe}` : ''}
+          </span>
+        )}
       </div>
 
       <div className="aula-faixa-material" data-ui>
@@ -315,6 +332,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
       </div>
 
       {e.material && <PainelMaterial e={e} ctl={ctl} />}
+      {verCelular && <PareamentoCelular e={e} ctl={ctl} aoFechar={() => setVerCelular(false)} />}
 
       <aside className="aula-dir">
         <div className="secao-dir">

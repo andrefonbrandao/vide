@@ -69,6 +69,10 @@ export class Reconhecedor {
   private vigia: number | null = null;
   private parcialPendente: { texto: string; chave: string } | null = null;
   private ultimoErro: string | null = null;
+  /** Último texto final entregue nesta sessão (para o caso do Safari, que repete o texto acumulado). */
+  private ultimoFinal = '';
+  /** Já houve escuta desde o último "Iniciar" (para distinguir bloqueio real de interrupção do Safari). */
+  private jaOuviu = false;
 
   /** Reinicia a sessão se nada for reconhecido por este tempo (ms). */
   vigiaMs = 60_000;
@@ -87,6 +91,7 @@ export class Reconhecedor {
     }
     if (this.desejado) return;
     this.desejado = true;
+    this.jaOuviu = false;
     this.falhasSeguidas = 0;
     this.eventos.onStatus('iniciando');
     this.abrir(C);
@@ -140,11 +145,13 @@ export class Reconhecedor {
     const sessao = ++this.sessao;
     this.rec = rec;
     this.ultimoErro = null;
+    this.ultimoFinal = '';
 
     rec.onstart = () => {
       if (sessao !== this.sessao) return;
       this.inicioSessao = Date.now();
       this.ultimoResultado = Date.now();
+      this.jaOuviu = true;
       this.eventos.onStatus('ouvindo');
       this.eventos.onDiagnostico('voz iniciada', { sessao });
     };
@@ -159,8 +166,15 @@ export class Reconhecedor {
         const r = e.results[i];
         const chave = `${sessao}:${i}`;
         if (r.isFinal) {
-          const texto = r[0].transcript.trim();
+          let texto = r[0].transcript.trim();
           if (this.parcialPendente?.chave === chave) this.parcialPendente = null;
+          // Safari (iPhone) às vezes entrega o texto acumulado da sessão: fica só a parte nova.
+          if (texto && texto === this.ultimoFinal) texto = '';
+          else if (this.ultimoFinal && texto.startsWith(this.ultimoFinal)) {
+            const novo = texto.slice(this.ultimoFinal.length).trim();
+            this.ultimoFinal = texto;
+            texto = novo;
+          } else if (texto) this.ultimoFinal = texto;
           if (texto) this.eventos.onFinal(texto, chave, r[0].confidence);
         } else {
           parcial += r[0].transcript;
@@ -176,7 +190,10 @@ export class Reconhecedor {
       if (sessao !== this.sessao) return;
       this.ultimoErro = e.error;
       if (e.error === 'no-speech' || e.error === 'aborted') return; // silêncio: normal
-      const msg = MENSAGENS_ERRO[e.error] ?? `erro: ${e.error}`;
+      // No iPhone, o Safari às vezes não deixa reabrir a escuta sozinho (exige um toque):
+      // o erro é o mesmo de microfone bloqueado, mas aqui a escuta já vinha funcionando.
+      const interrompido = e.error === 'not-allowed' && this.jaOuviu;
+      const msg = interrompido ? 'o navegador interrompeu a escuta — toque para retomar' : (MENSAGENS_ERRO[e.error] ?? `erro: ${e.error}`);
       this.eventos.onDiagnostico('erro de voz', { erro: e.error, mensagem: e.message ?? '' });
       if (e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'language-not-supported') {
         this.desejado = false;

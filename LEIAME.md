@@ -37,6 +37,15 @@ O acervo e o registro ficam no **IndexedDB**, um banco interno do navegador. Fic
 - O PDF é desenhado pelo pdf.js (edição "legacy", compatível com navegadores um pouco mais antigos), carregado só quando é usado.
 - Limitação: o PDF não tem as animações nem os vídeos do PowerPoint.
 
+## Controlar pelo celular (iPhone)
+
+O computador continua mostrando a projeção; o iPhone vira microfone e controle remoto.
+
+- Na tela da **Aula**, clique em **Celular** › **Gerar QR code** e aponte a câmera do iPhone para o código. A página abre no Safari.
+- O acervo (leis e materiais) continua no computador; o celular só manda a voz e os comandos.
+- Os dois aparelhos precisam de internet. O texto falado passa pelo Cloudflare só para chegar ao computador; não fica guardado lá.
+- Por dentro: um Worker do Cloudflare (`worker/index.ts`) com um Durable Object ("Sala") repassa as mensagens entre o computador e o celular por WebSocket.
+
 ## Publicar no Cloudflare (sem instalar nada no notebook)
 
 Você faz isso **uma vez só**, pelo navegador. Depois, cada atualização que eu enviar ao GitHub é publicada sozinha.

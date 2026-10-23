@@ -12,6 +12,8 @@ import { inicioSessaoAtual, novaSessao, registrar } from '../comum/registro';
 import { detectarComandos, type Comando } from '../voz/comandos';
 import { Detector, chaveReferencia, type Referencia } from '../voz/detector';
 import { Reconhecedor, nomeNavegador, type StatusVoz } from '../voz/reconhecedor';
+import { ConexaoSala, type StatusConexao } from '../remoto/conexao';
+import { gerarCodigo, type EnvioDoComputador, type MsgDoCelular, type MsgDoComputador } from '../remoto/protocolo';
 
 export interface Candidato {
   id: string;
@@ -96,6 +98,15 @@ export interface EstadoAula {
   /** Com material na tela, o artigo aparece ao lado (lateral) ou por cima de tudo (cheia). */
   layoutArtigo: LayoutArtigo;
   materiais: MaterialResumo[];
+  /** Celular pareado (controle remoto + microfone). */
+  remoto: {
+    codigo: string | null;
+    conexao: StatusConexao;
+    celularPresente: boolean;
+    /** Situação do microfone do celular (null = celular não está escutando). */
+    vozCelular: StatusVoz | null;
+    vozCelularDetalhe: string;
+  };
 }
 
 const MAX_CANDIDATOS = 5;
@@ -131,6 +142,7 @@ export class ControladorAula {
     telaPreta: false,
     layoutArtigo: 'lateral',
     materiais: [],
+    remoto: { codigo: null, conexao: 'desconectada', celularPresente: false, vozCelular: null, vozCelularDetalhe: '' },
   };
   private ouvintes = new Set<() => void>();
   private indice = new Map<string, Item>();
@@ -141,6 +153,8 @@ export class ControladorAula {
   private ultimaInteracao = 0;
   private ultimoPong = 0;
   private ultimoPedidoRecarga = 0;
+  private sala: ConexaoSala<MsgDoComputador | MsgDoCelular, EnvioDoComputador> | null = null;
+  private envioRemoto: number | null = null;
   private comandosFeitos = new Set<string>();
 
   constructor() {
@@ -157,6 +171,15 @@ export class ControladorAula {
     window.addEventListener('vide-materiais-mudou', () => void this.recarregarMateriais());
     void this.recarregarAcervo();
     void this.recarregarMateriais(true);
+    // Celular pareado antes (ex.: a página foi recarregada): reconecta.
+    try {
+      const codigo = localStorage.getItem('vide.sala');
+      if (codigo) this.conectarCelular(codigo);
+    } catch {
+      /* ignore */
+    }
+    // A cada mudança, manda o retrato da aula para o celular (no máximo ~6 vezes por segundo).
+    this.ouvintes.add(() => this.agendarEnvioRemoto());
   }
 
   // ---------- estado / React ----------
@@ -192,6 +215,149 @@ export class ControladorAula {
       totalAcervo: this.indice.size,
       leis: diplomas.map((d) => ({ sigla: d.sigla, abreviacao: abreviacaoDe(d.sigla) })),
       principal,
+    });
+  }
+
+  // ---------- celular (controle remoto + microfone) ----------
+  /** Abre (ou reabre) a sala de pareamento com o celular. */
+  conectarCelular(codigoExistente?: string) {
+    if (this.sala) return;
+    const codigo = codigoExistente ?? gerarCodigo();
+    try {
+      localStorage.setItem('vide.sala', codigo);
+    } catch {
+      /* ignore */
+    }
+    this.sala = new ConexaoSala<MsgDoComputador | MsgDoCelular, EnvioDoComputador>(
+      codigo,
+      'computador',
+      (m) => this.aoMsgCelular(m),
+      (conexao) => this.mudar({ remoto: { ...this.estado.remoto, conexao } }),
+    );
+    this.mudar({ remoto: { ...this.estado.remoto, codigo } });
+    if (!codigoExistente) registrar('sessao', 'pareamento com celular iniciado');
+  }
+
+  desconectarCelular() {
+    this.sala?.fechar();
+    this.sala = null;
+    try {
+      localStorage.removeItem('vide.sala');
+    } catch {
+      /* ignore */
+    }
+    this.mudar({ remoto: { codigo: null, conexao: 'desconectada', celularPresente: false, vozCelular: null, vozCelularDetalhe: '' } });
+    registrar('sessao', 'celular desconectado pelo professor');
+  }
+
+  private aoMsgCelular(m: MsgDoComputador | MsgDoCelular) {
+    const r = this.estado.remoto;
+    switch (m.t) {
+      case 'presenca': {
+        const presente = m.celular > 0;
+        if (r.celularPresente && !presente) {
+          registrar('sessao', 'celular saiu da sala');
+          if (r.vozCelular && r.vozCelular !== 'parado') {
+            this.mudar({ aviso: 'O celular desconectou. Para continuar, reabra o controle no celular ou clique em "Iniciar escuta" para usar o microfone do computador.' });
+          }
+          this.mudar({ remoto: { ...this.estado.remoto, celularPresente: false, vozCelular: null } });
+        } else if (!r.celularPresente && presente) {
+          registrar('sessao', 'celular conectado');
+          this.mudar({ remoto: { ...this.estado.remoto, celularPresente: true } });
+          this.enviarEstadoRemoto();
+        }
+        return;
+      }
+      case 'ola-celular':
+        if (!r.celularPresente) this.mudar({ remoto: { ...this.estado.remoto, celularPresente: true } });
+        this.enviarEstadoRemoto();
+        return;
+      case 'voz':
+        if (m.tipo === 'final') this.aoFinal(m.texto, `cel:${m.chave}`, m.confianca ?? -1);
+        else this.aoParcial(m.texto, `cel:${m.chave}`);
+        return;
+      case 'voz-status': {
+        // O celular começou a escutar: o microfone do computador para (para não ouvir em dobro).
+        if ((m.status === 'ouvindo' || m.status === 'iniciando') && this.voz.ativo) {
+          this.voz.parar();
+          this.cauda = '';
+          registrar('sessao', 'escuta passou para o celular');
+          this.mudar({ escutando: false, parcial: '' });
+        }
+        if (m.status !== (r.vozCelular ?? 'parado')) registrar('voz', `celular: ${m.status}`, m.detalhe ? { detalhe: m.detalhe } : undefined);
+        this.mudar({
+          remoto: { ...this.estado.remoto, vozCelular: m.status === 'parado' ? null : m.status, vozCelularDetalhe: m.detalhe ?? '' },
+          saiu: false,
+        });
+        return;
+      }
+      case 'diag':
+        registrar('voz', `celular: ${m.texto}`, m.dados);
+        return;
+      case 'cmd':
+        this.aoComandoRemoto(m);
+        return;
+      default:
+        return;
+    }
+  }
+
+  private aoComandoRemoto(m: Extract<MsgDoCelular, { t: 'cmd' }>) {
+    switch (m.acao) {
+      case 'projetar':
+        if (m.id) this.projetarCandidato(m.id, 'celular');
+        else this.cliqueProjetar();
+        break;
+      case 'recolher':
+        this.recolher('celular');
+        break;
+      case 'pagina':
+        this.passoMaterial(m.delta);
+        break;
+      case 'paginaInteira':
+        this.paginaInteira();
+        break;
+      case 'ocultar':
+        this.alternarTelaPreta();
+        break;
+      case 'layout':
+        this.definirLayout(m.valor);
+        break;
+      case 'rolar':
+        this.rolar(m.delta);
+        break;
+      case 'marcar':
+        this.marcar();
+        break;
+    }
+  }
+
+  private agendarEnvioRemoto() {
+    if (!this.sala || !this.estado.remoto.celularPresente || this.envioRemoto !== null) return;
+    this.envioRemoto = window.setTimeout(() => {
+      this.envioRemoto = null;
+      this.enviarEstadoRemoto();
+    }, 150);
+  }
+
+  private enviarEstadoRemoto() {
+    if (!this.sala) return;
+    const e = this.estado;
+    const ultimas = e.finais.slice(-2).map((f) => f.texto).join(' ');
+    this.sala.enviar({
+      t: 'estado',
+      versao: __VERSAO__,
+      alternativas: e.candidatos.map((c) => ({ id: c.id, titulo: c.titulo, texto: c.texto, aviso: c.aviso })),
+      projetadoId: e.projetado?.id ?? null,
+      projetadoTitulo: e.projetado?.titulo ?? null,
+      material: e.material
+        ? { nome: e.material.nome, pagina: e.material.pagina, paginas: e.material.paginas, zoom: !ehInteira(e.material.regiao) }
+        : null,
+      telaPreta: e.telaPreta,
+      layout: e.layoutArtigo,
+      escutaComputador: e.escutando,
+      projecaoConectada: e.projecao.conectada,
+      ultimaFala: (e.parcial ? `${ultimas} ${e.parcial}` : ultimas).slice(-240),
     });
   }
 
@@ -304,6 +470,11 @@ export class ControladorAula {
       agente: navigator.userAgent,
       itens_no_acervo: this.indice.size,
     });
+    // Se o celular estava escutando, ele para (o microfone do computador assume).
+    if (this.estado.remoto.vozCelular) {
+      this.sala?.enviar({ t: 'parar-escuta' });
+      this.mudar({ remoto: { ...this.estado.remoto, vozCelular: null } });
+    }
     this.voz.iniciar();
     const voltando = this.estado.saiu;
     this.mudar({ escutando: this.voz.ativo, saiu: false, telaPreta: voltando ? false : this.estado.telaPreta });
@@ -507,17 +678,17 @@ export class ControladorAula {
   }
 
   /** Clique direto num candidato da lista: projeta aquele. */
-  projetarCandidato(id: string) {
+  projetarCandidato(id: string, via: 'mouse' | 'celular' = 'mouse') {
     if (!this.estado.candidatos.some((c) => c.id === id)) return;
     this.mudar({ selecionadoId: id });
-    this.projetar('mouse');
+    this.projetar(via);
   }
 
   private layoutAtual(): LayoutArtigo {
     return this.estado.material && !this.estado.telaPreta ? this.estado.layoutArtigo : 'cheia';
   }
 
-  projetar(origem: 'mouse' | 'teclado' = 'mouse') {
+  projetar(origem: 'mouse' | 'teclado' | 'celular' = 'mouse') {
     const lista = this.estado.candidatos;
     const idx = lista.findIndex((c) => c.id === this.estado.selecionadoId);
     const c = lista[idx];
@@ -537,7 +708,7 @@ export class ControladorAula {
     this.mudar({ projetado: c, escala: 1 });
   }
 
-  recolher(origem: 'mouse' | 'voz' | 'teclado' | 'sair' | 'nova sessão') {
+  recolher(origem: 'mouse' | 'voz' | 'teclado' | 'sair' | 'nova sessão' | 'celular') {
     if (!this.estado.projetado) {
       this.canal.enviar({ t: 'recolher' });
       return;

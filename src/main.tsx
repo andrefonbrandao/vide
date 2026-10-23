@@ -11,6 +11,7 @@ import { Acervo } from './telas/Acervo';
 import { Aula } from './telas/Aula';
 import { Projecao } from './telas/Projecao';
 import { Registro } from './telas/Registro';
+import { Controle } from './telas/Controle';
 
 type Aba = 'aula' | 'acervo' | 'registro';
 
@@ -42,8 +43,12 @@ function App() {
   );
 }
 
-const ehProjecao = new URLSearchParams(location.search).get('tela') === 'projecao';
+const parametros = new URLSearchParams(location.search);
+const tela = parametros.get('tela');
+const sala = (parametros.get('sala') ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>{ehProjecao ? <Projecao /> : <App />}</StrictMode>,
+  <StrictMode>
+    {tela === 'projecao' ? <Projecao /> : tela === 'controle' && sala ? <Controle codigo={sala} /> : <App />}
+  </StrictMode>,
 );

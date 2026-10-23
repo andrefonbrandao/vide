@@ -327,3 +327,58 @@ button.etiqueta-mat:hover { background: rgba(30, 58, 52, 0.08); }
 }
 .proj-barra-dica { font-weight: 700; font-size: 14px; padding-right: 8px; }
 .projecao-convite { z-index: 15; }
+
+/* ---------- Pareamento com o celular ---------- */
+.modal-fundo { position: fixed; inset: 0; background: rgba(30, 58, 52, 0.45); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+.modal { background: var(--fundo); border-radius: 18px; padding: 24px 28px; width: min(720px, 100%); max-height: 92vh; overflow: auto; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); }
+.modal h2 { margin: 0 0 12px; font-size: 22px; font-weight: 800; }
+.modal-botoes { display: flex; gap: 10px; margin-top: 18px; align-items: center; }
+.pareamento { display: grid; grid-template-columns: 240px 1fr; gap: 22px; align-items: start; }
+@media (max-width: 640px) { .pareamento { grid-template-columns: 1fr; } }
+.qr { background: #fff; border-radius: 12px; padding: 8px; }
+.qr svg { width: 100%; height: auto; display: block; }
+
+/* ---------- Página do celular (controle) ---------- */
+.controle {
+  min-height: 100%; padding: 12px 14px calc(24px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px;
+  max-width: 560px; margin: 0 auto; -webkit-user-select: none; user-select: none;
+}
+.controle-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.chip { font-size: 13px; font-weight: 800; padding: 4px 12px; border-radius: 999px; border: 2px solid var(--tinta); }
+.chip.ok { background: var(--tinta); color: var(--fundo); }
+.chip.alerta { border-color: var(--destaque); }
+.botao-grande {
+  width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 64px;
+  border-radius: 18px; border: 2px solid var(--tinta); background: var(--papel); color: var(--tinta);
+  font-size: 19px; font-weight: 800; cursor: pointer; touch-action: manipulation;
+}
+.botao-grande.primario { background: var(--destaque); border-color: var(--destaque); }
+.botao-grande.destaque { background: var(--tinta); color: var(--fundo); }
+.botao-grande:disabled { opacity: 0.4; }
+.botao-grande:active { transform: scale(0.98); }
+.controle-status { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; font-weight: 700; }
+.controle-status .luz { width: 12px; height: 12px; border-radius: 50%; background: var(--linha); }
+.controle-status.ok .luz { background: #2e8b57; }
+.controle-fala { margin: 8px 0 0; color: var(--tinta-2); font-size: 15px; line-height: 1.4; min-height: 2.8em; }
+.controle-projetor { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; background: var(--papel); border: 1px solid var(--linha); border-radius: 16px; padding: 10px 12px; }
+.controle-projetor .botao-grande { width: auto; padding: 0 18px; min-height: 56px; font-size: 17px; }
+.controle-no-ar { display: flex; flex-direction: column; min-width: 0; }
+.controle-no-ar strong { font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.controle-alternativas h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tinta-2); margin: 0 0 8px; }
+.controle-alternativas ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.alternativa {
+  width: 100%; text-align: left; border: 3px solid var(--linha); background: var(--papel); border-radius: 16px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 4px; cursor: pointer; touch-action: manipulation; color: var(--tinta);
+}
+.alternativa:active { border-color: var(--destaque); }
+.alternativa.no-ar { background: var(--tinta); color: var(--fundo); border-color: var(--destaque); }
+.alternativa-titulo { font-size: 24px; font-weight: 800; }
+.alternativa-texto { font-size: 15px; line-height: 1.35; opacity: 0.85; }
+.alternativa-selo { font-size: 13px; font-weight: 800; }
+.controle-material { background: var(--papel); border: 1px solid var(--linha); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.controle-material-cab { display: flex; justify-content: space-between; gap: 10px; font-size: 15px; }
+.controle-material-cab strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.controle-paginas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.controle-paginas .botao-grande { min-height: 72px; }
+.controle-material-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.controle-rodape { display: flex; justify-content: space-between; align-items: center; gap: 10px; }

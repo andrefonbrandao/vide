@@ -173,3 +173,31 @@ export const IcSetaBaixo = (p: P) => (
     <path d="M6 9l6 6 6-6" />
   </Svg>
 );
+
+/** Celular. */
+export const IcCelular = (p: P) => (
+  <Svg {...p}>
+    <rect x="7" y="2.5" width="10" height="19" rx="2.5" />
+    <path d="M11 18h2" />
+  </Svg>
+);
+
+/** Recolher (seta para a direita saindo da tela). */
+export const IcRecolher = (p: P) => (
+  <Svg {...p}>
+    <rect x="3" y="5" width="14" height="14" rx="2" />
+    <path d="M13 12h8M18 9l3 3-3 3" />
+  </Svg>
+);
+
+/** Setas de página. */
+export const IcAnterior = (p: P) => (
+  <Svg {...p}>
+    <path d="M15 5l-7 7 7 7" />
+  </Svg>
+);
+export const IcProxima = (p: P) => (
+  <Svg {...p}>
+    <path d="M9 5l7 7-7 7" />
+  </Svg>
+);

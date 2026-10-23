@@ -1,10 +1,21 @@
-// Configuração para publicar no Cloudflare (Workers com arquivos estáticos).
-// O Cloudflare roda "npm run build" e publica a pasta "dist".
+// Configuração do Cloudflare (Worker com arquivos estáticos + serviço de mensagens).
+// O Cloudflare roda "npm run build" e publica a pasta "dist" e o worker/index.ts.
 {
   "name": "vide",
   "compatibility_date": "2026-10-01",
+  "main": "worker/index.ts",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
-  }
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // Só os endereços /api/ passam pelo worker; o resto é servido direto.
+    "run_worker_first": ["/api/*"]
+  },
+  // Salas de pareamento celular <-> computador (Durable Objects, plano gratuito).
+  "durable_objects": {
+    "bindings": [{ "name": "SALAS", "class_name": "Sala" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Sala"] }],
+  "workers_dev": true,
+  "preview_urls": false
 }

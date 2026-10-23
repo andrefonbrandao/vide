@@ -90,6 +90,26 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 5. **Clique direito** (ou "tira da tela") recolhe o artigo, e o slide volta a ocupar a tela, no mesmo ponto.
 6. **Ocultar** (ou tecla **.** ponto) deixa o projetor preto por um momento; **Mostrar** traz o material de volta.
 
+## Usar o iPhone como microfone e controle
+
+**Preparar o iPhone (uma vez só):**
+1. Em **Ajustes › Geral › Teclado**, ligue **Ativar Ditado**. Sem isso o Safari não reconhece voz.
+2. Em **Ajustes › Tela e Brilho › Bloqueio Automático**, escolha um tempo longo (ou "Nunca") durante a aula. O Vide tenta manter a tela acesa sozinho, mas isso garante.
+
+**Na aula:**
+1. No computador, abra o Vide e a projeção normalmente.
+2. Na tela da **Aula**, clique em **Celular** › **Gerar QR code**.
+3. No iPhone, abra a **Câmera**, aponte para o código e toque no link que aparece. O Vide abre no Safari, e o selo no alto mostra **"Computador conectado"**. No computador, o botão passa a dizer **"Celular conectado"**.
+4. No iPhone, toque em **Iniciar escuta** e permita o microfone. O microfone do computador para sozinho, para não ouvir em dobro.
+5. Pelo iPhone você pode:
+   - tocar numa **alternativa** para projetá-la;
+   - tocar em **Recolher** para tirar o artigo da tela;
+   - passar as páginas do material (◀ ▶), voltar à **Página inteira**, **Ocultar/Mostrar** e mudar a **Visualização**;
+   - tocar em **Registrar momento**.
+6. Se aparecer **"Toque para retomar a escuta"**, toque no botão. É o Safari que às vezes pausa o microfone e exige um toque para voltar.
+7. Para voltar ao microfone do computador, clique em **Iniciar escuta** no computador. O celular para de escutar.
+8. Se o celular perder a conexão, ele reconecta sozinho quando a internet voltar. O código da sala fica guardado: na próxima aula, basta abrir o mesmo link (ou gerar o QR de novo).
+
 ## Como medir os acertos
 
 Com o .csv aberto no Excel, use a coluna **tipo** para filtrar. Anote:
