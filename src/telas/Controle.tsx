@@ -31,6 +31,17 @@ const TEXTO_VOZ: Record<StatusVoz, string> = {
   'sem-suporte': 'Este navegador não reconhece voz',
 };
 
+/** -1 se a < b, 0 se iguais, 1 se a > b ("0.9.0" < "0.10.0"). */
+function compararVersao(a: string, b: string): number {
+  const pa = a.split('.').map((n) => parseInt(n, 10) || 0);
+  const pb = b.split('.').map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (d) return d < 0 ? -1 : 1;
+  }
+  return 0;
+}
+
 export function Controle({ codigo }: { codigo: string }) {
   const [conexao, setConexao] = useState<StatusConexao>('conectando');
   const [computador, setComputador] = useState(false);
@@ -42,6 +53,7 @@ export function Controle({ codigo }: { codigo: string }) {
   const [digitado, setDigitado] = useState('');
   const [respDigitado, setRespDigitado] = useState<{ ok: boolean; mensagem: string } | null>(null);
   const campoDigitado = useRef<HTMLInputElement>(null);
+  const esperaDigitado = useRef<number | null>(null);
   const salaRef = useRef<ConexaoSala<MsgDoComputador, MsgDoCelular> | null>(null);
   const reconRef = useRef<Reconhecedor | null>(null);
   const travaTela = useRef<WakeLockSentinel | null>(null);
@@ -56,9 +68,25 @@ export function Controle({ codigo }: { codigo: string }) {
       codigo,
       'celular',
       (m) => {
-        if (m.t === 'estado') setEstado(m);
+        if (m.t === 'estado') {
+          setEstado(m);
+          // Celular com versão mais antiga que o computador: recarrega sozinho (uma vez a cada minuto, no máximo).
+          if (m.versao && compararVersao(__VERSAO__, m.versao) < 0) {
+            try {
+              const ultima = Number(sessionStorage.getItem('vide.recarga') ?? 0);
+              if (Date.now() - ultima > 60_000) {
+                sessionStorage.setItem('vide.recarga', String(Date.now()));
+                location.reload();
+              }
+            } catch {
+              /* ignore */
+            }
+          }
+        }
         else if (m.t === 'presenca') setComputador(m.computador > 0);
         else if (m.t === 'resposta-digitado') {
+          if (esperaDigitado.current) window.clearTimeout(esperaDigitado.current);
+          esperaDigitado.current = null;
           setRespDigitado({ ok: m.ok, mensagem: m.mensagem });
           if (m.ok) {
             setDigitado('');
@@ -133,6 +161,7 @@ export function Controle({ codigo }: { codigo: string }) {
     if (navigator.vibrate) navigator.vibrate(15);
   };
 
+  const computadorAntigo = !!estado && compararVersao(estado.versao ?? '0', __VERSAO__) < 0;
   const escutando = voz === 'ouvindo' || voz === 'iniciando' || voz === 'reiniciando';
   const parouSozinho = voz === 'erro';
   const ditadoDesligado = /bloquead|not-allowed|service/i.test(vozDetalhe);
@@ -148,6 +177,12 @@ export function Controle({ codigo }: { codigo: string }) {
 
       {!suporte && (
         <div className="aviso">Este navegador não reconhece voz. No iPhone, use o Safari atualizado.</div>
+      )}
+      {computadorAntigo && (
+        <div className="aviso">
+          O Vide do computador está numa versão antiga. <strong>Recarregue a página no computador</strong> (tecla F5) para todos os
+          botões funcionarem.
+        </div>
       )}
       {aviso && (
         <div className="aviso" onClick={() => setAviso(null)}>
@@ -197,8 +232,19 @@ export function Controle({ codigo }: { codigo: string }) {
           onSubmit={(ev) => {
             ev.preventDefault();
             if (!digitado.trim()) return;
-            setRespDigitado(null);
+            setRespDigitado({ ok: true, mensagem: 'Enviando…' });
             cmd({ t: 'cmd', acao: 'digitar', texto: digitado });
+            // O computador sempre responde; se não responder, provavelmente está com o Vide antigo aberto.
+            if (esperaDigitado.current) window.clearTimeout(esperaDigitado.current);
+            esperaDigitado.current = window.setTimeout(() => {
+              esperaDigitado.current = null;
+              setRespDigitado({
+                ok: false,
+                mensagem: computadorAntigo
+                  ? 'O Vide do computador está desatualizado. Recarregue a página no computador (tecla F5) e tente de novo.'
+                  : 'O computador não respondeu. Confira se o Vide está aberto no computador e recarregue a página lá (F5).',
+              });
+            }, 4_000);
           }}
         >
           <input
