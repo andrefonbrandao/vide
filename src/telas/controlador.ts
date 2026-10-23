@@ -11,6 +11,7 @@ import { inicioDoTexto, resolver, type Projetavel } from '../comum/legislacao';
 import { inicioSessaoAtual, novaSessao, registrar } from '../comum/registro';
 import { detectarComandos, type Comando } from '../voz/comandos';
 import { Detector, chaveReferencia, type Referencia } from '../voz/detector';
+import { lerDigitado } from '../voz/digitado';
 import { Reconhecedor, nomeNavegador, type StatusVoz } from '../voz/reconhecedor';
 import { ConexaoSala, type StatusConexao } from '../remoto/conexao';
 import { gerarCodigo, type EnvioDoComputador, type MsgDoCelular, type MsgDoComputador } from '../remoto/protocolo';
@@ -23,7 +24,7 @@ export interface Candidato {
   aviso: string | null;
   projetavel: Projetavel;
   criadoEm: number;
-  origem: 'parcial' | 'final';
+  origem: 'parcial' | 'final' | 'digitado';
   contexto: boolean;
   /** Trecho de fala (resultado do reconhecedor) que gerou o candidato. */
   trechoId: string;
@@ -39,7 +40,7 @@ export interface Detectado {
   id: number;
   em: number;
   titulo: string;
-  situacao: 'novo' | 'refinado' | 'repetido' | 'fora do acervo' | 'outro diploma' | 'retirado';
+  situacao: 'novo' | 'refinado' | 'repetido' | 'fora do acervo' | 'outro diploma' | 'retirado' | 'digitado';
 }
 
 /** O que a roda do mouse faz: escolher candidato, rolar o artigo projetado ou passar o material. */
@@ -326,6 +327,11 @@ export class ControladorAula {
       case 'rolar':
         this.rolar(m.delta);
         break;
+      case 'digitar': {
+        const r = this.projetarDigitado(m.texto, 'celular');
+        this.sala?.enviar({ t: 'resposta-digitado', ...r });
+        break;
+      }
       case 'marcar':
         this.marcar();
         break;
@@ -688,7 +694,43 @@ export class ControladorAula {
     return this.estado.material && !this.estado.telaPreta ? this.estado.layoutArtigo : 'cheia';
   }
 
-  projetar(origem: 'mouse' | 'teclado' | 'celular' = 'mouse') {
+  /**
+   * Artigo digitado pelo professor ("485 VI", "300 §1", "5 CF"): entra no topo
+   * da lista e vai direto para o projetor (ao lado do slide, se houver material).
+   */
+  projetarDigitado(texto: string, via: 'digitado' | 'celular' = 'digitado'): { ok: boolean; mensagem: string } {
+    const lido = lerDigitado(texto, todosDiplomas(), this.detector.principal);
+    if (!lido.ok) return { ok: false, mensagem: lido.erro };
+    const ref: Referencia = { ...lido.ref, explicito: true, contexto: false, inicio: 0, fim: 0, trecho: texto };
+    const chave = chaveReferencia(ref);
+    const id = `c${seq++}`;
+    const res = resolver(ref, this.indice, id);
+    if (!res) {
+      const titulo = `art. ${ref.art}${ref.sufixo ? `-${ref.sufixo}` : ''} ${abreviacaoDe(ref.diploma)}`;
+      registrar('nao_encontrado', titulo, { chave, trecho: texto, origem: 'digitado' });
+      return { ok: false, mensagem: `${titulo} não está no acervo.` };
+    }
+    const novo: Candidato = {
+      id,
+      chave,
+      titulo: res.titulo,
+      texto: inicioDoTexto(res.texto),
+      aviso: res.aviso,
+      projetavel: res.projetavel,
+      criadoEm: Date.now(),
+      origem: 'digitado',
+      contexto: false,
+      trechoId: `dig:${id}`,
+    };
+    const candidatos = [novo, ...this.estado.candidatos.filter((c) => c.chave !== chave)].slice(0, MAX_CANDIDATOS);
+    registrar('detectado', res.titulo, { chave, trecho: texto, origem: 'digitado', acao: 'digitado', aviso: res.aviso ?? undefined });
+    this.anotar(res.titulo, 'digitado');
+    this.mudar({ candidatos, selecionadoId: id });
+    this.projetar(via);
+    return { ok: true, mensagem: res.aviso ? `${res.titulo} — ${res.aviso}` : `${res.titulo} na tela.` };
+  }
+
+  projetar(origem: 'mouse' | 'teclado' | 'celular' | 'digitado' = 'mouse') {
     const lista = this.estado.candidatos;
     const idx = lista.findIndex((c) => c.id === this.estado.selecionadoId);
     const c = lista[idx];

@@ -39,6 +39,76 @@ function ehInterface(alvo: EventTarget | null): boolean {
   return alvo instanceof Element && !!alvo.closest('[data-ui], button, input, textarea, a, select');
 }
 
+/** Campo para digitar um artigo e mandá-lo direto ao projetor. */
+function DigitarArtigo({ ativa }: { ativa: boolean }) {
+  const ctl = controlador();
+  const [texto, setTexto] = useState('');
+  const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
+  const campo = useRef<HTMLInputElement>(null);
+
+  // Tecla "/" (ou "A") em qualquer ponto da Aula: vai para o campo.
+  useEffect(() => {
+    if (!ativa) return;
+    const tecla = (ev: KeyboardEvent) => {
+      if (ev.target instanceof Element && ev.target.matches('input, textarea, select')) return;
+      if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      if (ev.key === '/' || ev.key === 'a' || ev.key === 'A') {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        campo.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', tecla, true);
+    return () => window.removeEventListener('keydown', tecla, true);
+  }, [ativa]);
+
+  const enviar = () => {
+    if (!texto.trim()) return;
+    const r = ctl.projetarDigitado(texto);
+    setMsg({ ok: r.ok, texto: r.mensagem });
+    if (r.ok) {
+      setTexto('');
+      campo.current?.blur(); // devolve a roda e as teclas para a aula
+    }
+  };
+
+  return (
+    <form
+      className="digitar-artigo"
+      data-ui
+      onSubmit={(ev) => {
+        ev.preventDefault();
+        enviar();
+      }}
+    >
+      <input
+        ref={campo}
+        type="text"
+        value={texto}
+        placeholder="Digitar artigo: 485 VI · 300 §1 · 5 CF"
+        aria-label="Digitar artigo para projetar"
+        autoComplete="off"
+        spellCheck={false}
+        onChange={(ev) => {
+          setTexto(ev.target.value);
+          setMsg(null);
+        }}
+        onKeyDown={(ev) => {
+          if (ev.key === 'Escape') {
+            setTexto('');
+            setMsg(null);
+            ev.currentTarget.blur();
+          }
+        }}
+      />
+      <button type="submit" className="botao" disabled={!texto.trim()}>
+        Projetar
+      </button>
+      {msg && <span className={`digitar-msg${msg.ok ? '' : ' erro'}`}>{msg.texto}</span>}
+    </form>
+  );
+}
+
 export function Aula({ ativa }: { ativa: boolean }) {
   const ctl = controlador();
   const e: EstadoAula = useSyncExternalStore(ctl.assinar, ctl.obter);
@@ -262,6 +332,8 @@ export function Aula({ ativa }: { ativa: boolean }) {
           <div className="aviso" data-ui onClick={() => ctl.fecharAviso()}>{e.aviso}</div>
         )}
 
+
+        <DigitarArtigo ativa={ativa} />
 
         <h3 className="titulo-alternativas">Alternativas</h3>
         {e.candidatos.length === 0 ? (

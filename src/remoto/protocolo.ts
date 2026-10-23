@@ -35,7 +35,8 @@ export type ComandoRemoto =
   | { t: 'cmd'; acao: 'ocultar' }
   | { t: 'cmd'; acao: 'layout'; valor: LayoutArtigo }
   | { t: 'cmd'; acao: 'rolar'; delta: number }
-  | { t: 'cmd'; acao: 'marcar' };
+  | { t: 'cmd'; acao: 'marcar' }
+  | { t: 'cmd'; acao: 'digitar'; texto: string };
 
 /** Celular -> computador. */
 export type MsgDoCelular =
@@ -58,9 +59,15 @@ export interface MsgPararEscuta {
 }
 
 /** Computador -> celular. */
-export type MsgDoComputador = EstadoRemoto | MsgPararEscuta | MsgPresenca;
+/** Resposta ao artigo digitado no celular (erro ou o que foi projetado). */
+export interface MsgRespostaDigitado {
+  t: 'resposta-digitado';
+  ok: boolean;
+  mensagem: string;
+}
+export type MsgDoComputador = EstadoRemoto | MsgPararEscuta | MsgPresenca | MsgRespostaDigitado;
 /** O que o computador envia (a presença vem do próprio serviço). */
-export type EnvioDoComputador = EstadoRemoto | MsgPararEscuta;
+export type EnvioDoComputador = EstadoRemoto | MsgPararEscuta | MsgRespostaDigitado;
 
 const LETRAS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 

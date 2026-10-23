@@ -87,8 +87,14 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
    - O artigo **desliza da direita** e ocupa cerca de 40% da tela; o slide continua visível ao lado.
    - Botão **Visualização** (ou tecla **L**): escolha **ao lado da norma** (padrão) ou **substituir pela norma**.
    - Artigo longo: **clique na roda** e a roda passa a rolar o artigo; clique na roda de novo para voltar às páginas.
-5. **Clique direito** (ou "tira da tela") recolhe o artigo, e o slide volta a ocupar a tela, no mesmo ponto.
-6. **Ocultar** (ou tecla **.** ponto) deixa o projetor preto por um momento; **Mostrar** traz o material de volta.
+5. **Digitar o artigo:** se a voz não pegou (ou você prefere digitar), use o campo **Digitar artigo**, acima das Alternativas. Atalho: aperte **/** (ou **A**) e o cursor já vai para o campo. Escreva e aperte **Enter**: o artigo vai direto para o projetor, ao lado do slide. Exemplos:
+   - `485 VI` · `art. 485, inc. VI` (inciso)
+   - `300 §1` · `1015 pu` (parágrafo; "pu" = parágrafo único)
+   - `1022 II b` (alínea)
+   - `5 CF` · `186 CC` · `3 lei 9.099` (outra lei; sem lei, vale a lei principal)
+   - **Esc** limpa o campo e devolve as teclas para a aula. O mesmo campo existe no iPhone.
+6. **Clique direito** (ou "tira da tela") recolhe o artigo, e o slide volta a ocupar a tela, no mesmo ponto.
+7. **Ocultar** (ou tecla **.** ponto) deixa o projetor preto por um momento; **Mostrar** traz o material de volta.
 
 ## Usar o iPhone como microfone e controle
 
@@ -102,7 +108,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 3. No iPhone, abra a **Câmera**, aponte para o código e toque no link que aparece. O Vide abre no Safari, e o selo no alto mostra **"Computador conectado"**. No computador, o botão passa a dizer **"Celular conectado"**.
 4. No iPhone, toque em **Iniciar escuta** e permita o microfone. O microfone do computador para sozinho, para não ouvir em dobro.
 5. Pelo iPhone você pode:
-   - tocar numa **alternativa** para projetá-la;
+   - tocar numa **alternativa** para projetá-la, ou **digitar o artigo** (ex.: `485 VI`) e tocar em **Projetar**;
    - tocar em **Recolher** para tirar o artigo da tela;
    - passar as páginas do material (◀ ▶), voltar à **Página inteira**, **Ocultar/Mostrar** e mudar a **Visualização**;
    - tocar em **Registrar momento**.

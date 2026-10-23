@@ -39,6 +39,9 @@ export function Controle({ codigo }: { codigo: string }) {
   const [vozDetalhe, setVozDetalhe] = useState('');
   const [parcial, setParcial] = useState('');
   const [aviso, setAviso] = useState<string | null>(null);
+  const [digitado, setDigitado] = useState('');
+  const [respDigitado, setRespDigitado] = useState<{ ok: boolean; mensagem: string } | null>(null);
+  const campoDigitado = useRef<HTMLInputElement>(null);
   const salaRef = useRef<ConexaoSala<MsgDoComputador, MsgDoCelular> | null>(null);
   const reconRef = useRef<Reconhecedor | null>(null);
   const travaTela = useRef<WakeLockSentinel | null>(null);
@@ -55,6 +58,13 @@ export function Controle({ codigo }: { codigo: string }) {
       (m) => {
         if (m.t === 'estado') setEstado(m);
         else if (m.t === 'presenca') setComputador(m.computador > 0);
+        else if (m.t === 'resposta-digitado') {
+          setRespDigitado({ ok: m.ok, mensagem: m.mensagem });
+          if (m.ok) {
+            setDigitado('');
+            campoDigitado.current?.blur(); // fecha o teclado
+          }
+        }
         else if (m.t === 'parar-escuta') {
           reconRef.current?.parar();
           setAviso('O microfone do computador foi ligado; a escuta do celular parou.');
@@ -182,6 +192,37 @@ export function Controle({ codigo }: { codigo: string }) {
       </section>
 
       <section className="controle-alternativas">
+        <form
+          className="digitar-artigo controle-digitar"
+          onSubmit={(ev) => {
+            ev.preventDefault();
+            if (!digitado.trim()) return;
+            setRespDigitado(null);
+            cmd({ t: 'cmd', acao: 'digitar', texto: digitado });
+          }}
+        >
+          <input
+            ref={campoDigitado}
+            type="text"
+            enterKeyHint="send"
+            value={digitado}
+            placeholder="Digitar artigo: 485 VI · 5 CF"
+            aria-label="Digitar artigo para projetar"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            onChange={(ev) => {
+              setDigitado(ev.target.value);
+              setRespDigitado(null);
+            }}
+          />
+          <button type="submit" className="botao" disabled={!digitado.trim()}>
+            Projetar
+          </button>
+          {respDigitado && <span className={`digitar-msg${respDigitado.ok ? '' : ' erro'}`}>{respDigitado.mensagem}</span>}
+        </form>
+
         <h2>Alternativas</h2>
         {!estado?.alternativas.length && <p className="ajuda">Aparecem aqui quando você citar um dispositivo de lei. Toque para projetar.</p>}
         <ul>

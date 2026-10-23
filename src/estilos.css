@@ -382,3 +382,16 @@ button.etiqueta-mat:hover { background: rgba(30, 58, 52, 0.08); }
 .controle-paginas .botao-grande { min-height: 72px; }
 .controle-material-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
 .controle-rodape { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+
+/* ---------- Digitar artigo ---------- */
+.digitar-artigo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.digitar-artigo input {
+  flex: 1 1 220px; min-width: 0; min-height: 40px; padding: 8px 14px; border: 2px solid var(--linha);
+  border-radius: 999px; background: var(--papel); font-weight: 600;
+}
+.digitar-artigo input:focus { outline: none; border-color: var(--tinta); }
+.digitar-msg { flex-basis: 100%; font-size: 14px; color: var(--tinta-2); padding-left: 14px; }
+.digitar-msg.erro { color: #a2361f; font-weight: 600; }
+.controle-digitar { margin-bottom: 14px; }
+.controle-digitar input { font-size: 17px; min-height: 48px; } /* 16px ou mais: o iPhone não dá zoom ao tocar */
+.controle-digitar .botao { min-height: 48px; }
