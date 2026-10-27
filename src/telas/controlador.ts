@@ -799,7 +799,7 @@ export class ControladorAula {
     if (this.comandosFeitos.has(k)) return;
     this.comandosFeitos.add(k);
     if (this.comandosFeitos.size > 500) this.comandosFeitos = new Set([...this.comandosFeitos].slice(-200));
-    const nomes: Record<Comando, string> = { recolher: 'tira da tela', aumentar: 'aumenta a fonte', diminuir: 'diminui a fonte' };
+    const nomes: Record<Comando, string> = { recolher: 'recolher (tira da tela / pode fechar)', aumentar: 'aumenta a fonte', diminuir: 'diminui a fonte' };
     if (!this.estado.projetado) {
       registrar('comando_voz', nomes[c], { trecho, executado: false, motivo: 'nada projetado' });
       return;

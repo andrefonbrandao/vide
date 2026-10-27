@@ -5,6 +5,7 @@ export type Comando = 'recolher' | 'aumentar' | 'diminuir';
 
 const PADROES: [Comando, RegExp][] = [
   ['recolher', /\b(tira|tire|tirar|tirem|retira|retire)( isso| isto| o texto)? da tela\b/],
+  ['recolher', /\bpode fechar\b/],
   ['aumentar', /\b(aumenta|aumente|aumentar|amplia|amplie) (a |essa |esta )?(fonte|letra)\b/],
   ['diminuir', /\b(diminui|diminua|diminuir|reduz|reduza) (a |essa |esta )?(fonte|letra)\b/],
 ];

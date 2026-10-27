@@ -39,7 +39,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
    - **Clique esquerdo:** projeta.
    - **Clique direito:** volta à tela preta.
    - **Clique na roda:** o selo muda para "ROLAR O TEXTO PROJETADO". Agora a roda rola o texto no projetor. Experimente com "artigo mil e quinze". Clique na roda de novo para voltar.
-6. Com algo projetado, diga **"aumenta a fonte"**, depois **"diminui a fonte"** e depois **"tira da tela"**.
+6. Com algo projetado, diga **"aumenta a fonte"**, depois **"diminui a fonte"** e depois **"pode fechar"** (ou "tira da tela").
 7. Abra a aba **Registro**, clique em **Ver** e confira se tudo ficou anotado. Depois clique em **Começar uma nova sessão agora** (ou em **Nova sessão**, na tela da Aula). A tela de trabalho fica limpa e o ensaio não se mistura com a aula; o registro do ensaio continua guardado.
 8. (Opcional) Repita os passos 1 a 3 no **Edge**, para comparar. Lembre-se de importar o CPC nele também.
 
@@ -59,7 +59,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 ### Durante a aula
 
 - Dê a aula normalmente e cite os dispositivos do jeito que você costuma citar. **Não fale de um jeito artificial para o app**: o teste é justamente ver se ele entende o seu jeito natural.
-- Quando um candidato útil aparecer, projete-o com o clique esquerdo. Para tirar, use o clique direito ou diga "tira da tela".
+- Quando um candidato útil aparecer, projete-o com o clique esquerdo. Para tirar, use o clique direito ou diga **"pode fechar"** (ou "tira da tela").
 - **Se você citar algo e nada aparecer, ou aparecer errado, aperte "Registrar momento" (ou a tecla M).** Isso deixa uma anotação no registro, com o horário e a última frase ouvida. Essas marcas são o dado mais importante do teste.
 - Para usar outro material (slides, por exemplo), clique em **Sair**. A escuta pausa e o projetor fica preto. Para voltar, clique em **Retomar a aula**.
 - Se a luz da voz ficar **laranja** ("Reconectando…"), espere alguns segundos: o app reconecta sozinho. Se demorar mais de 30 segundos, confira o Wi-Fi.
@@ -93,7 +93,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
    - `1022 II b` (alínea)
    - `5 CF` · `186 CC` · `3 lei 9.099` (outra lei; sem lei, vale a lei principal)
    - **Esc** limpa o campo e devolve as teclas para a aula. O mesmo campo existe no iPhone.
-6. **Clique direito** (ou "tira da tela") recolhe o artigo, e o slide volta a ocupar a tela, no mesmo ponto.
+6. **Clique direito** (ou dizer **"pode fechar"**) recolhe o artigo, e o slide volta a ocupar a tela, no mesmo ponto.
 7. **Ocultar** (ou tecla **.** ponto) deixa o projetor preto por um momento; **Mostrar** traz o material de volta.
 
 ## Usar o iPhone como microfone e controle
