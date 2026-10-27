@@ -253,7 +253,7 @@ export function Controle({ codigo }: { codigo: string }) {
             enterKeyHint="send"
             value={digitado}
             placeholder="Digitar artigo: 485 VI · 5 CF"
-            aria-label="Digitar artigo para projetar"
+            aria-label="Digitar artigo"
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="characters"
@@ -264,7 +264,7 @@ export function Controle({ codigo }: { codigo: string }) {
             }}
           />
           <button type="submit" className="botao" disabled={!digitado.trim()}>
-            Projetar
+            Ver prévia
           </button>
           {respDigitado && <span className={`digitar-msg${respDigitado.ok ? '' : ' erro'}`}>{respDigitado.mensagem}</span>}
         </form>

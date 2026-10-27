@@ -328,7 +328,7 @@ export class ControladorAula {
         this.rolar(m.delta);
         break;
       case 'digitar': {
-        const r = this.projetarDigitado(m.texto, 'celular');
+        const r = this.adicionarDigitado(m.texto, 'celular');
         this.sala?.enviar({ t: 'resposta-digitado', ...r });
         break;
       }
@@ -696,9 +696,10 @@ export class ControladorAula {
 
   /**
    * Artigo digitado pelo professor ("485 VI", "300 §1", "5 CF"): entra no topo
-   * da lista e vai direto para o projetor (ao lado do slide, se houver material).
+   * das alternativas como prévia. Só vai ao projetor quando ele clicar (ou tocar) nela,
+   * para que um número digitado errado não apareça para a turma.
    */
-  projetarDigitado(texto: string, via: 'digitado' | 'celular' = 'digitado'): { ok: boolean; mensagem: string } {
+  adicionarDigitado(texto: string, via: 'computador' | 'celular' = 'computador'): { ok: boolean; mensagem: string } {
     const lido = lerDigitado(texto, todosDiplomas(), this.detector.principal);
     if (!lido.ok) return { ok: false, mensagem: lido.erro };
     const ref: Referencia = { ...lido.ref, explicito: true, contexto: false, inicio: 0, fim: 0, trecho: texto };
@@ -725,12 +726,14 @@ export class ControladorAula {
     const candidatos = [novo, ...this.estado.candidatos.filter((c) => c.chave !== chave)].slice(0, MAX_CANDIDATOS);
     registrar('detectado', res.titulo, { chave, trecho: texto, origem: 'digitado', acao: 'digitado', aviso: res.aviso ?? undefined });
     this.anotar(res.titulo, 'digitado');
+    this.ultimaInteracao = Date.now();
     this.mudar({ candidatos, selecionadoId: id });
-    this.projetar(via);
-    return { ok: true, mensagem: res.aviso ? `${res.titulo} — ${res.aviso}` : `${res.titulo} na tela.` };
+    const verbo = via === 'celular' ? 'toque' : 'clique (ou aperte Enter de novo)';
+    const aviso = res.aviso ? ` Atenção: ${res.aviso}.` : '';
+    return { ok: true, mensagem: `${res.titulo} está nas alternativas.${aviso} Confira o texto e ${verbo} nele para projetar.` };
   }
 
-  projetar(origem: 'mouse' | 'teclado' | 'celular' | 'digitado' = 'mouse') {
+  projetar(origem: 'mouse' | 'teclado' | 'celular' = 'mouse') {
     const lista = this.estado.candidatos;
     const idx = lista.findIndex((c) => c.id === this.estado.selecionadoId);
     const c = lista[idx];

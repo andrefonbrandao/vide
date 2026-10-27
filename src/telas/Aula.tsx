@@ -39,7 +39,7 @@ function ehInterface(alvo: EventTarget | null): boolean {
   return alvo instanceof Element && !!alvo.closest('[data-ui], button, input, textarea, a, select');
 }
 
-/** Campo para digitar um artigo e mandá-lo direto ao projetor. */
+/** Campo para digitar um artigo: ele entra nas alternativas como prévia (não vai ao projetor sozinho). */
 function DigitarArtigo({ ativa }: { ativa: boolean }) {
   const ctl = controlador();
   const [texto, setTexto] = useState('');
@@ -64,7 +64,7 @@ function DigitarArtigo({ ativa }: { ativa: boolean }) {
 
   const enviar = () => {
     if (!texto.trim()) return;
-    const r = ctl.projetarDigitado(texto);
+    const r = ctl.adicionarDigitado(texto);
     setMsg({ ok: r.ok, texto: r.mensagem });
     if (r.ok) {
       setTexto('');
@@ -86,7 +86,7 @@ function DigitarArtigo({ ativa }: { ativa: boolean }) {
         type="text"
         value={texto}
         placeholder="Digitar artigo: 485 VI · 300 §1 · 5 CF"
-        aria-label="Digitar artigo para projetar"
+        aria-label="Digitar artigo"
         autoComplete="off"
         spellCheck={false}
         onChange={(ev) => {
@@ -102,7 +102,7 @@ function DigitarArtigo({ ativa }: { ativa: boolean }) {
         }}
       />
       <button type="submit" className="botao" disabled={!texto.trim()}>
-        Projetar
+        Ver prévia
       </button>
       {msg && <span className={`digitar-msg${msg.ok ? '' : ' erro'}`}>{msg.texto}</span>}
     </form>
@@ -361,6 +361,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
                 <span className="meta">
                   {idade(agora - c.criadoEm)}
                   {c.contexto ? ' · pelo contexto' : ''}
+                  {c.origem === 'digitado' ? ' · digitado' : ''}
                 </span>
                 <span className="trecho">{c.texto}</span>
                 {c.aviso && <span className="alerta">⚠ {c.aviso}</span>}
