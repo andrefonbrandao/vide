@@ -295,19 +295,33 @@ button.etiqueta-mat:hover { background: rgba(30, 58, 52, 0.08); }
 .opcao-menu:hover { background: rgba(30, 58, 52, 0.08); }
 .opcao-menu.atual { background: var(--tinta); color: var(--fundo); }
 .opcao-menu-desc { display: block; font-size: 13px; opacity: 0.85; }
-.menu-acervo { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 18px 0 8px; padding-bottom: 12px; border-bottom: 2px solid var(--linha); }
-.aba-acervo {
-  display: inline-flex; align-items: center; gap: 8px; border: 2px solid var(--tinta); background: transparent; color: var(--tinta);
-  border-radius: 999px; padding: 8px 18px; font-weight: 800; cursor: pointer; min-height: 44px;
+/* Abas do acervo, no estilo das abas do navegador: a aba atual "encosta" no conteúdo. */
+.menu-acervo {
+  display: flex; gap: 4px; align-items: flex-end; margin: 18px 0 20px; padding: 0 8px;
+  border-bottom: 2px solid var(--tinta);
 }
-.aba-acervo:hover { background: rgba(30, 58, 52, 0.08); }
-.aba-acervo[aria-current='page'] { background: var(--tinta); color: var(--fundo); }
-.mais-acervo { position: relative; margin-left: auto; }
+.aba-acervo {
+  position: relative; display: inline-flex; align-items: center; gap: 8px; margin-bottom: -2px;
+  border: 2px solid transparent; border-bottom: none; border-radius: 12px 12px 0 0;
+  background: rgba(30, 58, 52, 0.07); color: var(--tinta-2);
+  padding: 10px 22px 12px; font-weight: 700; cursor: pointer; min-height: 46px;
+}
+.aba-acervo:hover { background: rgba(30, 58, 52, 0.13); color: var(--tinta); }
+.aba-acervo[aria-current='page'] {
+  background: var(--fundo); color: var(--tinta); font-weight: 800;
+  border-color: var(--tinta); padding-bottom: 14px; z-index: 1;
+}
+/* Tampa a linha de baixo sob a aba atual, para ela se ligar ao conteúdo. */
+.aba-acervo[aria-current='page']::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 4px; background: var(--fundo);
+}
+.mais-acervo { position: relative; margin-left: auto; align-self: center; margin-bottom: 4px; }
 .botao-mais {
-  width: 46px; height: 46px; border-radius: 50%; border: none; background: var(--destaque); color: var(--tinta);
+  width: 38px; height: 38px; border-radius: 50%; border: none; background: var(--destaque); color: var(--tinta);
   display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
 }
 .botao-mais:hover, .botao-mais.ativo { filter: brightness(1.05); box-shadow: 0 0 0 4px rgba(232, 115, 90, 0.3); }
+@media (max-width: 560px) { .aba-acervo { padding: 10px 12px 12px; } }
 .mais-acervo .popover-menu { left: auto; right: 0; }
 .vazio-acervo { border: 3px dashed var(--linha); border-radius: var(--raio); padding: 28px; text-align: center; color: var(--tinta-2); margin-top: 16px; }
 .vazio-acervo p { margin: 0 0 14px; font-size: 17px; }
