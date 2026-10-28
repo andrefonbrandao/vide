@@ -409,3 +409,4 @@ button.etiqueta-mat:hover { background: rgba(30, 58, 52, 0.08); }
 .controle-digitar { margin-bottom: 14px; }
 .controle-digitar input { font-size: 17px; min-height: 48px; } /* 16px ou mais: o iPhone não dá zoom ao tocar */
 .controle-digitar .botao { min-height: 48px; }
+.aviso-pacote { margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; background: rgba(30, 58, 52, 0.08); font-weight: 600; cursor: pointer; }

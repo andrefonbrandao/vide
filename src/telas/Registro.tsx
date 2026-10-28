@@ -13,12 +13,38 @@ import {
   sessaoAtual,
   type ResumoSessao,
 } from '../comum/registro';
+import { montarPacote, nomeArquivoPacote } from '../comum/pacote';
+import { carregarIndice } from '../dados/db';
+import { abreviacaoDe, todosDiplomas } from '../dados/diplomas';
+
+/** "CPC — Código de Processo Civil (Lei 13.105/2015)". */
+function nomeDaLei(sigla: string): string {
+  const d = todosDiplomas().find((x) => x.sigla === sigla);
+  return d && d.nome && d.nome !== d.abreviacao ? `${d.abreviacao} — ${d.nome}` : abreviacaoDe(sigla);
+}
+
+async function pacoteDa(s: ResumoSessao): Promise<string> {
+  const [ev, indice] = await Promise.all([eventosDaSessao(s.id), carregarIndice()]);
+  return montarPacote(ev, indice, nomeDaLei);
+}
 
 export function Registro() {
   const [sessoes, setSessoes] = useState<ResumoSessao[]>([]);
   const [aberta, setAberta] = useState<string | null>(null);
   const [eventos, setEventos] = useState<EventoRegistro[]>([]);
   const [atual, setAtual] = useState(sessaoAtual());
+  const [avisoPacote, setAvisoPacote] = useState<{ id: string; texto: string } | null>(null);
+
+  const copiarPacote = async (s: ResumoSessao) => {
+    const texto = await pacoteDa(s);
+    try {
+      await navigator.clipboard.writeText(texto);
+      setAvisoPacote({ id: s.id, texto: 'Pacote copiado. No claude.ai, cole (Ctrl + V) e escreva o que você quer com ele.' });
+    } catch {
+      baixar(nomeArquivoPacote(s.inicio), texto, 'text/plain');
+      setAvisoPacote({ id: s.id, texto: 'Não foi possível copiar; o pacote foi baixado como arquivo. Anexe-o no claude.ai.' });
+    }
+  };
 
   const recarregar = async () => setSessoes(await listarSessoes());
   useEffect(() => {
@@ -42,6 +68,11 @@ export function Registro() {
         e recolhido, os comandos de voz e as quedas do reconhecimento. Cada aula vira uma <strong>sessão</strong> (uma nova
         começa sozinha depois de 3 horas sem uso). O botão abaixo começa uma sessão nova na hora e limpa a tela da aula
         (transcrição, candidatos e referências); as sessões anteriores continuam guardadas aqui.
+      </p>
+      <p className="ajuda">
+        <strong>Material de revisão:</strong> em cada aula, <strong>Copiar pacote para o Claude</strong> junta a transcrição e o
+        texto integral dos dispositivos que você projetou (as alternativas que não foram projetadas ficam de fora). Cole no
+        claude.ai e peça o que quiser: resumo, questões, esquema…
       </p>
       <p>
         <button
@@ -67,6 +98,18 @@ export function Registro() {
               </strong>
               {s.id === atual && <span className="etiqueta">sessão atual</span>}
               <span className="espaco" />
+              <button className="botao pequeno escuro" onClick={() => void copiarPacote(s)} title="Transcrição + texto integral dos dispositivos projetados">
+                Copiar pacote para o Claude
+              </button>
+              <button
+                className="botao pequeno"
+                onClick={async () => {
+                  baixar(nomeArquivoPacote(s.inicio), await pacoteDa(s), 'text/plain');
+                  setAvisoPacote({ id: s.id, texto: 'Pacote baixado (pasta Downloads). No claude.ai, anexe o arquivo e escreva o que você quer com ele.' });
+                }}
+              >
+                Baixar pacote
+              </button>
               <button className="botao pequeno" onClick={() => void exportar(s, 'txt')}>Exportar .txt</button>
               <button className="botao pequeno" onClick={() => void exportar(s, 'csv')}>Exportar .csv (Excel)</button>
               <button className="botao pequeno" onClick={() => setAberta(aberta === s.id ? null : s.id)}>
@@ -84,6 +127,11 @@ export function Registro() {
                 Apagar
               </button>
             </div>
+            {avisoPacote?.id === s.id && (
+              <p className="aviso-pacote" onClick={() => setAvisoPacote(null)}>
+                {avisoPacote.texto}
+              </p>
+            )}
             <div className="numeros">
               <div><strong>{c.fala ?? 0}</strong><span>trechos de fala</span></div>
               <div><strong>{c.detectado ?? 0}</strong><span>referências detectadas</span></div>

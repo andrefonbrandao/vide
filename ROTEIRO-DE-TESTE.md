@@ -71,6 +71,14 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 3. Clique em **Exportar .csv (Excel)**. É a mesma informação em tabela, boa para contar.
 4. Os dois arquivos vão para a pasta **Downloads**.
 
+### Material de revisão (com o seu plano do Claude)
+
+1. Na aba **Registro**, na aula desejada, clique em **Copiar pacote para o Claude**.
+   - O pacote tem só duas partes: a **transcrição** da aula (com a marca do horário em que cada artigo foi projetado) e o **texto integral dos dispositivos que você projetou**. As alternativas que apareceram mas não foram projetadas ficam de fora. Falas de teste e registros técnicos também.
+2. Abra o **claude.ai**, cole (**Ctrl + V**) e escreva o que você quer: um resumo para revisão, questões com gabarito, um esquema, um texto para os alunos…
+3. Prefere um arquivo? Use **Baixar pacote** e anexe o .txt no claude.ai.
+4. Lembre-se: a transcrição é automática e pode ter erros. Revise o material antes de entregá-lo aos alunos.
+
 ## Usar seus slides ou PDFs junto com os artigos
 
 **Preparar (em casa):**
