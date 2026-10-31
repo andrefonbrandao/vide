@@ -16,6 +16,19 @@ import { Reconhecedor, nomeNavegador, type StatusVoz } from '../voz/reconhecedor
 import { ConexaoSala, type StatusConexao } from '../remoto/conexao';
 import { gerarCodigo, type EnvioDoComputador, type MsgDoCelular, type MsgDoComputador } from '../remoto/protocolo';
 
+const CHAVE_ESCALA = 'vide.escalaFonte';
+const ESCALA_MIN = 0.6;
+const ESCALA_MAX = 2.5;
+/** Tamanho da fonte escolhido pelo professor (1 = 100%). Fica guardado neste navegador. */
+function escalaGuardada(): number {
+  try {
+    const v = Number(localStorage.getItem(CHAVE_ESCALA));
+    return v >= ESCALA_MIN && v <= ESCALA_MAX ? v : 1;
+  } catch {
+    return 1;
+  }
+}
+
 export interface Candidato {
   id: string;
   chave: string;
@@ -131,7 +144,7 @@ export class ControladorAula {
     selecionadoId: null,
     modoRoda: 'candidatos',
     projetado: null,
-    escala: 1,
+    escala: escalaGuardada(),
     projecao: { conectada: false, telaCheia: false, fracao: 0, rolavel: false, aspecto: 16 / 9, versao: __VERSAO__, materialCarregado: null },
     detectados: [],
     totalAcervo: 0,
@@ -332,6 +345,11 @@ export class ControladorAula {
         this.sala?.enviar({ t: 'resposta-digitado', ...r });
         break;
       }
+      case 'fonte':
+        if (m.delta === 0) this.fonteNormal('celular');
+        else if (m.delta > 0) this.aumentarFonte('celular');
+        else this.diminuirFonte('celular');
+        break;
       case 'marcar':
         this.marcar();
         break;
@@ -360,6 +378,7 @@ export class ControladorAula {
         ? { nome: e.material.nome, pagina: e.material.pagina, paginas: e.material.paginas, zoom: !ehInteira(e.material.regiao) }
         : null,
       telaPreta: e.telaPreta,
+      escala: e.escala,
       layout: e.layoutArtigo,
       escutaComputador: e.escutando,
       projecaoConectada: e.projecao.conectada,
@@ -739,7 +758,7 @@ export class ControladorAula {
     const c = lista[idx];
     if (!c) return;
     this.ultimaInteracao = Date.now();
-    this.canal.enviar({ t: 'projetar', item: c.projetavel, escala: 1, layout: this.layoutAtual() });
+    this.canal.enviar({ t: 'projetar', item: c.projetavel, escala: this.estado.escala, layout: this.layoutAtual() });
     registrar('projetado', c.titulo, {
       chave: c.chave,
       posicao: `${idx + 1} de ${lista.length}`,
@@ -750,7 +769,7 @@ export class ControladorAula {
       projecao_conectada: this.estado.projecao.conectada,
       sobre_material: this.estado.material && !this.estado.telaPreta ? `${this.estado.material.nome} p. ${this.estado.material.pagina} (${this.estado.layoutArtigo})` : undefined,
     });
-    this.mudar({ projetado: c, escala: 1 });
+    this.mudar({ projetado: c });
   }
 
   recolher(origem: 'mouse' | 'voz' | 'teclado' | 'sair' | 'nova sessão' | 'celular') {
@@ -781,17 +800,31 @@ export class ControladorAula {
     if (this.estado.projetado) this.canal.enviar({ t: 'rolar', delta });
   }
 
-  private mudarEscala(fator: number) {
-    const escala = Math.max(0.6, Math.min(2.5, this.estado.escala * fator));
+  /**
+   * Tamanho da fonte da norma projetada, em passos de 10%. Vale para tudo o que
+   * for projetado depois e fica guardado para as próximas aulas.
+   */
+  definirEscala(valor: number, via: 'mouse' | 'teclado' | 'voz' | 'celular' = 'mouse') {
+    const escala = Math.round(Math.max(ESCALA_MIN, Math.min(ESCALA_MAX, valor)) * 10) / 10;
+    if (escala === this.estado.escala) return;
+    try {
+      localStorage.setItem(CHAVE_ESCALA, String(escala));
+    } catch {
+      /* ignore */
+    }
     this.canal.enviar({ t: 'escala', escala });
+    registrar('sessao', `fonte da projeção: ${Math.round(escala * 100)}%`, { via });
     this.mudar({ escala });
   }
 
-  aumentarFonte() {
-    this.mudarEscala(1.15);
+  aumentarFonte(via: 'mouse' | 'teclado' | 'voz' | 'celular' = 'teclado') {
+    this.definirEscala(this.estado.escala + 0.1, via);
   }
-  diminuirFonte() {
-    this.mudarEscala(1 / 1.15);
+  diminuirFonte(via: 'mouse' | 'teclado' | 'voz' | 'celular' = 'teclado') {
+    this.definirEscala(this.estado.escala - 0.1, via);
+  }
+  fonteNormal(via: 'mouse' | 'teclado' | 'voz' | 'celular' = 'mouse') {
+    this.definirEscala(1, via);
   }
 
   private comandoVoz(c: Comando, chave: string, trecho: string) {
@@ -800,14 +833,15 @@ export class ControladorAula {
     this.comandosFeitos.add(k);
     if (this.comandosFeitos.size > 500) this.comandosFeitos = new Set([...this.comandosFeitos].slice(-200));
     const nomes: Record<Comando, string> = { recolher: 'recolher (tira da tela / pode fechar)', aumentar: 'aumenta a fonte', diminuir: 'diminui a fonte' };
-    if (!this.estado.projetado) {
+    // Recolher só faz sentido com algo na tela; a fonte vale também para a próxima projeção.
+    if (c === 'recolher' && !this.estado.projetado) {
       registrar('comando_voz', nomes[c], { trecho, executado: false, motivo: 'nada projetado' });
       return;
     }
     registrar('comando_voz', nomes[c], { trecho, executado: true });
     if (c === 'recolher') this.recolher('voz');
-    else if (c === 'aumentar') this.aumentarFonte();
-    else this.diminuirFonte();
+    else if (c === 'aumentar') this.aumentarFonte('voz');
+    else this.diminuirFonte('voz');
   }
 
   // ---------- projeção ----------
@@ -899,7 +933,6 @@ export class ControladorAula {
       selecionadoId: null,
       detectados: [],
       modoRoda: this.estado.material ? 'material' : 'candidatos',
-      escala: 1,
       saiu: false,
       aviso: 'Nova sessão iniciada: a tela foi limpa.',
       sessaoInicio: inicioSessaoAtual(),

@@ -226,6 +226,21 @@ export function Controle({ codigo }: { codigo: string }) {
         </button>
       </section>
 
+      <section className="controle-fonte-cel">
+        <span className="ajuda">Fonte da norma no projetor</span>
+        <div className="controle-fonte">
+          <button className="botao" onClick={() => cmd({ t: 'cmd', acao: 'fonte', delta: -1 })} aria-label="Diminuir fonte" disabled={(estado?.escala ?? 1) <= 0.6}>
+            A−
+          </button>
+          <button className="botao controle-fonte-valor" onClick={() => cmd({ t: 'cmd', acao: 'fonte', delta: 0 })} title="Voltar a 100%">
+            {Math.round((estado?.escala ?? 1) * 100)}%
+          </button>
+          <button className="botao" onClick={() => cmd({ t: 'cmd', acao: 'fonte', delta: 1 })} aria-label="Aumentar fonte" disabled={(estado?.escala ?? 1) >= 2.5}>
+            A+
+          </button>
+        </div>
+      </section>
+
       <section className="controle-alternativas">
         <form
           className="digitar-artigo controle-digitar"

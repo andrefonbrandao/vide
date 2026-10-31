@@ -24,7 +24,8 @@ Este protótipo serve para **testar em sala se o reconhecimento de voz funciona*
   - clique esquerdo: projeta o candidato selecionado;
   - clique direito: volta à tela preta;
   - clique na roda: alterna a roda entre "percorrer candidatos" e "rolar o texto projetado".
-- **Comandos de voz** (só quando há algo projetado): "pode fechar" ou "tira da tela", "aumenta a fonte" e "diminui a fonte".
+- **Comandos de voz**: "pode fechar" ou "tira da tela" (com algo projetado), "aumenta a fonte" e "diminui a fonte".
+- **Tamanho da fonte da norma**: botões A− / A+ na Aula e no celular (teclas + e −). Fica guardado neste navegador.
 - **Atalhos de teclado** (opcionais): setas ou PageUp/PageDown = roda; Enter = projetar; B = recolher; R = alternar a roda; M = marcar momento; + e − mudam a fonte.
 - **Registro de teste** com horário: falas, referências detectadas, projeções, recolhimentos, comandos de voz, quedas da voz e momentos marcados. Exporta em **.txt** e **.csv** (abre no Excel).
 

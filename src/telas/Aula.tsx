@@ -377,7 +377,6 @@ export function Aula({ ativa }: { ativa: boolean }) {
           {e.projetado ? (
             <span>
               No projetor: <span className="titulo">{e.projetado.titulo}</span>
-              {e.escala !== 1 && <span className="ajuda"> · fonte {Math.round(e.escala * 100)}%</span>}
               {e.modoRoda === 'rolar' && (
                 <span className="ajuda">
                   {' '}· a roda está rolando o texto{e.projecao.rolavel ? ` (${Math.round(e.projecao.fracao * 100)}%)` : ' (já cabe inteiro na tela)'}
@@ -401,6 +400,18 @@ export function Aula({ ativa }: { ativa: boolean }) {
           <button className="botao com-icone" onClick={() => ctl.marcar()} title="Anota no registro de teste que algo deu errado aqui (tecla M)">
             <IcPin /> Registrar momento
           </button>
+          <div className="controle-fonte" role="group" aria-label="Tamanho da fonte na projeção">
+            <span className="controle-fonte-rotulo">Fonte</span>
+            <button className="botao pequeno" onClick={() => ctl.diminuirFonte('mouse')} disabled={e.escala <= 0.6} title="Diminuir a fonte da norma projetada (tecla −)" aria-label="Diminuir fonte">
+              A−
+            </button>
+            <button className="botao pequeno controle-fonte-valor" onClick={() => ctl.fonteNormal('mouse')} disabled={e.escala === 1} title="Voltar ao tamanho normal (100%)">
+              {Math.round(e.escala * 100)}%
+            </button>
+            <button className="botao pequeno" onClick={() => ctl.aumentarFonte('mouse')} disabled={e.escala >= 2.5} title="Aumentar a fonte da norma projetada (tecla +)" aria-label="Aumentar fonte">
+              A+
+            </button>
+          </div>
         </div>
       </div>
 

@@ -39,7 +39,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
    - **Clique esquerdo:** projeta.
    - **Clique direito:** volta à tela preta.
    - **Clique na roda:** o selo muda para "ROLAR O TEXTO PROJETADO". Agora a roda rola o texto no projetor. Experimente com "artigo mil e quinze". Clique na roda de novo para voltar.
-6. Com algo projetado, diga **"aumenta a fonte"**, depois **"diminui a fonte"** e depois **"pode fechar"** (ou "tira da tela").
+6. Com algo projetado, ajuste o **tamanho da fonte** nos botões **A−** e **A+** (embaixo, à esquerda; clicar na porcentagem volta a 100%). Também valem as teclas **+** e **−** e a voz: "aumenta a fonte", "diminui a letra", "letra maior". O tamanho escolhido fica guardado para os próximos artigos e as próximas aulas. Depois diga **"pode fechar"** (ou "tira da tela").
 7. Abra a aba **Registro**, clique em **Ver** e confira se tudo ficou anotado. Depois clique em **Começar uma nova sessão agora** (ou em **Nova sessão**, na tela da Aula). A tela de trabalho fica limpa e o ensaio não se mistura com a aula; o registro do ensaio continua guardado.
 8. (Opcional) Repita os passos 1 a 3 no **Edge**, para comparar. Lembre-se de importar o CPC nele também.
 
@@ -118,6 +118,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 5. Pelo iPhone você pode:
    - tocar numa **alternativa** para projetá-la, ou **digitar o artigo** (ex.: `485 VI`) e tocar em **Ver prévia**: ele aparece nas Alternativas, e você toca nele para projetar;
    - tocar em **Recolher** para tirar o artigo da tela;
+   - ajustar a **fonte da norma no projetor** (A− / A+);
    - passar as páginas do material (◀ ▶), voltar à **Página inteira**, **Ocultar/Mostrar** e mudar a **Visualização**;
    - tocar em **Registrar momento**.
 6. Se aparecer **"Toque para retomar a escuta"**, toque no botão. É o Safari que às vezes pausa o microfone e exige um toque para voltar.

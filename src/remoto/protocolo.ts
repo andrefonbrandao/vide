@@ -19,6 +19,8 @@ export interface EstadoRemoto {
   projetadoTitulo: string | null;
   material: { nome: string; pagina: number; paginas: number; zoom: boolean } | null;
   telaPreta: boolean;
+  /** Tamanho da fonte da norma projetada (1 = 100%). */
+  escala?: number;
   layout: LayoutArtigo;
   /** O microfone do computador está ligado. */
   escutaComputador: boolean;
@@ -36,6 +38,7 @@ export type ComandoRemoto =
   | { t: 'cmd'; acao: 'layout'; valor: LayoutArtigo }
   | { t: 'cmd'; acao: 'rolar'; delta: number }
   | { t: 'cmd'; acao: 'marcar' }
+  | { t: 'cmd'; acao: 'fonte'; delta: number }
   | { t: 'cmd'; acao: 'digitar'; texto: string };
 
 /** Celular -> computador. */

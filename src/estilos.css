@@ -410,3 +410,13 @@ button.etiqueta-mat:hover { background: rgba(30, 58, 52, 0.08); }
 .controle-digitar input { font-size: 17px; min-height: 48px; } /* 16px ou mais: o iPhone não dá zoom ao tocar */
 .controle-digitar .botao { min-height: 48px; }
 .aviso-pacote { margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; background: rgba(30, 58, 52, 0.08); font-weight: 600; cursor: pointer; }
+
+/* ---------- Tamanho da fonte da projeção ---------- */
+.aula-esq-rodape { align-items: center; }
+.controle-fonte { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.controle-fonte-rotulo { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tinta-2); margin-right: 2px; }
+.controle-fonte .botao { min-width: 44px; font-weight: 800; }
+.controle-fonte-valor { min-width: 64px; font-variant-numeric: tabular-nums; }
+.controle-fonte-valor:disabled { opacity: 1; border-color: transparent; }
+.controle-fonte-cel { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 6px 0 14px; }
+.controle-fonte-cel .botao { min-height: 48px; min-width: 56px; font-size: 18px; }
