@@ -13,8 +13,16 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-Pacote aberto em 2026-11-03, a partir da versão 0.16.0. **Fechado e publicado como versão 0.17.0.**
-O próximo pacote recomeça este arquivo a partir da versão publicada.
+**Pacote 2** aberto em 2026-11-03, a partir da versão 0.17.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| — | (nenhuma ainda) | — |
+
+## Pacotes anteriores
+
+### Pacote 1 (publicado como 0.17.0 em 2026-11-03)
+
 
 | # | Ideia | Situação |
 |---|-------|----------|
