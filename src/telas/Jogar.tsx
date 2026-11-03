@@ -49,6 +49,13 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
   const [retrato, setRetrato] = useState<Retrato | null>(null);
   const [fim, setFim] = useState<string | null>(null);
   const [prazoLocal, setPrazoLocal] = useState(0);
+  const [duracao, setDuracao] = useState(1);
+  /** Conceito: quando chega a próxima dica e quando pode tentar de novo (relógio deste celular). */
+  const [proximaDicaEm, setProximaDicaEm] = useState<number | null>(null);
+  const [liberaEm, setLiberaEm] = useState(0);
+  const [textoResposta, setTextoResposta] = useState('');
+  const [enviandoTexto, setEnviandoTexto] = useState(false);
+  const indiceRef = useRef(-1);
   const [agora, setAgora] = useState(Date.now());
   const salaRef = useRef<ConexaoSala<ParaAluno, DoAluno> | null>(null);
   const jaConectouRef = useRef(false);
@@ -81,7 +88,20 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
       (m) => {
         if (m.t === 'jogo') {
           setRetrato(m);
-          if (m.pergunta) setPrazoLocal(Date.now() + m.pergunta.restanteMs);
+          if (m.pergunta) {
+            setPrazoLocal(Date.now() + m.pergunta.restanteMs);
+            if (indiceRef.current !== m.indice) {
+              indiceRef.current = m.indice;
+              setDuracao(Math.max(1, m.pergunta.restanteMs));
+              setTextoResposta('');
+            }
+            setProximaDicaEm(m.pergunta.proximaDicaMs == null ? null : Date.now() + m.pergunta.proximaDicaMs);
+          }
+          setLiberaEm(m.voce?.aguardarMs ? Date.now() + m.voce.aguardarMs : 0);
+          setEnviandoTexto(false);
+        } else if (m.t === 'tentativa') {
+          setEnviandoTexto(false);
+          if (m.resultado === 'certo' && navigator.vibrate) navigator.vibrate([30, 40, 30]);
         } else if (m.t === 'anfitriao') setProfessorOn(m.on);
         else if (m.t === 'recusado') {
           setFim(m.motivo);
@@ -280,8 +300,58 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
             <span className="jogar-tempo">{Math.ceil(Math.max(0, prazoLocal - agora) / 1000)}s</span>
           </div>
           <div className="jogar-barra-tempo">
-            <span style={{ width: `${Math.max(0, Math.min(100, ((prazoLocal - agora) / Math.max(1, p.restanteMs)) * 100))}%` }} />
+            <span style={{ width: `${Math.max(0, Math.min(100, ((prazoLocal - agora) / duracao) * 100))}%` }} />
           </div>
+          {p.tipo === 'conceito' ? (
+            <>
+              <p className="jogar-enunciado">Quem sou eu?</p>
+              <ol className="jogar-dicas">
+                {(p.dicas ?? []).map((d, i) => (
+                  <li key={i} className={i === (p.dicas?.length ?? 0) - 1 ? 'nova' : ''}>
+                    <span className="jogar-dica-num">Dica {i + 1}</span> {d}
+                  </li>
+                ))}
+              </ol>
+              {proximaDicaEm !== null && v.resposta == null && (
+                <p className="ajuda" style={{ margin: 0 }}>
+                  Próxima dica em {Math.max(0, Math.ceil((proximaDicaEm - agora) / 1000))} s
+                </p>
+              )}
+              {v.resposta != null ? (
+                <p className="jogar-resultado certo">Acertou! Aguarde o fim da rodada.</p>
+              ) : (
+                <form
+                  className="jogar-form-conceito"
+                  onSubmit={(ev) => {
+                    ev.preventDefault();
+                    const t = textoResposta.trim();
+                    if (!t || agora < liberaEm || enviandoTexto) return;
+                    setEnviandoTexto(true);
+                    salaRef.current?.enviar({ t: 'responder-texto', indice: retrato.indice, texto: t });
+                  }}
+                >
+                  <input
+                    className="jogar-campo"
+                    value={textoResposta}
+                    onChange={(e) => setTextoResposta(e.target.value)}
+                    placeholder="Sua resposta"
+                    maxLength={120}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    enterKeyHint="send"
+                    aria-label="Sua resposta"
+                  />
+                  <button className="botao-grande primario" disabled={!textoResposta.trim() || agora < liberaEm || enviandoTexto}>
+                    {agora < liberaEm ? `Aguarde ${Math.ceil((liberaEm - agora) / 1000)} s` : 'Responder'}
+                  </button>
+                  {v.errou && <p className="jogar-errou">{agora < liberaEm ? 'Ainda não. Pense mais um pouco…' : 'Ainda não. Tente outra resposta.'}</p>}
+                </form>
+              )}
+            </>
+          ) : (
+          <>
           <p className="jogar-enunciado">{p.enunciado}</p>
           <div className="jogar-alternativas">
             {p.alternativas.map((a, i) => (
@@ -300,19 +370,27 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
             ))}
           </div>
           {v.resposta != null && <p className="jogar-enviada">Resposta enviada. Aguarde o resultado.</p>}
+          </>
+          )}
         </div>
       )}
 
       {(retrato.fase === 'resultado' || retrato.fase === 'ranking') && (
         <div className="jogar-centro">
           <p className={`jogar-resultado ${v.acertou ? 'certo' : 'errado'}`}>
-            {v.resposta == null ? 'Sem resposta' : v.acertou ? 'Acertou!' : 'Não foi dessa vez'}
+            {v.acertou ? 'Acertou!' : v.resposta == null && !retrato.conceito ? 'Sem resposta' : 'Não foi dessa vez'}
           </p>
           {retrato.ranking && v.acertou && <p className="jogar-grande">+{v.ganho} pontos</p>}
-          {retrato.correta != null && (
-            <p className="ajuda">
-              Resposta correta: <strong>{LETRAS[retrato.correta]}</strong>
+          {retrato.conceito ? (
+            <p className="jogar-posicao">
+              Resposta: <strong>{retrato.conceito}</strong>
             </p>
+          ) : (
+            retrato.correta != null && (
+              <p className="ajuda">
+                Resposta correta: <strong>{LETRAS[retrato.correta]}</strong>
+              </p>
+            )
           )}
           {retrato.ranking && v.posicao != null && (
             <p className="jogar-posicao">

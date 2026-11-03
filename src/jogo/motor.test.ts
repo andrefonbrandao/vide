@@ -77,3 +77,43 @@ describe('motor do jogo', () => {
     expect(m.visaoAlunoComum(7_000).correta).toBe(3);
   });
 });
+
+describe('adivinhe o conceito', () => {
+  const c: QuestaoJogo = {
+    tipo: 'conceito', enunciado: 'Sentença', alternativas: [], correta: 0, tempo: 60, explicacao: '', fundamento: '',
+    dicas: ['sou uma manifestação judicial', 'devo ser congruente com o pedido', 'posso ser terminativa'], aceitas: ['sentença judicial'],
+  };
+  test('dicas graduais, espera de 5 s após erro, pontos pelo tempo e quem acertou', () => {
+    const m = new MotorJogo([c], true);
+    m.entrar('a', 'Ana');
+    m.entrar('b', 'Bia');
+    m.entrar('c', 'Caio');
+    m.avancar(0);
+    const v0 = m.visaoAlunoComum(1_000);
+    expect(v0.pergunta?.enunciado).toBe(''); // a resposta não vai para o celular
+    expect(v0.pergunta?.dicas).toEqual(['sou uma manifestação judicial']);
+    expect(v0.pergunta?.proximaDicaMs).toBe(19_000);
+    expect(m.visaoAlunoComum(25_000).pergunta?.dicas).toHaveLength(2);
+    expect(m.responderTexto('a', 0, 'decisão', 2_000)).toBe('errado');
+    expect(m.responderTexto('a', 0, 'sentença', 4_000)).toBe('aguarde');
+    expect(m.visaoPessoal('a', 4_000)).toMatchObject({ errou: true, aguardarMs: 3_000 });
+    expect(m.responderTexto('a', 0, 'A SENTENCA', 30_000)).toBe('certo');
+    expect(m.responderTexto('a', 0, 'sentença', 31_000)).toBe('invalido'); // já acertou
+    expect(m.responderTexto('b', 0, 'sentença judicial', 10_000)).toBe('certo');
+    expect(m.visaoTela().acertaram.map((x) => [x.apelido, x.dicas])).toEqual([['Bia', 1], ['Ana', 2]]);
+    expect(m.todosResponderam()).toBe(false);
+    m.avancar(60_000);
+    expect(m.visaoPessoal('b')).toMatchObject({ acertou: true, ganho: 883 });
+    expect(m.visaoPessoal('a')).toMatchObject({ acertou: true, ganho: 650 });
+    expect(m.visaoPessoal('c')).toMatchObject({ acertou: false, ganho: 0, resposta: null });
+    expect(m.visaoAlunoComum(60_000).conceito).toBe('Sentença');
+    expect(m.historico[0]).toMatchObject({ enunciado: 'Conceito: Sentença', respostas: [2], semResposta: 1 });
+    expect(m.visaoTela().acertoPorPergunta).toEqual([67]);
+  });
+  test('responder texto numa múltipla escolha é ignorado', () => {
+    const m = new MotorJogo([q(0)]);
+    m.entrar('a', 'Ana');
+    m.avancar(0);
+    expect(m.responderTexto('a', 0, 'a', 10)).toBe('invalido');
+  });
+});

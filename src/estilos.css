@@ -578,3 +578,23 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .botao-drive.ok .luz { background: #2e7d4f; }
 .botao-drive.alerta { border-color: var(--destaque); }
 .botao-drive.alerta .luz { background: var(--destaque); }
+
+/* ---------- Adivinhe o conceito (projetor) ---------- */
+.conceito-dicas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.2cqw; flex: 1; min-height: 0; }
+.conceito-dicas li { display: flex; align-items: baseline; gap: 1.6cqw; border-radius: 1.2cqw; padding: 1.4cqw 2cqw; font-size: 2.8cqw; line-height: 1.25; }
+.conceito-dicas li.visivel { background: var(--tinta); color: var(--fundo); animation: dica-entra 0.5s ease-out; }
+.conceito-dicas li.oculta { background: var(--fundo); color: var(--tinta-2); box-shadow: inset 0 0 0 0.25cqw var(--linha); }
+.conceito-num { flex: none; font-size: 1.8cqw; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.8; min-width: 9cqw; }
+.conceito-texto { flex: 1; font-weight: 700; }
+@keyframes dica-entra { from { transform: translateY(1cqw); opacity: 0; } to { transform: none; opacity: 1; } }
+.conceito-resposta { display: flex; align-items: baseline; gap: 2cqw; }
+.conceito-resposta strong { font-size: 5cqw; font-weight: 800; line-height: 1.1; box-shadow: inset 0 -0.8cqw 0 var(--destaque); }
+.conceito-acertos { display: flex; flex-direction: column; gap: 0.8cqw; }
+.conceito-acertos .jogo-nomes { max-height: 9cqw; }
+.jogar-dicas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.jogar-dicas li { background: var(--tinta); color: var(--fundo); border-radius: 14px; padding: 12px 14px; font-size: 18px; font-weight: 700; line-height: 1.3; }
+.jogar-dicas li.nova { box-shadow: 0 0 0 3px var(--destaque); animation: dica-entra 0.5s ease-out; }
+.jogar-dica-num { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.8; margin-bottom: 2px; }
+.jogar-form-conceito { display: flex; flex-direction: column; gap: 10px; }
+.jogar-form-conceito .jogar-campo { text-align: left; }
+.jogar-errou { margin: 0; font-weight: 800; text-align: center; }

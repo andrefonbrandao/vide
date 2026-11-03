@@ -5,7 +5,9 @@ import type { VisaoAlunoComum, VisaoPessoal } from './motor';
 export type DoAluno =
   | { t: 'entrar'; apelido: string }
   | { t: 'ola' }
-  | { t: 'responder'; indice: number; alt: number };
+  | { t: 'responder'; indice: number; alt: number }
+  /** Adivinhe o conceito: a resposta digitada. */
+  | { t: 'responder-texto'; indice: number; texto: string };
 
 /** O que chega ao professor (o serviço acrescenta quem enviou). */
 export type ParaAnfitriao =
@@ -18,6 +20,8 @@ export type ParaAluno =
   | ({ t: 'jogo'; voce: VisaoPessoal | null } & VisaoAlunoComum)
   | { t: 'anfitriao'; on: boolean }
   | { t: 'recusado'; motivo: string }
+  /** Resultado da tentativa no "Adivinhe o conceito" (vem junto com o retrato atualizado). */
+  | { t: 'tentativa'; resultado: 'certo' | 'errado' | 'aguarde' | 'invalido' }
   | { t: 'encerrado' };
 
 /** Código de 6 algarismos (fácil de digitar no celular). */

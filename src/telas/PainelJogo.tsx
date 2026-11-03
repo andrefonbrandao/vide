@@ -1,7 +1,7 @@
 // Jogo de perguntas na tela do professor: escolher o questionário e conduzir o jogo.
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { anfitriao, rankingPreferido } from '../jogo/anfitriao';
-import { assuntosDasQuestoes, listarQuestionarios, listarQuestoes, questoesDo, sortearQuestoes } from '../jogo/banco';
+import { assuntosDasQuestoes, listarQuestionarios, listarQuestoes, questoesDo, sortearQuestoes, type FiltroTipo } from '../jogo/banco';
 import { rotuloAvancar } from '../jogo/motor';
 import type { Questao, QuestaoJogo, Questionario } from '../jogo/tipos';
 import { JogoTela } from './JogoTela';
@@ -16,8 +16,8 @@ type Modo = 'assunto' | 'questionario';
 const CHAVE_MODO = 'vide.jogoModo';
 
 function paraJogo(q: Questao): QuestaoJogo {
-  const { tipo, enunciado, alternativas, correta, tempo, explicacao, fundamento } = q;
-  return { tipo, enunciado, alternativas, correta, tempo, explicacao, fundamento };
+  const { tipo, enunciado, alternativas, correta, tempo, explicacao, fundamento, dicas, aceitas } = q;
+  return { tipo, enunciado, alternativas, correta, tempo, explicacao, fundamento, dicas, aceitas };
 }
 
 /** Janela para abrir a sala: sorteio por assunto ou um questionário pronto. */
@@ -35,6 +35,7 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
   });
   const [assunto, setAssunto] = useState<string>('');
   const [quantas, setQuantas] = useState(10);
+  const [tipos, setTipos] = useState<FiltroTipo>('todos');
   const setModo = (m: Modo) => {
     setModoEstado(m);
     try {
@@ -55,13 +56,14 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
     })();
   }, []);
 
-  const assuntos = assuntosDasQuestoes(banco);
-  const disponiveis = assunto === '*' ? banco.length : (assuntos.find((a) => a.assunto === assunto)?.total ?? 0);
+  const doTipo = banco.filter((q) => tipos === 'todos' || (tipos === 'conceito') === (q.tipo === 'conceito'));
+  const assuntos = assuntosDasQuestoes(doTipo);
+  const disponiveis = assunto === '*' ? doTipo.length : (assuntos.find((a) => a.assunto === assunto)?.total ?? 0);
   const vaiTer = Math.min(quantas, disponiveis);
 
   const abrir = async () => {
     if (modo === 'assunto') {
-      const sorteadas = sortearQuestoes(banco, assunto === '*' ? null : assunto, quantas);
+      const sorteadas = sortearQuestoes(banco, assunto === '*' ? null : assunto, quantas, Math.random, tipos);
       if (!sorteadas.length) return;
       const nome = `${sorteadas.length} ${sorteadas.length === 1 ? 'questão' : 'questões'} · ${assunto === '*' ? 'todos os assuntos' : assunto}`;
       anfitriao().iniciar(nome, sorteadas.map(paraJogo), ranking);
@@ -108,11 +110,20 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
                       {a.assunto} ({a.total} {a.total === 1 ? 'questão' : 'questões'})
                     </option>
                   ))}
-                  <option value="*">Todos os assuntos ({banco.length})</option>
+                  {assunto !== '*' && !assuntos.some((a) => a.assunto === assunto) && <option value={assunto}>{assunto} (0)</option>}
+                  <option value="*">Todos os assuntos ({doTipo.length})</option>
                 </select>
                 {assuntos.length === 0 && (
                   <span className="ajuda">As questões ainda não têm assunto: cadastre em Acervo › Questões (campo "Assuntos").</span>
                 )}
+              </div>
+              <div className="campo">
+                <label htmlFor="tipos-jogo">Tipo de questão</label>
+                <select id="tipos-jogo" className="seletor" value={tipos} onChange={(e) => setTipos(e.target.value as FiltroTipo)}>
+                  <option value="todos">Todos os tipos</option>
+                  <option value="alternativas">Só múltipla escolha e V/F</option>
+                  <option value="conceito">Só "Adivinhe o conceito"</option>
+                </select>
               </div>
               <div className="campo">
                 <label htmlFor="quantas-jogo">Quantas questões</label>

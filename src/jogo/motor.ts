@@ -1,6 +1,7 @@
 // Regras do jogo de perguntas, sem rede nem tela (fácil de testar).
 // Quem roda o motor é o computador do professor; os celulares só recebem o retrato.
-import type { QuestaoJogo, ResultadoPergunta } from './tipos';
+import { dicasVisiveis, pontosConceito, proximaDica, respostaCerta } from './conceito';
+import { ESPERA_NOVA_TENTATIVA_MS, type QuestaoJogo, type ResultadoPergunta } from './tipos';
 
 export type Fase = 'sala' | 'pergunta' | 'resultado' | 'ranking' | 'fim';
 
@@ -51,6 +52,9 @@ export interface VisaoTela {
   /** Percentual de acerto de cada pergunta e geral (no fim). */
   acertoPorPergunta: number[];
   acertoGeral: number | null;
+  /** Adivinhe o conceito: quantas dicas estão à mostra e quem já acertou (na ordem). */
+  dicasVisiveis: number;
+  acertaram: { apelido: string; ms: number; dicas: number }[];
 }
 
 /** O que todos os celulares recebem. */
@@ -59,8 +63,19 @@ export interface VisaoAlunoComum {
   indice: number;
   total: number;
   ranking: boolean;
-  pergunta: { tipo: QuestaoJogo['tipo']; enunciado: string; alternativas: string[]; restanteMs: number } | null;
+  pergunta: {
+    tipo: QuestaoJogo['tipo'];
+    enunciado: string;
+    alternativas: string[];
+    restanteMs: number;
+    /** Conceito: as dicas já à mostra, o total e quando vem a próxima (ms a partir de agora). */
+    dicas?: string[];
+    totalDicas?: number;
+    proximaDicaMs?: number | null;
+  } | null;
   correta: number | null;
+  /** Conceito: a resposta, depois de encerrada a rodada. */
+  conceito?: string | null;
 }
 
 /** O que cada celular recebe só para si. */
@@ -73,7 +88,12 @@ export interface VisaoPessoal {
   acertou: boolean | null;
   ganho: number;
   acertos: number;
+  /** Conceito: errou a última tentativa e precisa esperar este tempo (ms) para tentar de novo. */
+  aguardarMs?: number;
+  errou?: boolean;
 }
+
+export type ResultadoTentativa = 'certo' | 'errado' | 'aguarde' | 'invalido';
 
 export class MotorJogo {
   fase: Fase = 'sala';
@@ -82,7 +102,9 @@ export class MotorJogo {
   prazo = 0;
   private jogadores = new Map<string, Jogador>();
   /** Respostas da pergunta atual: token -> alternativa e tempo gasto. */
-  private respostas = new Map<string, { alt: number; ms: number }>();
+  private respostas = new Map<string, { alt: number; ms: number; dicas?: number }>();
+  /** Conceito: última tentativa errada de cada um (para a espera de 5 s). */
+  private erros = new Map<string, number>();
   /** Números de cada pergunta já encerrada (sem nomes). */
   readonly historico: ResultadoPergunta[] = [];
 
@@ -144,6 +166,24 @@ export class MotorJogo {
     return true;
   }
 
+  /** Adivinhe o conceito: confere a resposta digitada. */
+  responderTexto(token: string, indice: number, texto: string, agora: number): ResultadoTentativa {
+    const q = this.questaoAtual;
+    if (this.fase !== 'pergunta' || !q || q.tipo !== 'conceito' || indice !== this.indice) return 'invalido';
+    if (!this.jogadores.has(token) || this.respostas.has(token)) return 'invalido';
+    if (agora > this.prazo + 500) return 'invalido';
+    const errou = this.erros.get(token);
+    if (errou !== undefined && agora - errou < ESPERA_NOVA_TENTATIVA_MS) return 'aguarde';
+    if (!respostaCerta(texto.slice(0, 120), q.enunciado, q.aceitas ?? [])) {
+      this.erros.set(token, agora);
+      return 'errado';
+    }
+    const ms = Math.max(0, agora - this.inicio);
+    this.respostas.set(token, { alt: 0, ms, dicas: dicasVisiveis(q.dicas?.length ?? 0, q.tempo * 1000, ms) });
+    this.erros.delete(token);
+    return 'certo';
+  }
+
   get respondidas(): number {
     return this.respostas.size;
   }
@@ -165,6 +205,7 @@ export class MotorJogo {
     this.inicio = agora;
     this.prazo = agora + q.tempo * 1000;
     this.respostas.clear();
+    this.erros.clear();
   }
 
   /** Fim do tempo (ou todos responderam): calcula os pontos e guarda os números. */
@@ -173,7 +214,8 @@ export class MotorJogo {
     if (this.fase !== 'pergunta' || !q) return;
     this.fase = 'resultado';
     const tempoMs = q.tempo * 1000;
-    const contagem = q.alternativas.map(() => 0);
+    const conceito = q.tipo === 'conceito';
+    const contagem = conceito ? [0] : q.alternativas.map(() => 0);
     let semResposta = 0;
     for (const j of this.jogadores.values()) {
       const r = this.respostas.get(j.token);
@@ -183,16 +225,16 @@ export class MotorJogo {
         continue;
       }
       contagem[r.alt]++;
-      const acertou = r.alt === q.correta;
-      const ganho = acertou ? calcularPontos(r.ms, tempoMs) : 0;
+      const acertou = conceito || r.alt === q.correta;
+      const ganho = acertou ? (conceito ? pontosConceito(r.ms, tempoMs) : calcularPontos(r.ms, tempoMs)) : 0;
       j.pontos += ganho;
       if (acertou) j.acertos++;
       j.ultimo = { resposta: r.alt, acertou, ganho };
     }
     this.historico[this.indice] = {
-      enunciado: q.enunciado,
-      alternativas: [...q.alternativas],
-      correta: q.correta,
+      enunciado: conceito ? `Conceito: ${q.enunciado}` : q.enunciado,
+      alternativas: conceito ? ['acertou'] : [...q.alternativas],
+      correta: conceito ? 0 : q.correta,
       respostas: contagem,
       semResposta,
     };
@@ -272,6 +314,13 @@ export class MotorJogo {
       classificacao: this.ranking ? this.classificacao().slice(0, 10) : [],
       acertoPorPergunta: porPergunta,
       acertoGeral,
+      dicasVisiveis: q?.tipo === 'conceito' ? dicasVisiveis(q.dicas?.length ?? 0, q.tempo * 1000, Date.now() - this.inicio) : 0,
+      acertaram:
+        q?.tipo === 'conceito' && (this.fase === 'pergunta' || this.fase === 'resultado')
+          ? [...this.respostas.entries()]
+              .map(([token, r]) => ({ apelido: this.jogadores.get(token)?.apelido ?? '?', ms: r.ms, dicas: r.dicas ?? 1 }))
+              .sort((a, b) => a.ms - b.ms)
+          : [],
     };
   }
 
@@ -284,29 +333,48 @@ export class MotorJogo {
       ranking: this.ranking,
       pergunta:
         q && this.fase === 'pergunta'
-          ? { tipo: q.tipo, enunciado: q.enunciado, alternativas: q.alternativas, restanteMs: Math.max(0, this.prazo - agora) }
+          ? q.tipo === 'conceito'
+            ? (() => {
+                // O conceito (a resposta) nunca vai para o celular durante a rodada: só as dicas já à mostra.
+                const total = q.dicas?.length ?? 0;
+                const decorrido = agora - this.inicio;
+                const prox = proximaDica(total, q.tempo * 1000, decorrido);
+                return {
+                  tipo: q.tipo,
+                  enunciado: '',
+                  alternativas: [],
+                  restanteMs: Math.max(0, this.prazo - agora),
+                  dicas: (q.dicas ?? []).slice(0, dicasVisiveis(total, q.tempo * 1000, decorrido)),
+                  totalDicas: total,
+                  proximaDicaMs: prox === null ? null : Math.max(0, prox - decorrido),
+                };
+              })()
+            : { tipo: q.tipo, enunciado: q.enunciado, alternativas: q.alternativas, restanteMs: Math.max(0, this.prazo - agora) }
           : null,
       correta: q && this.fase !== 'pergunta' && this.fase !== 'sala' ? q.correta : null,
+      conceito: q?.tipo === 'conceito' && this.fase !== 'pergunta' && this.fase !== 'sala' ? q.enunciado : null,
     };
   }
 
   /** Visão de cada participante, por token. */
-  visoesPessoais(): Record<string, VisaoPessoal> {
+  visoesPessoais(agora = Date.now()): Record<string, VisaoPessoal> {
     const posicoes = new Map(this.classificacao().map((c) => [c.apelido, c.posicao]));
     const saida: Record<string, VisaoPessoal> = {};
-    for (const j of this.jogadores.values()) saida[j.token] = this.visaoDe(j, posicoes);
+    for (const j of this.jogadores.values()) saida[j.token] = this.visaoDe(j, posicoes, agora);
     return saida;
   }
 
-  visaoPessoal(token: string): VisaoPessoal | null {
+  visaoPessoal(token: string, agora = Date.now()): VisaoPessoal | null {
     const j = this.jogadores.get(token);
     if (!j) return null;
-    return this.visaoDe(j, new Map(this.classificacao().map((c) => [c.apelido, c.posicao])));
+    return this.visaoDe(j, new Map(this.classificacao().map((c) => [c.apelido, c.posicao])), agora);
   }
 
-  private visaoDe(j: Jogador, posicoes: Map<string, number>): VisaoPessoal {
+  private visaoDe(j: Jogador, posicoes: Map<string, number>, agora: number): VisaoPessoal {
     const atual = this.fase === 'pergunta' ? this.respostas.get(j.token) : undefined;
+    const errou = this.fase === 'pergunta' ? this.erros.get(j.token) : undefined;
     return {
+      ...(errou !== undefined ? { errou: true, aguardarMs: Math.max(0, ESPERA_NOVA_TENTATIVA_MS - (agora - errou)) } : {}),
       apelido: j.apelido,
       pontos: j.pontos,
       posicao: this.ranking ? (posicoes.get(j.apelido) ?? null) : null,

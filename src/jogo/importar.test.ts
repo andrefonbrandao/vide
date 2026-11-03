@@ -5,7 +5,7 @@ describe('importar questões', () => {
   test('modelo', () => {
     const r = importarQuestoes(MODELO_IMPORTACAO);
     expect(r.erros).toEqual([]);
-    expect(r.questoes).toHaveLength(2);
+    expect(r.questoes).toHaveLength(3);
     expect(r.questoes[0]).toMatchObject({
       tipo: 'multipla', correta: 2, tempo: 30, fundamento: '335',
       enunciado: 'Qual o prazo para contestar no procedimento comum?',
@@ -83,5 +83,32 @@ Temas: sentença`);
   });
   test('o modelo traz assuntos', () => {
     expect(importarQuestoes(MODELO_IMPORTACAO).questoes[0].assuntos).toEqual(['contestação', 'prazos']);
+  });
+});
+
+describe('adivinhe o conceito', () => {
+  test('modelo traz um conceito', () => {
+    const r = importarQuestoes(MODELO_IMPORTACAO);
+    expect(r.erros).toEqual([]);
+    expect(r.questoes).toHaveLength(3);
+    expect(r.questoes[2]).toMatchObject({
+      tipo: 'conceito', enunciado: 'sentença', tempo: 60, aceitas: ['sentença judicial'], assuntos: ['sentença'],
+      dicas: ['sou uma manifestação judicial', 'devo ser congruente com o objeto do pedido', 'posso ser terminativa ou extintiva'],
+    });
+  });
+  test('mistura com múltipla escolha e erros de dicas', () => {
+    const r = importarQuestoes(`1. Pergunta
+A) x
+B) y
+Resposta: B
+Conceito: coisa julgada
+Dica 1: torno a decisão imutável
+Dica 2 - sou material ou formal
+Conceito: preclusão
+Dica: só uma`);
+    expect(r.questoes.map((q) => [q.tipo, q.enunciado])).toEqual([['multipla', 'Pergunta'], ['conceito', 'coisa julgada']]);
+    expect(r.questoes[1].tempo).toBe(60);
+    expect(r.erros).toHaveLength(1);
+    expect(r.erros[0].mensagem).toMatch(/2 a 4 dicas/);
   });
 });

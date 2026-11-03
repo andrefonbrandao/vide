@@ -1,7 +1,8 @@
 // Questões, questionários e o jogo de perguntas (estilo quiz) do Vide.
 import type { Sincronizavel } from '../dados/modelo';
 
-export type TipoQuestao = 'multipla' | 'vf';
+/** multipla e vf: alternativas; conceito: "Adivinhe o conceito" (dicas graduais e resposta digitada). */
+export type TipoQuestao = 'multipla' | 'vf' | 'conceito';
 
 /** Uma questão do acervo. */
 export interface Questao extends Sincronizavel {
@@ -16,6 +17,10 @@ export interface Questao extends Sincronizavel {
   explicacao: string;
   /** Dispositivo que fundamenta a resposta, como se digita na aula: "485 VI", "5 CF". */
   fundamento: string;
+  /** Conceito: dicas, da mais difícil para a mais fácil (2 a 4). O conceito em si fica em "enunciado". */
+  dicas?: string[];
+  /** Conceito: outras respostas aceitas além do próprio conceito. */
+  aceitas?: string[];
   pasta: string;
   etiquetas: string[];
 }
@@ -55,8 +60,13 @@ export interface QuestaoJogo {
   tempo: number;
   explicacao: string;
   fundamento: string;
+  dicas?: string[];
+  aceitas?: string[];
 }
 
 export const TEMPO_PADRAO = 30;
+export const TEMPO_PADRAO_CONCEITO = 60;
+/** Depois de uma resposta errada no "Adivinhe o conceito", espera antes de tentar de novo. */
+export const ESPERA_NOVA_TENTATIVA_MS = 5_000;
 export const TEMPOS = [10, 20, 30, 45, 60, 90, 120];
 export const LETRAS = ['A', 'B', 'C', 'D'];

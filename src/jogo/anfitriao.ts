@@ -35,6 +35,8 @@ class Anfitriao {
   private motor: MotorJogo | null = null;
   private sala: ConexaoSala<ParaAnfitriao, unknown> | null = null;
   private relogio: number | null = null;
+  /** Conceito: quantas dicas já foram mandadas aos celulares (para mandar a próxima quando aparecer). */
+  private dicasEnviadas = 0;
   private canal = abrirCanal((m) => {
     // Janela de projeção (re)aberta: manda o jogo de novo.
     if (m.t === 'ola' && this.estado.tela) this.canal.enviar({ t: 'jogo', jogo: this.estado.tela });
@@ -132,6 +134,13 @@ class Anfitriao {
     if (Date.now() >= m.prazo || m.todosResponderam()) {
       m.encerrarPergunta();
       this.publicar();
+      return;
+    }
+    // Adivinhe o conceito: apareceu uma dica nova -> todos recebem.
+    const v = m.visaoTela().dicasVisiveis;
+    if (m.questaoAtual?.tipo === 'conceito' && v !== this.dicasEnviadas) {
+      this.dicasEnviadas = v;
+      this.publicar();
     }
   }
 
@@ -161,6 +170,14 @@ class Anfitriao {
       this.publicar();
     } else if (d?.t === 'ola') {
       if (m.conhece(msg.de)) this.enviarPara(msg.de);
+    } else if (d?.t === 'responder-texto' && Number.isInteger(d.indice) && typeof d.texto === 'string') {
+      const resultado = m.responderTexto(msg.de, d.indice, d.texto, Date.now());
+      this.sala?.enviar({ t: 'para', token: msg.de, msg: { t: 'tentativa', resultado } });
+      this.enviarPara(msg.de);
+      if (resultado === 'certo') {
+        if (m.todosResponderam()) m.encerrarPergunta();
+        this.publicar(m.fase !== 'pergunta');
+      }
     } else if (d?.t === 'responder' && Number.isInteger(d.indice) && Number.isInteger(d.alt)) {
       if (m.responder(msg.de, d.indice, d.alt, Date.now())) {
         this.enviarPara(msg.de);
@@ -193,6 +210,7 @@ class Anfitriao {
       enderecoCurto: `${location.host}/j`,
       url: urlDoJogo(this.estado.codigo),
     };
+    if (m.fase === 'pergunta') this.dicasEnviadas = tela.dicasVisiveis;
     this.canal.enviar({ t: 'jogo', jogo: tela });
     this.mudar({ tela, fundamento: m.questaoAtual?.fundamento ?? '' });
     if (paraAlunos) this.difundir();

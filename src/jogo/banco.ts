@@ -134,8 +134,20 @@ export function assuntosDasQuestoes(questoes: Pick<Questao, 'etiquetas'>[]): { a
 }
 
 /** Sorteia até `quantas` questões do assunto (null = de todos), em ordem aleatória. */
-export function sortearQuestoes<T extends Pick<Questao, 'etiquetas'>>(questoes: T[], assunto: string | null, quantas: number, aleatorio = Math.random): T[] {
-  const lista = questoes.filter((q) => !assunto || (q.etiquetas ?? []).includes(assunto));
+export type FiltroTipo = 'todos' | 'alternativas' | 'conceito';
+
+export function sortearQuestoes<T extends Pick<Questao, 'etiquetas'> & { tipo?: Questao['tipo'] }>(
+  questoes: T[],
+  assunto: string | null,
+  quantas: number,
+  aleatorio = Math.random,
+  tipo: FiltroTipo = 'todos',
+): T[] {
+  const lista = questoes.filter(
+    (q) =>
+      (!assunto || (q.etiquetas ?? []).includes(assunto)) &&
+      (tipo === 'todos' || (tipo === 'conceito') === (q.tipo === 'conceito')),
+  );
   for (let i = lista.length - 1; i > 0; i--) {
     const j = Math.floor(aleatorio() * (i + 1));
     [lista[i], lista[j]] = [lista[j], lista[i]];

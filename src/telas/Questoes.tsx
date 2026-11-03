@@ -18,7 +18,7 @@ import {
   salvarQuestionario,
 } from '../jogo/banco';
 import { MODELO_IMPORTACAO, importarQuestoes } from '../jogo/importar';
-import { LETRAS, TEMPOS, TEMPO_PADRAO, type Questao, type QuestaoJogo, type Questionario, type ResultadoJogo } from '../jogo/tipos';
+import { LETRAS, TEMPOS, TEMPO_PADRAO, TEMPO_PADRAO_CONCEITO, type Questao, type QuestaoJogo, type Questionario, type ResultadoJogo } from '../jogo/tipos';
 import { filtrarMateriais, nomePasta, todasPastas } from '../material/organizacao';
 
 function useDados() {
@@ -73,8 +73,33 @@ export function FormQuestao({
   const [pasta, setPasta] = useState(inicial?.pasta ?? '');
   const [etiquetas, setEtiquetas] = useState((inicial?.etiquetas ?? []).join(', '));
   const [erro, setErro] = useState<string | null>(null);
+  const [dicas, setDicas] = useState<string[]>(() => {
+    const d = inicial?.dicas ?? [];
+    return [...d, '', '', '', ''].slice(0, 4);
+  });
+  const [aceitas, setAceitas] = useState((inicial?.aceitas ?? []).join(', '));
 
   const salvar = async () => {
+    if (tipo === 'conceito') {
+      const ds = dicas.map((d) => d.trim()).filter(Boolean);
+      if (!enunciado.trim()) return setErro('Escreva o conceito (a resposta).');
+      if (ds.length < 2) return setErro('Escreva pelo menos duas dicas.');
+      setErro(null);
+      await aoSalvar({
+        tipo,
+        enunciado: enunciado.trim(),
+        alternativas: [],
+        correta: 0,
+        tempo,
+        explicacao: explicacao.trim(),
+        fundamento: fundamento.trim(),
+        dicas: ds,
+        aceitas: aceitas.split(/[,;]/).map((a) => a.trim()).filter(Boolean),
+        pasta: pasta.trim().replace(/\s*\/\s*/g, '/').replace(/^\/|\/$/g, ''),
+        etiquetas: lerEtiquetas(etiquetas),
+      });
+      return;
+    }
     const alternativas = tipo === 'vf' ? ['Verdadeiro', 'Falso'] : alts.map((a) => a.trim()).filter(Boolean);
     if (!enunciado.trim()) return setErro('Escreva o enunciado.');
     if (tipo === 'multipla' && alternativas.length < 2) return setErro('Preencha pelo menos duas alternativas.');
@@ -118,12 +143,54 @@ export function FormQuestao({
           />{' '}
           Verdadeiro ou falso
         </label>
+        <label className="caixa-marcar">
+          <input
+            type="radio"
+            checked={tipo === 'conceito'}
+            onChange={() => {
+              setTipo('conceito');
+              if (tempo === TEMPO_PADRAO) setTempo(TEMPO_PADRAO_CONCEITO);
+            }}
+          />{' '}
+          Adivinhe o conceito
+        </label>
       </div>
+      {tipo === 'conceito' ? (
+        <>
+          <div className="campo">
+            <label htmlFor="enunciado">Conceito (a resposta certa)</label>
+            <input id="enunciado" type="text" placeholder="ex.: sentença" value={enunciado} onChange={(e) => setEnunciado(e.target.value)} />
+          </div>
+          <div className="campo">
+            <label>Dicas, da mais difícil para a mais fácil (2 a 4)</label>
+            {dicas.map((d, i) => (
+              <div key={i} className="linha-alt">
+                <b>Dica {i + 1}</b>
+                <input
+                  type="text"
+                  value={d}
+                  placeholder={i < 2 ? 'obrigatória' : 'opcional'}
+                  onChange={(e) => setDicas(dicas.map((x, k) => (k === i ? e.target.value : x)))}
+                />
+              </div>
+            ))}
+            <span className="ajuda" style={{ margin: 0 }}>
+              A 1ª dica aparece no início; as outras, em intervalos iguais do tempo (ex.: 60 s e 3 dicas: 0 s, 20 s e 40 s).
+            </span>
+          </div>
+          <div className="campo">
+            <label htmlFor="aceitas">Também aceitar (separadas por vírgula; opcional)</label>
+            <input id="aceitas" type="text" placeholder="ex.: sentença judicial" value={aceitas} onChange={(e) => setAceitas(e.target.value)} />
+            <span className="ajuda" style={{ margin: 0 }}>Maiúsculas, acentos e artigo no início ("a sentença") não importam.</span>
+          </div>
+        </>
+      ) : (
       <div className="campo">
         <label htmlFor="enunciado">{tipo === 'vf' ? 'Afirmação' : 'Enunciado'}</label>
         <textarea id="enunciado" rows={3} value={enunciado} onChange={(e) => setEnunciado(e.target.value)} />
       </div>
-      {tipo === 'multipla' ? (
+      )}
+      {tipo === 'conceito' ? null : tipo === 'multipla' ? (
         <div className="campo">
           <label>Alternativas (marque a correta)</label>
           {alts.map((a, i) => (
@@ -302,7 +369,7 @@ export function AdicionarQuestoes({ aoVer }: { aoVer: () => void }) {
                   <li key={i}>
                     {q.enunciado}{' '}
                     <span className="ajuda">
-                      · {q.tipo === 'vf' ? (q.correta === 0 ? 'Verdadeiro' : 'Falso') : `correta ${LETRAS[q.correta]}`} · {q.tempo}s
+                      · {q.tipo === 'conceito' ? `conceito · ${q.dicas?.length ?? 0} dicas` : q.tipo === 'vf' ? (q.correta === 0 ? 'Verdadeiro' : 'Falso') : `correta ${LETRAS[q.correta]}`} · {q.tempo}s
                       {q.fundamento && ` · ${q.fundamento}`}
                     </span>
                   </li>
@@ -516,10 +583,15 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
             {filtradas.map((q) => (
               <li key={q.id} className="cartao">
                 <p className="texto-questao">
-                  <strong>{q.enunciado}</strong>
+                  <strong>{q.tipo === 'conceito' ? `Conceito: ${q.enunciado}` : q.enunciado}</strong>
                 </p>
                 <p className="ajuda" style={{ margin: 0 }}>
-                  {q.tipo === 'vf' ? `V/F · ${q.correta === 0 ? 'Verdadeiro' : 'Falso'}` : `Múltipla escolha · correta ${LETRAS[q.correta]}) ${q.alternativas[q.correta]}`} ·{' '}
+                  {q.tipo === 'conceito'
+                    ? `Adivinhe o conceito · ${q.dicas?.length ?? 0} dicas${q.aceitas?.length ? ` · também aceita: ${q.aceitas.join(', ')}` : ''}`
+                    : q.tipo === 'vf'
+                      ? `V/F · ${q.correta === 0 ? 'Verdadeiro' : 'Falso'}`
+                      : `Múltipla escolha · correta ${LETRAS[q.correta]}) ${q.alternativas[q.correta]}`}{' '}
+                  ·{' '}
                   {q.tempo}s{q.fundamento && ` · fundamento: ${q.fundamento}`} · {nomePasta(q.pasta)}
                   {q.etiquetas.length > 0 && ` · assuntos: ${q.etiquetas.join(', ')}`}
                 </p>

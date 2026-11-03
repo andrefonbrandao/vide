@@ -151,6 +151,21 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 8. Clique em **Encerrar jogo**. Os celulares dos alunos mostram que o jogo terminou.
 9. O iPhone (controle) também tem o botão para avançar o jogo.
 
+**Adivinhe o conceito** (outra modalidade, no mesmo jogo):
+- Cadastre em **Acervo › + › Adicionar questões** › **Escrever uma questão** › **Adivinhe o conceito**: o conceito (a resposta), de 2 a 4 dicas da mais difícil para a mais fácil, e, se quiser, outras respostas aceitas. Ou cole assim:
+  ```
+  Conceito: sentença
+  Dica: sou uma manifestação judicial
+  Dica: devo ser congruente com o objeto do pedido
+  Dica: posso ser terminativa ou extintiva
+  Aceitar também: sentença judicial
+  Tempo: 60
+  Assunto: sentença
+  ```
+- Na aula, o projetor mostra "Quem sou eu?" e a 1ª dica; as outras aparecem em intervalos iguais (60 s e 3 dicas: 0 s, 20 s e 40 s). O aluno digita a resposta no celular; maiúsculas, acentos e "a/o" no início não importam. Se errar, espera 5 segundos para tentar de novo.
+- Quem acerta antes ganha mais pontos (de 1.000 no início a 300 no fim). O projetor mostra quem já acertou e com quantas dicas (com o ranking desligado, só a quantidade). No fim do tempo (ou quando todos acertam), aparece a resposta.
+- No sorteio por assunto, escolha em **Tipo de questão**: todos, só múltipla escolha e V/F, ou só "Adivinhe o conceito".
+
 **O que fica guardado:** só os números de cada questão (quantos marcaram cada alternativa), em **Acervo › Questões › Resultados dos jogos**, com exportação para Excel. Nenhum apelido ou nome é guardado.
 
 **Cuidados:** cada aluno precisa de internet no celular. Não recarregue nem feche a página do Vide no computador durante o jogo: o jogo roda nela. Se um aluno recarregar a página, ele volta ao jogo com os mesmos pontos.

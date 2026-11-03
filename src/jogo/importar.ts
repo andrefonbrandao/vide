@@ -14,9 +14,17 @@
 //   2. A citação válida induz litispendência.
 //   Resposta: V
 //
+// Sem alternativas, a questão é de verdadeiro/falso. "Adivinhe o conceito":
+//
+//   Conceito: sentença
+//   Dica: sou uma manifestação judicial
+//   Dica: devo ser congruente com o objeto do pedido
+//   Dica: posso ser terminativa ou extintiva
+//   Aceitar também: sentença judicial
+//
 // Sem alternativas, a questão é de verdadeiro/falso. A correta também pode ser
 // marcada com * antes da letra ("*C) 15 dias") ou com "(correta)" no fim.
-import { TEMPO_PADRAO, type QuestaoJogo } from './tipos';
+import { TEMPO_PADRAO, TEMPO_PADRAO_CONCEITO, type QuestaoJogo } from './tipos';
 
 export interface ErroImportacao {
   /** Número da questão no texto (1, 2, 3…). */
@@ -47,10 +55,21 @@ Assunto: contestação, prazos
 2. A citação válida induz litispendência.
 Resposta: V
 Fundamento: 240
-Assunto: citação`;
+Assunto: citação
+
+Conceito: sentença
+Dica: sou uma manifestação judicial
+Dica: devo ser congruente com o objeto do pedido
+Dica: posso ser terminativa ou extintiva
+Aceitar também: sentença judicial
+Tempo: 60
+Assunto: sentença`;
 
 const RE_ALT = /^\s*(\*)?\s*([A-Da-d])\s*[).\-–]\s+(.+?)\s*$/;
 const RE_NUMERO = /^\s*(?:quest[aã]o\s*)?(?:q\s*)?\d{1,3}\s*[.):\-–]\s*/i;
+const RE_CONCEITO = /^\s*(?:\d{1,3}\s*[.):\-–]\s*)?conceito\s*[:\-–]\s*(.+)$/i;
+const RE_DICA = /^\s*dica(?:\s*\d+)?\s*[:\-–]\s*(.+)$/i;
+const RE_ACEITAS = /^\s*(?:aceitar tamb[eé]m|tamb[eé]m aceitar|aceitas|respostas aceitas|sin[oô]nimos?)\s*[:\-–]\s*(.*)$/i;
 const RE_CHAVE = /^\s*(resposta|gabarito|correta|alternativa correta|tempo|explica[cç][aã]o|coment[aá]rio|fundamento|dispositivo|base legal|assuntos?|temas?)\s*[:\-–]\s*(.*)$/i;
 
 interface Rascunho {
@@ -63,6 +82,10 @@ interface Rascunho {
   explicacao: string[];
   fundamento: string;
   assuntos: string[];
+  /** Adivinhe o conceito. */
+  conceito: boolean;
+  dicas: string[];
+  aceitas: string[];
   /** O que a próxima linha comum continua. */
   continuar: 'enunciado' | 'explicacao' | null;
 }
@@ -78,6 +101,9 @@ function novo(numero: number, primeira: string): Rascunho {
     explicacao: [],
     fundamento: '',
     assuntos: [],
+    conceito: false,
+    dicas: [],
+    aceitas: [],
     continuar: 'enunciado',
   };
 }
@@ -108,6 +134,30 @@ export function importarQuestoes(texto: string): ResultadoImportacao {
     if (!linha) {
       emBranco = true;
       if (atual?.continuar === 'explicacao') atual.continuar = null;
+      continue;
+    }
+    // Adivinhe o conceito: "Conceito:" começa um novo; "Dica:" e "Aceitar também:" completam.
+    const conceito = RE_CONCEITO.exec(linha);
+    if (conceito) {
+      atual = novo(rascunhos.length + 1, conceito[1].trim());
+      atual.conceito = true;
+      atual.continuar = null;
+      rascunhos.push(atual);
+      emBranco = false;
+      continue;
+    }
+    const dica = RE_DICA.exec(linha);
+    if (dica && atual?.conceito) {
+      atual.dicas.push(dica[1].trim());
+      atual.continuar = null;
+      emBranco = false;
+      continue;
+    }
+    const aceitas = RE_ACEITAS.exec(linha);
+    if (aceitas && atual?.conceito) {
+      atual.aceitas.push(...aceitas[1].split(/[,;]/).map((a) => a.trim()).filter(Boolean));
+      atual.continuar = null;
+      emBranco = false;
       continue;
     }
     const chave = RE_CHAVE.exec(linha);
@@ -161,6 +211,25 @@ export function importarQuestoes(texto: string): ResultadoImportacao {
     const erro = (mensagem: string) => erros.push({ numero: r.numero, trecho, mensagem });
     if (!enunciado) {
       erro('Falta o enunciado.');
+      continue;
+    }
+    if (r.conceito) {
+      if (r.dicas.length < 2 || r.dicas.length > 4) {
+        erro(`Conceito precisa de 2 a 4 dicas (tem ${r.dicas.length}).`);
+        continue;
+      }
+      questoes.push({
+        tipo: 'conceito',
+        enunciado,
+        alternativas: [],
+        correta: 0,
+        tempo: Math.max(10, Math.min(240, r.tempo ?? TEMPO_PADRAO_CONCEITO)),
+        explicacao: r.explicacao.join(' ').trim(),
+        fundamento: r.fundamento,
+        dicas: r.dicas,
+        aceitas: [...new Set(r.aceitas)],
+        assuntos: [...new Set(r.assuntos)],
+      });
       continue;
     }
     if (r.alternativas.length === 1) {

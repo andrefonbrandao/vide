@@ -5,6 +5,7 @@ import qrcode from 'qrcode-generator';
 import { useEffect, useMemo, useState } from 'react';
 import type { TelaJogo } from '../comum/canal';
 import { LETRAS } from '../jogo/tipos';
+import { dicasVisiveis, proximaDica } from '../jogo/conceito';
 
 /** Formas que distinguem as alternativas (além da letra). */
 export function Forma({ i, tamanho = '1em' }: { i: number; tamanho?: string }) {
@@ -53,9 +54,78 @@ function QR({ url }: { url: string }) {
   return <div className="jogo-qr" dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
+/** Adivinhe o conceito no projetor: dicas aparecendo, quem já acertou e, no fim, a resposta. */
+function TelaConceito({ jogo }: { jogo: TelaJogo }) {
+  const q = jogo.questao!;
+  const [agora, setAgora] = useState(Date.now());
+  useEffect(() => {
+    if (jogo.fase !== 'pergunta') return;
+    const t = window.setInterval(() => setAgora(Date.now()), 250);
+    return () => window.clearInterval(t);
+  }, [jogo.fase, jogo.indice]);
+  const dicas = q.dicas ?? [];
+  const tempoMs = q.tempo * 1000;
+  const revelada = jogo.fase === 'resultado';
+  const decorrido = agora - jogo.inicio;
+  const visiveis = revelada ? dicas.length : dicasVisiveis(dicas.length, tempoMs, decorrido);
+  const prox = revelada ? null : proximaDica(dicas.length, tempoMs, decorrido);
+  const nomes = jogo.ranking;
+  return (
+    <div className="jogo-tela jogo-conceito">
+      <div className="jogo-topo">
+        <span className="jogo-rotulo">
+          Adivinhe o conceito · questão {jogo.indice + 1} de {jogo.total}
+        </span>
+        {jogo.fase === 'pergunta' ? <Cronometro inicio={jogo.inicio} prazo={jogo.prazo} /> : <span className="jogo-rotulo">Resultado</span>}
+      </div>
+      {revelada ? (
+        <div className="conceito-resposta">
+          <span className="jogo-rotulo">Resposta</span>
+          <strong>{q.enunciado}</strong>
+        </div>
+      ) : (
+        <h1 className="jogo-enunciado">Quem sou eu?</h1>
+      )}
+      <ol className="conceito-dicas">
+        {dicas.map((d, i) => (
+          <li key={i} className={i < visiveis ? 'visivel' : 'oculta'}>
+            <span className="conceito-num">Dica {i + 1}</span>
+            {i < visiveis ? (
+              <span className="conceito-texto">{d}</span>
+            ) : (
+              <span className="conceito-texto">{i === visiveis && prox !== null ? `em ${Math.ceil((prox - decorrido) / 1000)} s` : '…'}</span>
+            )}
+          </li>
+        ))}
+      </ol>
+      <div className="conceito-acertos">
+        <span className="jogo-contagem" style={{ margin: 0 }}>
+          <strong>{jogo.acertaram.length}</strong> de {jogo.aResponder} acertaram
+        </span>
+        {nomes && (
+          <div className="jogo-nomes">
+            {jogo.acertaram.slice(0, 30).map((a, i) => (
+              <span key={`${a.apelido}-${i}`}>
+                {i + 1}º {a.apelido} · {a.dicas} {a.dicas === 1 ? 'dica' : 'dicas'}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      {revelada && (q.explicacao || jogo.acertoPorPergunta[jogo.indice] !== undefined) && (
+        <div className="jogo-rodape">
+          {q.explicacao && <span className="jogo-explicacao">{q.explicacao}</span>}
+          {jogo.acertoPorPergunta[jogo.indice] !== undefined && <span className="jogo-acerto">{jogo.acertoPorPergunta[jogo.indice]}% de acerto</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function JogoTela({ jogo }: { jogo: TelaJogo }) {
   const q = jogo.questao;
   const revelada = jogo.fase === 'resultado';
+  if ((jogo.fase === 'pergunta' || jogo.fase === 'resultado') && q?.tipo === 'conceito') return <TelaConceito jogo={jogo} />;
 
   if (jogo.fase === 'sala') {
     return (
