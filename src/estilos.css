@@ -626,3 +626,36 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .previa-mat-dados { display: flex; flex-direction: column; gap: 4px; }
 .previa-mat-seq { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--linha); }
 @media (max-width: 860px) { .modal.previa-mat { grid-template-columns: 1fr; } .previa-mat-pagina { height: 50vh; } }
+
+/* ---------- Treino em casa (página do aluno) ---------- */
+.treino .jogar-centro { justify-content: flex-start; padding-top: 6vh; }
+.treino-explicacao { margin: 0; font-weight: 600; line-height: 1.45; }
+.treino-feedback { display: flex; flex-direction: column; gap: 10px; }
+.treino-fundamento { border: 2px solid var(--linha); border-radius: 12px; padding: 8px 12px; background: var(--papel); }
+.treino-fundamento summary { cursor: pointer; font-weight: 800; }
+.treino-artigo { font-size: 15px; line-height: 1.45; margin-top: 6px; }
+.treino-artigo p { margin: 4px 0; }
+.treino-artigo p.destaque { background: var(--tinta); color: var(--fundo); border-radius: 6px; padding: 2px 6px; }
+.treino-resultado .jogar-resultado { text-align: center; }
+.treino-cabecalho-pdf { display: flex; flex-direction: column; gap: 2px; }
+.treino-cabecalho-pdf strong { font-size: 22px; }
+.treino-cabecalho-pdf span { color: var(--tinta-2); font-weight: 600; }
+.treino-lista { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.treino-lista li { border: 2px solid var(--linha); border-radius: 14px; padding: 12px 14px; background: var(--papel); break-inside: avoid; }
+.treino-lista li.certo { border-color: var(--tinta); }
+.treino-lista li p { margin: 4px 0; line-height: 1.4; }
+.treino-q { font-weight: 700; }
+.treino-selo { display: inline-block; font-size: 12px; font-weight: 800; border-radius: 999px; padding: 1px 8px; margin-right: 6px; border: 2px solid var(--tinta); }
+.treino-lista li.certo .treino-selo { background: var(--tinta); color: var(--fundo); }
+@media print {
+  .nao-imprimir { display: none !important; }
+  .jogar.treino { max-width: none; padding: 0; min-height: 0; }
+  body, .jogar { background: #fff !important; }
+  .treino-lista li, .treino-fundamento { background: #fff; }
+  .treino-fundamento > summary { list-style: none; }
+}
+.link-treino-pronto { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; margin: 8px 0; }
+.qr-treino { width: 150px; flex: none; }
+.qr-treino svg { width: 100%; height: auto; display: block; }
+.link-treino-url { word-break: break-all; font-size: 15px; font-weight: 700; margin: 0 0 8px; }
+.form-treino .lista-ordem.disponiveis { max-height: 280px; }

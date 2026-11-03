@@ -15,13 +15,16 @@
   "durable_objects": {
     "bindings": [
       { "name": "SALAS", "class_name": "Sala" },
-      { "name": "JOGOS", "class_name": "Jogo" }
+      { "name": "JOGOS", "class_name": "Jogo" },
+      { "name": "TREINOS", "class_name": "Treino" }
     ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["Sala"] },
     // Salas do jogo de perguntas (alunos respondendo pelo celular).
-    { "tag": "v2", "new_sqlite_classes": ["Jogo"] }
+    { "tag": "v2", "new_sqlite_classes": ["Jogo"] },
+    // Treinos em casa (cópias de grupos de questões compartilhadas por link).
+    { "tag": "v3", "new_sqlite_classes": ["Treino"] }
   ],
   "workers_dev": true,
   "preview_urls": false

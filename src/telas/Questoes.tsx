@@ -19,6 +19,7 @@ import {
 } from '../jogo/banco';
 import { MODELO_IMPORTACAO, importarQuestoes } from '../jogo/importar';
 import { LETRAS, TEMPOS, TEMPO_PADRAO, TEMPO_PADRAO_CONCEITO, type Questao, type QuestaoJogo, type Questionario, type ResultadoJogo } from '../jogo/tipos';
+import { TreinosEmCasa } from './CompartilharTreino';
 import { filtrarMateriais, nomePasta, todasPastas } from '../material/organizacao';
 
 function useDados() {
@@ -608,6 +609,8 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
           </ul>
         </>
       )}
+
+      <TreinosEmCasa questoes={questoes} questionarios={questionarios} />
 
       <h2>Resultados dos jogos</h2>
       <p className="ajuda">Só os números de cada questão (quantos marcaram cada alternativa). Nenhum apelido é guardado.</p>

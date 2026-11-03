@@ -92,7 +92,7 @@ class ServicoDrive {
       if (this.aplicando) return;
       this.agendar(registro ? ESPERA_REGISTRO_MS : ESPERA_MUDANCA_MS);
     };
-    const tabelas = [db.questoes, db.questionarios, db.jogos, db.materiais, db.diplomas, db.itens, db.apagados] as const;
+    const tabelas = [db.questoes, db.questionarios, db.jogos, db.treinos, db.materiais, db.diplomas, db.itens, db.apagados] as const;
     for (const t of tabelas) {
       const f = marcar(false);
       (t as typeof db.questoes).hook('creating', f);

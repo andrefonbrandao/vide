@@ -167,6 +167,15 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 - Quem acerta antes ganha mais pontos (de 1.000 no início a 300 no fim). O projetor mostra quem já acertou e com quantas dicas (com o ranking desligado, só a quantidade). No fim do tempo (ou quando todos acertam), aparece a resposta.
 - No sorteio por assunto, escolha em **Tipo de questão**: todos, só múltipla escolha e V/F, ou só "Adivinhe o conceito".
 
+**Treino em casa (link para os alunos):**
+1. Em **Acervo › Questões**, na parte **Treino em casa**, clique em **Compartilhar para treino**.
+2. Dê um título e escolha as questões: **Por assunto** (com o tipo de questão e quantas por sessão), **Questionário pronto** ou **Escolher as questões** (marcando uma a uma).
+   - Por assunto, escolha **Sortear novas questões a cada sessão** (o aluno pode treinar várias vezes, com variedade) ou **Lista fixa** (sorteada agora, igual para todos, para direcionar o treino).
+3. Escolha quando o aluno vê a resposta certa: **logo depois de cada questão** (com a explicação e o texto do artigo do fundamento) ou **só no fim**.
+4. Clique em **Gerar link** e mande o link (ou o QR code) para a turma. A lista de links fica ali, com **Link e QR** e **Desativar**.
+5. O aluno abre o link, escreve o nome se quiser (só para o PDF) e treina sem tempo e sem competição. No "Adivinhe o conceito", ele pede as dicas quando quiser. No fim, vê o resultado e pode tocar em **Salvar em PDF**. Se a página recarregar, ele continua de onde parou.
+6. Nada do aluno é guardado no serviço do Vide; o resultado fica só no aparelho dele. As respostas certas vão junto com as questões no link (é um treino, não uma prova).
+
 **O que fica guardado:** só os números de cada questão (quantos marcaram cada alternativa), em **Acervo › Questões › Resultados dos jogos**, com exportação para Excel. Nenhum apelido ou nome é guardado.
 
 **Cuidados:** cada aluno precisa de internet no celular. Não recarregue nem feche a página do Vide no computador durante o jogo: o jogo roda nela. Se um aluno recarregar a página, ele volta ao jogo com os mesmos pontos.

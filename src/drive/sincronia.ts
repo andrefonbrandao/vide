@@ -9,6 +9,7 @@
 import type { BancoVide } from '../dados/db';
 import type { Diploma, EventoRegistro, Item, Material } from '../dados/modelo';
 import type { Questao, Questionario, ResultadoJogo } from '../jogo/tipos';
+import type { LinkTreino } from '../treino/tipos';
 import type { ArmazemRemoto, ArquivoRemoto } from './remoto';
 
 export type MaterialMeta = Omit<Material, 'arquivo'>;
@@ -27,6 +28,8 @@ export interface DadosRemotos {
   questoes: Questao[];
   questionarios: Questionario[];
   jogos: ResultadoJogo[];
+  /** Links de treino em casa (com a chave para poder desativá-los de outro computador). */
+  treinos?: LinkTreino[];
   materiais: MaterialMeta[];
   diplomas: Diploma[];
   sessoes: SessaoMeta[];
@@ -39,7 +42,7 @@ export interface ResumoSincronia {
   mudou: Set<'acervo' | 'materiais' | 'questoes' | 'registro'>;
 }
 
-const VAZIO: DadosRemotos = { formato: 'vide-dados@1', questoes: [], questionarios: [], jogos: [], materiais: [], diplomas: [], sessoes: [] };
+const VAZIO: DadosRemotos = { formato: 'vide-dados@1', questoes: [], questionarios: [], jogos: [], treinos: [], materiais: [], diplomas: [], sessoes: [] };
 
 interface ComData {
   id: string;
@@ -122,6 +125,11 @@ export async function sincronizar(banco: BancoVide, remoto: ArmazemRemoto, aviso
   const q = mesclar(await banco.questoes.toArray(), rem.questoes);
   const qz = mesclar(await banco.questionarios.toArray(), rem.questionarios);
   const jg = mesclar(await banco.jogos.toArray(), rem.jogos);
+  const tr = mesclar(await banco.treinos.toArray(), rem.treinos ?? []);
+  if (tr.paraLocal.length) {
+    await banco.treinos.bulkPut(tr.paraLocal);
+    resumo.mudou.add('questoes');
+  }
   if (q.paraLocal.length) await banco.questoes.bulkPut(q.paraLocal);
   if (qz.paraLocal.length) await banco.questionarios.bulkPut(qz.paraLocal);
   if (jg.paraLocal.length) await banco.jogos.bulkPut(jg.paraLocal);
@@ -300,6 +308,7 @@ export async function sincronizar(banco: BancoVide, remoto: ArmazemRemoto, aviso
     questoes: q.resultado,
     questionarios: qz.resultado,
     jogos: jg.resultado,
+    treinos: tr.resultado,
     materiais: [...materiaisFinal.values()],
     diplomas: [...diplomasFinal.values()],
     sessoes: [...sessoesFinal.values()],
@@ -307,13 +316,15 @@ export async function sincronizar(banco: BancoVide, remoto: ArmazemRemoto, aviso
   const ordenar = (d: DadosRemotos) =>
     JSON.stringify(
       Object.fromEntries(
-        Object.entries(d).map(([k, v]) => [k, Array.isArray(v) ? [...v].sort((a, b) => String(a.id).localeCompare(String(b.id))) : v]),
+        Object.entries(d)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([k, v]) => [k, Array.isArray(v) ? [...v].sort((a, b) => String(a.id).localeCompare(String(b.id))) : v]),
       ),
     );
   if (!arqDados || ordenar(novo) !== ordenar(rem)) {
     if (arqDados) await remoto.atualizar(arqDados.id, json(novo));
     else await remoto.criar('Vide - dados.json', { vide: 'dados' }, json(novo));
-    if (q.remotoDesatualizado || qz.remotoDesatualizado || jg.remotoDesatualizado || mat.remotoDesatualizado || dip.remotoDesatualizado) {
+    if (q.remotoDesatualizado || qz.remotoDesatualizado || jg.remotoDesatualizado || tr.remotoDesatualizado || mat.remotoDesatualizado || dip.remotoDesatualizado) {
       resumo.enviados.push('dados');
     }
   }

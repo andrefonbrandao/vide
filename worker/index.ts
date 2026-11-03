@@ -10,6 +10,7 @@ import { DurableObject } from 'cloudflare:workers';
 export interface Env {
   SALAS: DurableObjectNamespace<Sala>;
   JOGOS: DurableObjectNamespace<Jogo>;
+  TREINOS: DurableObjectNamespace<Treino>;
   ASSETS: Fetcher;
 }
 
@@ -17,6 +18,7 @@ type Papel = 'computador' | 'celular';
 
 const RE_SALA = /^\/api\/sala\/([A-Z0-9]{6,16})$/;
 const RE_JOGO = /^\/api\/jogo\/(\d{6})$/;
+const RE_TREINO = /^\/api\/treino(?:\/([A-Za-z0-9]{10,24}))?$/;
 /** Mensagens maiores que isso são descartadas (as do Vide têm poucos KB). */
 const TAMANHO_MAXIMO = 256 * 1024;
 
@@ -39,6 +41,8 @@ export default {
       if (origem && new URL(origem).host !== url.host) return new Response('Origem não permitida', { status: 403 });
       return env.JOGOS.get(env.JOGOS.idFromName(j[1])).fetch(req);
     }
+    const t = RE_TREINO.exec(url.pathname);
+    if (t) return tratarTreino(req, env, url, t[1]);
     if (url.pathname.startsWith('/api/')) return new Response('Não encontrado', { status: 404 });
     return env.ASSETS.fetch(req);
   },
@@ -245,5 +249,70 @@ export class Jogo extends DurableObject<Env> {
     } catch {
       /* já fechada */
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Treino em casa: o professor publica uma cópia de um grupo de questões e
+// recebe um link. Qualquer um com o link lê as questões; só quem tem a chave
+// (o navegador do professor) pode trocar ou apagar. Nada dos alunos é guardado.
+
+const MAX_TREINO = 1_500_000;
+const LETRAS_ID = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+
+function novoIdTreino(): string {
+  const n = new Uint32Array(12);
+  crypto.getRandomValues(n);
+  return Array.from(n, (x) => LETRAS_ID[x % LETRAS_ID.length]).join('');
+}
+
+function jsonResp(dados: unknown, status = 200): Response {
+  return new Response(JSON.stringify(dados), {
+    status,
+    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+  });
+}
+
+async function tratarTreino(req: Request, env: Env, url: URL, id: string | undefined): Promise<Response> {
+  // Escritas só a partir do próprio Vide.
+  if (req.method !== 'GET') {
+    const origem = req.headers.get('Origin');
+    if (!origem || new URL(origem).host !== url.host) return new Response('Origem não permitida', { status: 403 });
+  }
+  if (!id) {
+    if (req.method !== 'POST') return new Response('Método não permitido', { status: 405 });
+    const novo = novoIdTreino();
+    return env.TREINOS.get(env.TREINOS.idFromName(novo)).fetch(new Request(`https://treino/${novo}`, { method: 'PUT', headers: req.headers, body: req.body }));
+  }
+  return env.TREINOS.get(env.TREINOS.idFromName(id)).fetch(new Request(`https://treino/${id}`, { method: req.method, headers: req.headers, body: req.body }));
+}
+
+export class Treino extends DurableObject<Env> {
+  async fetch(req: Request): Promise<Response> {
+    const id = new URL(req.url).pathname.slice(1);
+    const chave = req.headers.get('X-Vide-Chave') ?? '';
+    const guardada = await this.ctx.storage.get<string>('chave');
+    if (req.method === 'GET') {
+      const dados = await this.ctx.storage.get<string>('dados');
+      return dados ? new Response(dados, { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } }) : jsonResp({ erro: 'não encontrado' }, 404);
+    }
+    if (!RE_TOKEN.test(chave)) return jsonResp({ erro: 'chave inválida' }, 400);
+    if (guardada && guardada !== chave) return jsonResp({ erro: 'sem permissão' }, 403);
+    if (req.method === 'PUT') {
+      const texto = await req.text();
+      if (texto.length > MAX_TREINO) return jsonResp({ erro: 'grande demais' }, 413);
+      try {
+        JSON.parse(texto);
+      } catch {
+        return jsonResp({ erro: 'JSON inválido' }, 400);
+      }
+      await this.ctx.storage.put({ chave, dados: texto });
+      return jsonResp({ id });
+    }
+    if (req.method === 'DELETE') {
+      await this.ctx.storage.deleteAll();
+      return jsonResp({ ok: true });
+    }
+    return new Response('Método não permitido', { status: 405 });
   }
 }

@@ -3,6 +3,7 @@
 import Dexie, { type Table } from 'dexie';
 import type { Diploma, EventoRegistro, Item, Material } from './modelo';
 import type { Questao, Questionario, ResultadoJogo } from '../jogo/tipos';
+import type { LinkTreino } from '../treino/tipos';
 import { agoraISO } from './modelo';
 
 export class BancoVide extends Dexie {
@@ -15,6 +16,8 @@ export class BancoVide extends Dexie {
   jogos!: Table<ResultadoJogo, string>;
   /** Marcas do que foi apagado de vez (ex.: registro de uma aula), para levar a exclusão a outros computadores. */
   apagados!: Table<{ chave: string; em: string }, string>;
+  /** Links de treino em casa criados pelo professor. */
+  treinos!: Table<LinkTreino, string>;
 
   constructor(nome = 'vide') {
     super(nome);
@@ -48,6 +51,8 @@ export class BancoVide extends Dexie {
     });
     // Versão 5: marcas de exclusão (sincronização com o Google Drive).
     this.version(5).stores({ apagados: 'chave' });
+    // Versão 6: links de treino em casa.
+    this.version(6).stores({ treinos: 'id, codigo, atualizado_em' });
   }
 }
 

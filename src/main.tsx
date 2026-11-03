@@ -13,6 +13,7 @@ import { Projecao } from './telas/Projecao';
 import { Registro } from './telas/Registro';
 import { Controle } from './telas/Controle';
 import { Jogar } from './telas/Jogar';
+import { Treino } from './telas/Treino';
 import { BotaoDrive } from './telas/PainelDrive';
 
 type Aba = 'aula' | 'acervo' | 'registro';
@@ -52,10 +53,14 @@ const sala = (parametros.get('sala') ?? '').toUpperCase().replace(/[^A-Z0-9]/g, 
 
 // Página dos alunos no jogo de perguntas: /j ou /j/123456.
 const rotaJogo = /^\/j(?:\/(\d{6}))?\/?$/.exec(location.pathname);
+// Treino em casa: /t/<código>.
+const rotaTreino = /^\/t\/([A-Za-z0-9]{10,24})\/?$/.exec(location.pathname);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {rotaJogo ? (
+    {rotaTreino ? (
+      <Treino codigo={rotaTreino[1]} />
+    ) : rotaJogo ? (
       <Jogar codigoInicial={rotaJogo[1] ?? ''} />
     ) : tela === 'projecao' ? (
       <Projecao />
