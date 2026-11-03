@@ -566,3 +566,8 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .trilha-pastas ~ .lista-mat, .cartao > .lista-mat { padding-left: 0; }
 .item-mat > .icone { flex: none; color: var(--tinta-2); }
 .link-pasta { display: inline-flex; align-items: center; gap: 4px; border: none; background: transparent; padding: 0; color: var(--tinta-2); font-weight: 700; font-size: 13px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.trilha-pastas.compacta { margin: 0 0 4px; padding-bottom: 6px; }
+.trilha-pastas.compacta .trilha-degrau { padding: 2px 6px; font-size: 14px; }
+.opcao-pasta { font-weight: 800; }
+.opcao-pasta .icone { flex: none; color: var(--tinta-2); }
+.opcao-mat.opcao-pasta .opcao-mat-nome { min-width: 0; }

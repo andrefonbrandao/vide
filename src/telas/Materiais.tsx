@@ -406,6 +406,7 @@ export function SeletorMaterial({
   const [aberto, setAberto] = useState(false);
   const [busca, setBusca] = useState('');
   const [etiqueta, setEtiqueta] = useState<string | null>(null);
+  const [pastaAberta, setPastaAberta] = useState('');
   const caixaRef = useRef<HTMLDivElement>(null);
 
   // Fecha ao clicar fora ou apertar Esc.
@@ -425,6 +426,10 @@ export function SeletorMaterial({
 
   const filtrados = filtrarMateriais(lista, busca, etiqueta);
   const grupos = agruparPorPasta(filtrados);
+  const procurando = !!busca.trim() || !!etiqueta;
+  const pastas = todasPastas(lista);
+  const atualPasta = pastaAberta && pastas.includes(pastaAberta) ? pastaAberta : '';
+  const conteudo = conteudoDaPasta(lista, atualPasta);
   const recentes = busca || etiqueta
     ? []
     : lerLocal(CHAVE_RECENTES, '')
@@ -434,6 +439,29 @@ export function SeletorMaterial({
         .slice(0, 4);
 
   const atualCompleto = atual ? lista.find((m) => m.id === atual.id) : undefined;
+  const abrirSeletor = () => {
+    // Abre na pasta do material em uso (ou na última aberta).
+    if (!aberto) {
+      let p = atualCompleto?.pasta ?? '';
+      if (!atualCompleto) {
+        try {
+          p = sessionStorage.getItem(CHAVE_PASTA_ABERTA) ?? '';
+        } catch {
+          /* ignore */
+        }
+      }
+      setPastaAberta(p);
+    }
+    setAberto(!aberto);
+  };
+  const abrirPasta = (p: string) => {
+    setPastaAberta(p);
+    try {
+      sessionStorage.setItem(CHAVE_PASTA_ABERTA, p);
+    } catch {
+      /* ignore */
+    }
+  };
   const escolher = (id: string | null) => {
     if (id) marcarUsado(id);
     aoEscolher(id);
@@ -456,7 +484,7 @@ export function SeletorMaterial({
       <span className="seletor-material-rotulo">
         <IcDocumento /> Material
       </span>
-      <button type="button" className="botao-seletor" onClick={() => setAberto(!aberto)} disabled={carregando} aria-expanded={aberto}>
+      <button type="button" className="botao-seletor" onClick={abrirSeletor} disabled={carregando} aria-expanded={aberto}>
         <span className="botao-seletor-nome">
           {carregando ? 'carregando…' : (atual?.nome ?? 'Nenhum material — só os artigos')}
         </span>
@@ -487,13 +515,56 @@ export function SeletorMaterial({
                 <ul className="lista-opcoes">{recentes.map(linha)}</ul>
               </>
             )}
-            {grupos.map((g) => (
-              <div key={g.pasta}>
-                <h4>{nomePasta(g.pasta)}</h4>
-                <ul className="lista-opcoes">{g.itens.map(linha)}</ul>
-              </div>
-            ))}
-            {lista.length > 0 && filtrados.length === 0 && <p className="ajuda">Nada encontrado.</p>}
+            {procurando ? (
+              <>
+                {grupos.map((g) => (
+                  <div key={g.pasta}>
+                    <h4>{nomePasta(g.pasta)}</h4>
+                    <ul className="lista-opcoes">{g.itens.map(linha)}</ul>
+                  </div>
+                ))}
+                {lista.length > 0 && filtrados.length === 0 && <p className="ajuda">Nada encontrado.</p>}
+              </>
+            ) : (
+              lista.length > 0 && (
+                <>
+                  <h4>Pastas</h4>
+                  <nav className="trilha-pastas compacta" aria-label="Pasta aberta">
+                    <button type="button" className={`trilha-degrau${atualPasta === '' ? ' atual' : ''}`} onClick={() => abrirPasta('')}>
+                      <IcPasta tamanho={16} /> Todos
+                    </button>
+                    {degrausDaPasta(atualPasta).map((d) => (
+                      <span key={d.pasta} className="trilha-item">
+                        <span className="trilha-sep" aria-hidden="true">›</span>
+                        <button type="button" className={`trilha-degrau${d.pasta === atualPasta ? ' atual' : ''}`} onClick={() => abrirPasta(d.pasta)}>
+                          {d.nome}
+                        </button>
+                      </span>
+                    ))}
+                  </nav>
+                  <ul className="lista-opcoes">
+                    {atualPasta && (
+                      <li>
+                        <button type="button" className="opcao-mat opcao-pasta" onClick={() => abrirPasta(atualPasta.split('/').slice(0, -1).join('/'))}>
+                          <span className="opcao-mat-nome">↑ Voltar</span>
+                        </button>
+                      </li>
+                    )}
+                    {conteudo.subpastas.map((sp) => (
+                      <li key={sp.pasta}>
+                        <button type="button" className="opcao-mat opcao-pasta" onClick={() => abrirPasta(sp.pasta)}>
+                          <IcPasta tamanho={18} />
+                          <span className="opcao-mat-nome">{sp.nome}</span>
+                          <span className="ajuda">{sp.total} ›</span>
+                        </button>
+                      </li>
+                    ))}
+                    {conteudo.itens.map(linha)}
+                  </ul>
+                  {!conteudo.subpastas.length && !conteudo.itens.length && <p className="ajuda">Pasta vazia.</p>}
+                </>
+              )
+            )}
           </div>
           <button
             type="button"

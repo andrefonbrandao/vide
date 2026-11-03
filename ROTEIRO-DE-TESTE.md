@@ -86,7 +86,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 2. No Vide, na aba **Acervo**, clique em **+** › **Adicionar material**: preencha a **Pasta** (use "/" para subpastas, ex.: *Processo Civil II/Sentença*) e as **Etiquetas** (ex.: *sentença, recursos*) e escolha os arquivos (pode escolher vários de uma vez). Os materiais guardados ficam na aba **Materiais**, organizados como no explorador de arquivos: clique na pasta, depois na subpasta, até chegar ao arquivo (a linha do alto mostra o caminho e serve para voltar; **Adicionar aqui** já guarda na pasta aberta). A busca procura em todas as pastas. Para mudar a pasta ou as etiquetas de um arquivo, use **Organizar**.
 
 **Na aula:**
-1. Clique na faixa **Material** (logo abaixo dos botões do alto). Abre uma lista com busca: digite parte do nome, da pasta ou uma etiqueta (ou clique numa etiqueta). Os usados recentemente aparecem no topo. Escolha o arquivo; o projetor mostra a página 1.
+1. Clique na faixa **Material** (logo abaixo dos botões do alto). Os usados recentemente aparecem no topo; abaixo, navegue pelas pastas como no Acervo (pasta › subpasta › arquivo; a linha do caminho serve para voltar). A lista já abre na pasta do material em uso. A busca (nome, pasta ou etiqueta) procura em todas as pastas. Escolha o arquivo; o projetor mostra a página 1.
 2. **Roda do mouse** passa as páginas. O passador de slides (PageDown/PageUp) também funciona.
 3. **Para ampliar uma parte da página:** na miniatura do centro da sua tela, **arraste o mouse** desenhando um retângulo sobre o trecho. O projetor mostra só aquele trecho, ocupando a tela inteira.
    - Com zoom, a roda **desce dentro da página**; no fim, continua no alto da página seguinte (bom para PDF em pé).
