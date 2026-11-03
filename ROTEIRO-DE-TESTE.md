@@ -103,6 +103,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
    - **Esc** limpa o campo e devolve as teclas para a aula. O mesmo campo existe no iPhone.
 6. **Clique direito** (ou dizer **"pode fechar"**) recolhe o artigo, e o slide volta a ocupar a tela, no mesmo ponto.
 7. **Ocultar** (ou tecla **.** ponto) deixa o projetor preto por um momento; **Mostrar** traz o material de volta.
+8. Para tirar o material da tela, clique no **×** no canto direito da barra do material (acima da miniatura). O projetor fica só com os artigos.
 
 ## Usar o iPhone como microfone e controle
 

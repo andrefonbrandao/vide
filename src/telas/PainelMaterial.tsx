@@ -74,6 +74,14 @@ export function PainelMaterial({ e, ctl }: { e: EstadoAula; ctl: ControladorAula
           página {m.pagina} de {m.paginas}
         </span>
         <button className="botao pequeno" onClick={() => ctl.passoMaterial(1)} aria-label="Avançar">▶</button>
+        <button
+          className="fechar-material"
+          onClick={() => ctl.escolherMaterial(null)}
+          aria-label="Fechar o material"
+          title="Fechar o material (o projetor fica só com os artigos)"
+        >
+          ×
+        </button>
       </div>
 
       <div className={`painel-material-pagina${e.telaPreta ? ' apagado' : ''}`}>
