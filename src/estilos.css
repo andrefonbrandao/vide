@@ -615,3 +615,14 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .opcao-assunto:hover { background: rgba(30, 58, 52, 0.08); }
 .opcao-assunto.atual { background: var(--tinta); color: var(--fundo); }
 .opcao-assunto .total { font-weight: 600; font-size: 13px; opacity: 0.8; white-space: nowrap; }
+
+/* ---------- Ver material (Acervo) ---------- */
+.nome-mat { border: none; background: transparent; padding: 0; font-weight: 800; color: var(--tinta); cursor: pointer; text-align: left; }
+.nome-mat:hover { text-decoration: underline; text-underline-offset: 3px; }
+.modal.previa-mat { width: min(1180px, 100%); display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; padding: 18px; }
+.previa-mat-visor { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.previa-mat-pagina { position: relative; height: min(72vh, 760px); background: #000; border-radius: 12px; overflow: hidden; display: flex; }
+.previa-mat-paginas { display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 700; }
+.previa-mat-dados { display: flex; flex-direction: column; gap: 4px; }
+.previa-mat-seq { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--linha); }
+@media (max-width: 860px) { .modal.previa-mat { grid-template-columns: 1fr; } .previa-mat-pagina { height: 50vh; } }

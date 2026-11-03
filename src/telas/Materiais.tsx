@@ -3,7 +3,9 @@
 // - <SeletorMaterial/>: botão da tela da aula, com busca, para escolher o material.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Material } from '../dados/modelo';
-import { atualizarMaterial, excluirMaterial, importarMaterial, limparEtiquetas, listarMateriais } from '../material/documento';
+import { abrirDocumentoPorId, atualizarMaterial, excluirMaterial, importarMaterial, limparEtiquetas, listarMateriais, type Documento } from '../material/documento';
+import { CanvasMaterial } from '../material/CanvasMaterial';
+import { PAGINA_INTEIRA } from '../material/regiao';
 import { IcDocumento, IcMais, IcPasta, IcSetaBaixo } from '../comum/Icones';
 import {
   agruparPorPasta,
@@ -126,6 +128,7 @@ export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
   const [busca, setBusca] = useState('');
   const [etiqueta, setEtiqueta] = useState<string | null>(null);
   const [editando, setEditando] = useState<string | null>(null);
+  const [previa, setPrevia] = useState<string | null>(null);
   // Pasta aberta (lembrada enquanto a aba do navegador estiver aberta). "" = início.
   const [aberta, setAbertaEstado] = useState(() => {
     try {
@@ -173,7 +176,9 @@ export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
       <li key={m.id} className="item-mat">
         <IcDocumento tamanho={20} />
         <div className="item-mat-info">
-          <strong>{m.nome}</strong>{' '}
+          <button className="nome-mat" onClick={() => setPrevia(m.id)} title="Ver o conteúdo">
+            {m.nome}
+          </button>{' '}
           <span className="ajuda">
             {m.tipo === 'pdf' ? 'PDF' : 'imagem'} · {m.paginas} {m.paginas === 1 ? 'página' : 'páginas'} · {mb(m.tamanho)}
           </span>
@@ -184,6 +189,7 @@ export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
           )}
           <Etiquetas lista={m.etiquetas ?? []} ativa={etiqueta} aoEscolher={(e) => setEtiqueta(etiqueta === e ? null : e)} />
         </div>
+        <button className="botao pequeno" onClick={() => setPrevia(m.id)}>Ver</button>
         <button className="botao pequeno" onClick={() => setEditando(m.id)}>Organizar</button>
         <button
           className="botao pequeno"
@@ -199,6 +205,14 @@ export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
 
   return (
     <>
+      {previa && lista.some((m) => m.id === previa) && (
+        <PreviaMaterial
+          m={lista.find((m) => m.id === previa)!}
+          sequencia={(procurando ? grupos.flatMap((g) => g.itens) : conteudo.itens).map((m) => m.id)}
+          aoTrocar={setPrevia}
+          aoFechar={() => setPrevia(null)}
+        />
+      )}
       <h2>Materiais</h2>
       <datalist id="pastas-mat">
         {pastas.map((p) => (
@@ -349,6 +363,139 @@ export function AdicionarMaterial({ aoVer }: { aoVer: () => void }) {
         )}
       </div>
     </>
+  );
+}
+
+/** Janela para ver o conteúdo do material e, ao lado, renomear ou mudar de pasta. */
+function PreviaMaterial({
+  m,
+  sequencia,
+  aoTrocar,
+  aoFechar,
+}: {
+  m: Material;
+  /** Materiais da pasta (ou da busca) na ordem da lista, para passar ao próximo. */
+  sequencia: string[];
+  aoTrocar: (id: string) => void;
+  aoFechar: () => void;
+}) {
+  const [documento, setDocumento] = useState<Documento | null>(null);
+  const [pagina, setPagina] = useState(1);
+  const [nome, setNome] = useState(m.nome);
+  const [pasta, setPasta] = useState(m.pasta ?? '');
+  const [etiquetas, setEtiquetas] = useState((m.etiquetas ?? []).join(', '));
+  const [aviso, setAviso] = useState<string | null>(null);
+
+  // Trocou de material: abre o arquivo e recarrega os campos.
+  useEffect(() => {
+    let vivo = true;
+    setDocumento(null);
+    setPagina(1);
+    setNome(m.nome);
+    setPasta(m.pasta ?? '');
+    setEtiquetas((m.etiquetas ?? []).join(', '));
+    setAviso(null);
+    abrirDocumentoPorId(m.id).then((d) => vivo && setDocumento(d));
+    return () => {
+      vivo = false;
+    };
+  }, [m.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const pos = sequencia.indexOf(m.id);
+  const mudou = nome.trim() !== m.nome || pasta.trim() !== (m.pasta ?? '') || etiquetas.trim() !== (m.etiquetas ?? []).join(', ');
+  const salvar = async () => {
+    if (!nome.trim()) return setAviso('O nome não pode ficar vazio.');
+    await atualizarMaterial(m.id, { nome, pasta, etiquetas: [etiquetas] });
+    setAviso('Guardado.');
+  };
+  const ir = async (delta: number) => {
+    if (mudou) await salvar();
+    const prox = sequencia[pos + delta];
+    if (prox) aoTrocar(prox);
+  };
+
+  // Setas do teclado passam as páginas (fora dos campos de texto); Esc fecha.
+  useEffect(() => {
+    const tecla = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') return aoFechar();
+      if (e.target instanceof Element && e.target.matches('input, textarea')) return;
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') setPagina((p) => Math.min(m.paginas, p + 1));
+      if (e.key === 'ArrowLeft' || e.key === 'PageUp') setPagina((p) => Math.max(1, p - 1));
+    };
+    window.addEventListener('keydown', tecla);
+    return () => window.removeEventListener('keydown', tecla);
+  }, [m.paginas, aoFechar]);
+
+  return (
+    <div className="modal-fundo" onMouseDown={(ev) => ev.target === ev.currentTarget && aoFechar()}>
+      <div className="modal previa-mat" role="dialog" aria-label={`Ver ${m.nome}`}>
+        <div className="previa-mat-visor">
+          <div className="previa-mat-pagina">
+            {documento ? (
+              <CanvasMaterial documento={documento} pagina={pagina} regiao={PAGINA_INTEIRA} />
+            ) : (
+              <p className="ajuda" style={{ margin: 'auto' }}>Abrindo…</p>
+            )}
+          </div>
+          <div className="previa-mat-paginas">
+            <button className="botao pequeno" onClick={() => setPagina((p) => Math.max(1, p - 1))} disabled={pagina <= 1} aria-label="Página anterior">
+              ◀
+            </button>
+            <span>
+              página {pagina} de {m.paginas}
+            </span>
+            <button className="botao pequeno" onClick={() => setPagina((p) => Math.min(m.paginas, p + 1))} disabled={pagina >= m.paginas} aria-label="Próxima página">
+              ▶
+            </button>
+          </div>
+        </div>
+        <form
+          className="previa-mat-dados"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void salvar();
+          }}
+        >
+          <div className="campo">
+            <label htmlFor="previa-nome">Nome</label>
+            <input id="previa-nome" value={nome} onChange={(e) => (setNome(e.target.value), setAviso(null))} />
+          </div>
+          <div className="campo">
+            <label htmlFor="previa-pasta">Pasta (use "/" para subpastas)</label>
+            <input id="previa-pasta" list="pastas-mat" value={pasta} onChange={(e) => (setPasta(e.target.value), setAviso(null))} placeholder="sem pasta" />
+          </div>
+          <div className="campo">
+            <label htmlFor="previa-etq">Etiquetas (vírgula)</label>
+            <input id="previa-etq" value={etiquetas} onChange={(e) => (setEtiquetas(e.target.value), setAviso(null))} />
+          </div>
+          <div className="linha-opcoes">
+            <button className="botao primario" type="submit" disabled={!mudou}>
+              Salvar
+            </button>
+            <button className="botao" type="button" onClick={aoFechar}>
+              Fechar
+            </button>
+          </div>
+          {aviso && <p className={`digitar-msg${aviso === 'Guardado.' ? '' : ' erro'}`} style={{ padding: 0 }}>{aviso}</p>}
+          {sequencia.length > 1 && pos >= 0 && (
+            <div className="previa-mat-seq">
+              <span className="ajuda" style={{ margin: 0 }}>
+                Material {pos + 1} de {sequencia.length} desta lista
+              </span>
+              <div className="linha-opcoes">
+                <button className="botao pequeno" type="button" onClick={() => void ir(-1)} disabled={pos <= 0}>
+                  ◀ Anterior
+                </button>
+                <button className="botao pequeno" type="button" onClick={() => void ir(1)} disabled={pos >= sequencia.length - 1}>
+                  Próximo ▶
+                </button>
+              </div>
+              {mudou && <span className="ajuda" style={{ margin: 0 }}>Ao passar para outro, as mudanças deste são guardadas.</span>}
+            </div>
+          )}
+        </form>
+      </div>
+    </div>
   );
 }
 
