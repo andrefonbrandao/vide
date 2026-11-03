@@ -173,6 +173,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
    - Por assunto, escolha **Sortear novas questões a cada sessão** (o aluno pode treinar várias vezes, com variedade) ou **Lista fixa** (sorteada agora, igual para todos, para direcionar o treino).
 3. Escolha quando o aluno vê a resposta certa: **logo depois de cada questão** (com a explicação e o texto do artigo do fundamento) ou **só no fim**.
 4. Clique em **Gerar link** e mande o link (ou o QR code) para a turma. A lista de links fica ali, com **Link e QR** e **Desativar**.
+   - Para o **Moodle**: o mais simples é **Copiar link** e criar um recurso **URL** (ou colar num Rótulo, Página ou Fórum). Para pôr o QR code: **Copiar imagem do QR** e, no editor do Moodle, **Ctrl + V**; ou **Baixar QR code (imagem)** (vai para Downloads, com o título e o link embaixo) e use o botão de inserir imagem do editor.
 5. O aluno abre o link, escreve o nome se quiser (só para o PDF) e treina sem tempo e sem competição. No "Adivinhe o conceito", ele pede as dicas quando quiser. No fim, vê o resultado e pode tocar em **Salvar em PDF**. Se a página recarregar, ele continua de onde parou.
 6. Nada do aluno é guardado no serviço do Vide; o resultado fica só no aparelho dele. As respostas certas vão junto com as questões no link (é um treino, não uma prova).
 

@@ -5,6 +5,7 @@ import { assuntosDasQuestoes, sortearQuestoes, type FiltroTipo } from '../jogo/b
 import type { Questao, Questionario } from '../jogo/tipos';
 import { criarLinkTreino, desativarLinkTreino, listarLinksTreino } from '../treino/publicar';
 import { urlDoTreino, type LinkTreino } from '../treino/tipos';
+import { gerarImagemQr, nomeArquivoQr } from '../treino/imagemQr';
 
 type Fonte = 'questionario' | 'escolher' | 'assunto';
 
@@ -25,6 +26,27 @@ function semAcento(t: string): string {
 function LinkPronto({ link }: { link: LinkTreino }) {
   const url = urlDoTreino(link.codigo);
   const [copiado, setCopiado] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
+  const baixarQr = async () => {
+    const png = await gerarImagemQr(url, link.titulo);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(png);
+    a.download = nomeArquivoQr(link.titulo);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    setAviso('Imagem salva na pasta Downloads. No Moodle, use o botão de inserir imagem do editor.');
+  };
+  const copiarQr = async () => {
+    try {
+      const png = await gerarImagemQr(url, link.titulo);
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
+      setAviso('Imagem copiada. No editor do Moodle, clique onde quer a imagem e aperte Ctrl + V.');
+    } catch {
+      setAviso('Este navegador não deixou copiar a imagem. Use "Baixar QR code".');
+    }
+  };
   return (
     <div className="link-treino-pronto">
       <QRPequeno url={url} />
@@ -42,7 +64,14 @@ function LinkPronto({ link }: { link: LinkTreino }) {
           }}
         >
           {copiado ? 'Link copiado' : 'Copiar link'}
+        </button>{' '}
+        <button className="botao pequeno" onClick={() => void baixarQr()} title="Salva uma imagem PNG com o QR code, o título e o link">
+          Baixar QR code (imagem)
+        </button>{' '}
+        <button className="botao pequeno" onClick={() => void copiarQr()} title="Copia a imagem do QR code para colar no Moodle (Ctrl + V)">
+          Copiar imagem do QR
         </button>
+        {aviso && <p className="digitar-msg" style={{ padding: 0 }}>{aviso}</p>}
         <p className="ajuda">Mande o link (ou o QR code) para a turma. Quem abrir treina sozinho, sem cadastro.</p>
       </div>
     </div>

@@ -13,16 +13,22 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 2** aberto em 2026-11-03, a partir da versão 0.17.0. **Fechado e publicado como versão 0.18.0.**
-O próximo pacote recomeça esta seção a partir da versão publicada.
+**Pacote 3** aberto em 2026-11-03, a partir da versão 0.18.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | Treino em casa: botões para baixar o QR code como imagem (PNG) e copiar a imagem, para divulgar no Moodle, em slides ou impresso (imagem PNG com o QR, o título e o link) | Pronta |
+
+## Pacotes anteriores
+
+### Pacote 2 (publicado como 0.18.0 em 2026-11-03)
+
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | Atividades › Sortear por assunto: campo de busca de assunto (sem diferença de maiúsculas e acentos; Enter escolhe o primeiro) com a lista filtrada, no lugar da caixa de seleção | Publicada (0.18.0) |
 | 2 | Acervo › Materiais: ver o conteúdo do PDF/imagem (clique no nome ou em "Ver"), com as páginas e, ao lado, renomear, mudar de pasta e etiquetas; "Próximo ▶" passa ao seguinte da mesma pasta guardando as mudanças | Publicada (0.18.0) |
 | 3 | Treino em casa: link (e QR) com um grupo de questões — por assunto (sorteio a cada sessão ou lista fixa), questionário pronto ou escolhidas uma a uma; aluno resolve sozinho, sem tempo nem competição, com a resposta a cada questão ou só no fim, o texto do artigo do fundamento e o resultado em PDF; links listados com Desativar. Requer novo serviço no Cloudflare (Durable Object "Treino") | Publicada (0.18.0) |
-
-## Pacotes anteriores
 
 ### Pacote 1 (publicado como 0.17.0 em 2026-11-03)
 
