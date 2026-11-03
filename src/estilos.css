@@ -547,3 +547,22 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .lista-previa { margin: 6px 0 0; padding-left: 22px; line-height: 1.5; }
 .editor-questionario h3 { margin: 14px 0 6px; }
 .controle-jogo { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+
+/* ---------- Materiais: navegação por pastas ---------- */
+.trilha-pastas { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 10px 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--linha); }
+.trilha-item { display: inline-flex; align-items: center; gap: 6px; }
+.trilha-sep { color: var(--tinta-3); font-weight: 800; }
+.trilha-degrau { display: inline-flex; align-items: center; gap: 6px; border: none; background: transparent; padding: 4px 8px; border-radius: 8px; font-weight: 700; color: var(--tinta-2); cursor: pointer; }
+.trilha-degrau:hover { background: rgba(30, 58, 52, 0.08); color: var(--tinta); }
+.trilha-degrau.atual { color: var(--tinta); font-weight: 800; }
+.grade-pastas { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.cartao-pasta {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; cursor: pointer;
+  border: 2px solid var(--linha); border-radius: 14px; background: var(--fundo); padding: 12px 14px; color: var(--tinta);
+}
+.cartao-pasta:hover { border-color: var(--tinta); }
+.cartao-pasta-nome { font-weight: 800; font-size: 16px; line-height: 1.25; word-break: break-word; }
+.cartao-pasta-total { font-size: 13px; color: var(--tinta-3); font-weight: 600; }
+.trilha-pastas ~ .lista-mat, .cartao > .lista-mat { padding-left: 0; }
+.item-mat > .icone { flex: none; color: var(--tinta-2); }
+.link-pasta { display: inline-flex; align-items: center; gap: 4px; border: none; background: transparent; padding: 0; color: var(--tinta-2); font-weight: 700; font-size: 13px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }

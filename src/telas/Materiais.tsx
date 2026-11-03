@@ -5,7 +5,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Material } from '../dados/modelo';
 import { atualizarMaterial, excluirMaterial, importarMaterial, limparEtiquetas, listarMateriais } from '../material/documento';
 import { IcDocumento, IcMais, IcPasta, IcSetaBaixo } from '../comum/Icones';
-import { agruparPorPasta, filtrarMateriais, nomePasta, todasEtiquetas, todasPastas, type MaterialOrganizavel } from '../material/organizacao';
+import {
+  agruparPorPasta,
+  conteudoDaPasta,
+  degrausDaPasta,
+  filtrarMateriais,
+  nomePasta,
+  todasEtiquetas,
+  todasPastas,
+  type MaterialOrganizavel,
+} from '../material/organizacao';
 
 const CHAVE_ULTIMA_PASTA = 'vide.ultimaPasta';
 const CHAVE_RECENTES = 'vide.materiaisRecentes';
@@ -110,15 +119,40 @@ function Filtros({
 // ---------------------------------------------------------------------------
 
 /** Lista de materiais, agrupada por pasta, com busca e etiquetas. */
+const CHAVE_PASTA_ABERTA = 'vide.pastaAberta';
+
 export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
   const lista = useMateriais();
   const [busca, setBusca] = useState('');
   const [etiqueta, setEtiqueta] = useState<string | null>(null);
   const [editando, setEditando] = useState<string | null>(null);
+  // Pasta aberta (lembrada enquanto a aba do navegador estiver aberta). "" = início.
+  const [aberta, setAbertaEstado] = useState(() => {
+    try {
+      return sessionStorage.getItem(CHAVE_PASTA_ABERTA) ?? '';
+    } catch {
+      return '';
+    }
+  });
+  const abrir = (p: string) => {
+    setAbertaEstado(p);
+    setBusca('');
+    setEtiqueta(null);
+    try {
+      sessionStorage.setItem(CHAVE_PASTA_ABERTA, p);
+    } catch {
+      /* ignore */
+    }
+  };
 
   const pastas = useMemo(() => todasPastas(lista), [lista]);
+  const procurando = !!busca.trim() || !!etiqueta;
   const filtrados = useMemo(() => filtrarMateriais(lista, busca, etiqueta), [lista, busca, etiqueta]);
   const grupos = useMemo(() => agruparPorPasta(filtrados), [filtrados]);
+  // A pasta aberta pode ter deixado de existir (materiais movidos ou apagados): volta ao início.
+  const pastaValida = !aberta || pastas.includes(aberta);
+  const atual = pastaValida ? aberta : '';
+  const conteudo = useMemo(() => conteudoDaPasta(lista, atual), [lista, atual]);
   const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
 
   if (lista.length === 0) {
@@ -132,6 +166,37 @@ export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
     );
   }
 
+  const item = (m: Material, mostrarPasta = false) =>
+    editando === m.id ? (
+      <EditarMaterial key={m.id} m={m} aoFechar={() => setEditando(null)} />
+    ) : (
+      <li key={m.id} className="item-mat">
+        <IcDocumento tamanho={20} />
+        <div className="item-mat-info">
+          <strong>{m.nome}</strong>{' '}
+          <span className="ajuda">
+            {m.tipo === 'pdf' ? 'PDF' : 'imagem'} · {m.paginas} {m.paginas === 1 ? 'página' : 'páginas'} · {mb(m.tamanho)}
+          </span>
+          {mostrarPasta && (
+            <button className="link-pasta" onClick={() => abrir(m.pasta ?? '')}>
+              <IcPasta tamanho={14} /> {nomePasta(m.pasta ?? '')}
+            </button>
+          )}
+          <Etiquetas lista={m.etiquetas ?? []} ativa={etiqueta} aoEscolher={(e) => setEtiqueta(etiqueta === e ? null : e)} />
+        </div>
+        <button className="botao pequeno" onClick={() => setEditando(m.id)}>Organizar</button>
+        <button
+          className="botao pequeno"
+          onClick={async () => {
+            if (!confirm(`Apagar "${m.nome}" dos materiais?`)) return;
+            await excluirMaterial(m.id);
+          }}
+        >
+          Apagar
+        </button>
+      </li>
+    );
+
   return (
     <>
       <h2>Materiais</h2>
@@ -142,42 +207,66 @@ export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
       </datalist>
       <div className="cartao">
         <Filtros lista={lista} busca={busca} setBusca={setBusca} etiqueta={etiqueta} setEtiqueta={setEtiqueta} />
-        {filtrados.length === 0 && <p className="ajuda">Nada encontrado.</p>}
-        {grupos.map((g) => (
-          <details key={g.pasta} open className="pasta-mat">
-            <summary>
-              <span className="pasta-icone" aria-hidden="true">▸</span> <IcPasta tamanho={18} /> {nomePasta(g.pasta)}{' '}
-              <span className="total">{g.itens.length}</span>
-            </summary>
-            <ul className="lista-mat">
-              {g.itens.map((m) =>
-                editando === m.id ? (
-                  <EditarMaterial key={m.id} m={m} aoFechar={() => setEditando(null)} />
-                ) : (
-                  <li key={m.id} className="item-mat">
-                    <div className="item-mat-info">
-                      <strong>{m.nome}</strong>{' '}
-                      <span className="ajuda">
-                        {m.tipo === 'pdf' ? 'PDF' : 'imagem'} · {m.paginas} {m.paginas === 1 ? 'página' : 'páginas'} · {mb(m.tamanho)}
-                      </span>
-                      <Etiquetas lista={m.etiquetas ?? []} ativa={etiqueta} aoEscolher={(e) => setEtiqueta(etiqueta === e ? null : e)} />
-                    </div>
-                    <button className="botao pequeno" onClick={() => setEditando(m.id)}>Organizar</button>
-                    <button
-                      className="botao pequeno"
-                      onClick={async () => {
-                        if (!confirm(`Apagar "${m.nome}" dos materiais?`)) return;
-                        await excluirMaterial(m.id);
-                      }}
-                    >
-                      Apagar
-                    </button>
-                  </li>
-                ),
+
+        {procurando ? (
+          <>
+            <p className="ajuda">
+              {filtrados.length === 0 ? 'Nada encontrado.' : `${filtrados.length} encontrado(s) em todas as pastas.`}{' '}
+              <button className="link-pasta" onClick={() => abrir(atual)}>
+                Limpar a busca
+              </button>
+            </p>
+            <ul className="lista-mat">{grupos.flatMap((g) => g.itens.map((m) => item(m, true)))}</ul>
+          </>
+        ) : (
+          <>
+            <nav className="trilha-pastas" aria-label="Pasta aberta">
+              <button className={`trilha-degrau${atual === '' ? ' atual' : ''}`} onClick={() => abrir('')}>
+                <IcPasta tamanho={16} /> Todos os materiais
+              </button>
+              {degrausDaPasta(atual).map((d) => (
+                <span key={d.pasta} className="trilha-item">
+                  <span className="trilha-sep" aria-hidden="true">›</span>
+                  <button className={`trilha-degrau${d.pasta === atual ? ' atual' : ''}`} onClick={() => abrir(d.pasta)}>
+                    {d.nome}
+                  </button>
+                </span>
+              ))}
+              <span className="espaco" />
+              {atual && (
+                <button className="botao pequeno" onClick={() => abrir(atual.split('/').slice(0, -1).join('/'))}>
+                  ↑ Voltar
+                </button>
               )}
-            </ul>
-          </details>
-        ))}
+              <button
+                className="botao pequeno com-icone"
+                onClick={() => {
+                  gravarLocal(CHAVE_ULTIMA_PASTA, atual);
+                  aoAdicionar();
+                }}
+                title={atual ? `Adicionar material na pasta "${nomePasta(atual)}"` : 'Adicionar material'}
+              >
+                <IcMais tamanho={16} /> {atual ? 'Adicionar aqui' : 'Adicionar'}
+              </button>
+            </nav>
+
+            {conteudo.subpastas.length > 0 && (
+              <div className="grade-pastas">
+                {conteudo.subpastas.map((sp) => (
+                  <button key={sp.pasta} className="cartao-pasta" onClick={() => abrir(sp.pasta)}>
+                    <IcPasta tamanho={26} />
+                    <span className="cartao-pasta-nome">{sp.nome}</span>
+                    <span className="cartao-pasta-total">
+                      {sp.total} {sp.total === 1 ? 'material' : 'materiais'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {conteudo.itens.length > 0 && <ul className="lista-mat">{conteudo.itens.map((m) => item(m))}</ul>}
+            {!conteudo.subpastas.length && !conteudo.itens.length && <p className="ajuda">Esta pasta está vazia.</p>}
+          </>
+        )}
       </div>
     </>
   );

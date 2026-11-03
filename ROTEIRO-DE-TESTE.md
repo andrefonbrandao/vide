@@ -83,7 +83,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 
 **Preparar (em casa):**
 1. No PowerPoint, salve os slides em PDF: **Arquivo › Exportar › Criar PDF**. Também servem PDFs de acórdãos, textos e imagens (PNG, JPG).
-2. No Vide, na aba **Acervo**, clique em **+** › **Adicionar material**: preencha a **Pasta** (use "/" para subpastas, ex.: *Processo Civil II/Sentença*) e as **Etiquetas** (ex.: *sentença, recursos*) e escolha os arquivos (pode escolher vários de uma vez). Os materiais guardados ficam no botão **Materiais**; para mudar a pasta ou as etiquetas, use **Organizar**.
+2. No Vide, na aba **Acervo**, clique em **+** › **Adicionar material**: preencha a **Pasta** (use "/" para subpastas, ex.: *Processo Civil II/Sentença*) e as **Etiquetas** (ex.: *sentença, recursos*) e escolha os arquivos (pode escolher vários de uma vez). Os materiais guardados ficam na aba **Materiais**, organizados como no explorador de arquivos: clique na pasta, depois na subpasta, até chegar ao arquivo (a linha do alto mostra o caminho e serve para voltar; **Adicionar aqui** já guarda na pasta aberta). A busca procura em todas as pastas. Para mudar a pasta ou as etiquetas de um arquivo, use **Organizar**.
 
 **Na aula:**
 1. Clique na faixa **Material** (logo abaixo dos botões do alto). Abre uma lista com busca: digite parte do nome, da pasta ou uma etiqueta (ou clique numa etiqueta). Os usados recentemente aparecem no topo. Escolha o arquivo; o projetor mostra a página 1.

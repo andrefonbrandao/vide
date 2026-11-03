@@ -65,3 +65,47 @@ export function todasEtiquetas(lista: MaterialOrganizavel[]): { etiqueta: string
 export function nomePasta(pasta: string): string {
   return pasta ? pasta.split('/').join(' › ') : 'Sem pasta';
 }
+
+export interface Subpasta {
+  /** Caminho completo ("Processo Civil II/Sentença"). */
+  pasta: string;
+  /** Só o último nome ("Sentença"). */
+  nome: string;
+  /** Quantos materiais há dentro dela (incluindo as subpastas). */
+  total: number;
+}
+
+/**
+ * O que aparece ao abrir uma pasta: as subpastas diretas (com o total de
+ * materiais dentro de cada uma) e os materiais que estão nela mesma.
+ * Pasta "" = início (materiais sem pasta e as pastas principais).
+ */
+export function conteudoDaPasta<T extends MaterialOrganizavel>(lista: T[], pasta: string): { subpastas: Subpasta[]; itens: T[] } {
+  const prefixo = pasta ? `${pasta}/` : '';
+  const sub = new Map<string, number>();
+  const itens: T[] = [];
+  for (const m of lista) {
+    const p = m.pasta ?? '';
+    if (p === pasta) {
+      itens.push(m);
+      continue;
+    }
+    if (pasta && !p.startsWith(prefixo)) continue;
+    const resto = p.slice(prefixo.length);
+    if (!resto) continue;
+    const nome = resto.split('/')[0];
+    sub.set(nome, (sub.get(nome) ?? 0) + 1);
+  }
+  return {
+    subpastas: [...sub.entries()]
+      .sort(([a], [b]) => a.localeCompare(b, 'pt-BR', { numeric: true }))
+      .map(([nome, total]) => ({ pasta: prefixo + nome, nome, total })),
+    itens: itens.sort((x, y) => x.nome.localeCompare(y.nome, 'pt-BR', { numeric: true })),
+  };
+}
+
+/** Os degraus do caminho: "A/B/C" -> ["A", "A/B", "A/B/C"]. */
+export function degrausDaPasta(pasta: string): { pasta: string; nome: string }[] {
+  const partes = pasta.split('/').filter(Boolean);
+  return partes.map((nome, i) => ({ pasta: partes.slice(0, i + 1).join('/'), nome }));
+}
