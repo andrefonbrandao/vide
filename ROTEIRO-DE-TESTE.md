@@ -132,12 +132,17 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
    - **Colar várias de uma vez:** cole as questões no formato mostrado na tela (enunciado, alternativas A a D e "Resposta: C"; sem alternativas, a questão é de verdadeiro ou falso, com "Resposta: V" ou "F"). "Tempo", "Explicação" e "Fundamento" (ex.: `485 VI`) são opcionais. Se pedir questões ao Claude ou ao Gemini, use **Copiar o modelo** e mande junto.
    - O Vide mostra quantas questões entendeu e aponta as que têm problema.
    - Dê um nome em **Criar um questionário com estas questões** para já montar o jogo.
+   - **Assuntos:** escreva os assuntos no campo **Assuntos** (valem para todas as questões coladas) ou numa linha "Assunto: sentença, recursos" dentro de cada questão. Na aba **Questões**, os assuntos aparecem como botões para filtrar o banco.
    - Ou use **Escrever uma questão** para fazer uma por vez.
 2. Na aba **Questões** do Acervo você edita as questões, monta outros questionários (escolhendo e ordenando as questões) e vê os resultados dos jogos.
 
 **Na aula:**
 1. Abra a projeção normalmente e clique em **Atividades** (no alto da tela da Aula).
-2. Escolha o questionário. **Ranking com pontos e pódio** vem ligado; desmarque se não quiser placar. Clique em **Abrir a sala**.
+2. Escolha como montar o jogo:
+   - **Sortear por assunto:** escolha o assunto (ou "Todos os assuntos") e quantas questões (5, 10, 15, 20 ou outro número). O Vide sorteia as questões, em ordem aleatória. Se houver menos questões do assunto do que o pedido, ele avisa e usa todas.
+   - **Questionário pronto:** a sequência que você montou no Acervo.
+
+   **Ranking com pontos e pódio** vem ligado; desmarque se não quiser placar. Clique em **Abrir a sala**.
 3. O projetor mostra um **QR code** e um **código de 6 números**. Os alunos apontam a câmera do celular para o QR code (ou entram no endereço que aparece e digitam o código) e escrevem um apelido ou o nome. Não há cadastro.
 4. Quando todos tiverem entrado, **clique** (ou Enter, ou o passador) para começar.
 5. A cada questão: os alunos respondem no celular; o tempo acaba sozinho (ou quando todos respondem), ou você encerra antes com um clique. O projetor mostra quantos marcaram cada alternativa e qual era a correta.

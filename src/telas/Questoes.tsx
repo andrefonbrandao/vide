@@ -12,6 +12,7 @@ import {
   listarQuestionarios,
   listarQuestoes,
   listarResultados,
+  assuntosDasQuestoes,
   resultadoCsv,
   salvarQuestao,
   salvarQuestionario,
@@ -95,6 +96,10 @@ export function FormQuestao({
   };
 
   const aviso = avisoFundamento(fundamento);
+  const [conhecidos, setConhecidos] = useState<string[]>([]);
+  useEffect(() => {
+    void listarQuestoes().then((l) => setConhecidos(assuntosDasQuestoes(l).map((a) => a.assunto)));
+  }, []);
 
   return (
     <div className="cartao form-questao">
@@ -174,10 +179,15 @@ export function FormQuestao({
           <input id="pasta-q" type="text" placeholder="ex.: Processo Civil II/Recursos" value={pasta} onChange={(e) => setPasta(e.target.value)} />
         </div>
         <div className="campo">
-          <label htmlFor="etiquetas-q">Etiquetas (separadas por vírgula)</label>
-          <input id="etiquetas-q" type="text" placeholder="ex.: recursos, prazos" value={etiquetas} onChange={(e) => setEtiquetas(e.target.value)} />
+          <label htmlFor="etiquetas-q">Assuntos (separados por vírgula)</label>
+          <input id="etiquetas-q" type="text" list="assuntos-q" placeholder="ex.: sentença, recursos" value={etiquetas} onChange={(e) => setEtiquetas(e.target.value)} />
         </div>
       </div>
+      <datalist id="assuntos-q">
+        {conhecidos.map((a) => (
+          <option key={a} value={a} />
+        ))}
+      </datalist>
       {erro && <p className="digitar-msg erro">{erro}</p>}
       <div className="modal-botoes">
         <button className="botao primario" onClick={() => void salvar()}>
@@ -250,8 +260,8 @@ export function AdicionarQuestoes({ aoVer }: { aoVer: () => void }) {
         <div className="cartao">
           <p className="ajuda">
             Cole as questões no formato abaixo: enunciado, alternativas (A a D) e <strong>Resposta</strong>. Sem alternativas, a
-            questão vira verdadeiro ou falso (Resposta: V ou F). <strong>Tempo</strong>, <strong>Explicação</strong> e{' '}
-            <strong>Fundamento</strong> são opcionais. Se pedir questões a uma IA, mande este modelo junto.
+            questão vira verdadeiro ou falso (Resposta: V ou F). <strong>Tempo</strong>, <strong>Explicação</strong>,{' '}
+            <strong>Fundamento</strong> e <strong>Assunto</strong> são opcionais. Se pedir questões a uma IA, mande este modelo junto.
           </p>
           <pre className="mono modelo-questoes">{MODELO_IMPORTACAO}</pre>
           <button
@@ -306,8 +316,8 @@ export function AdicionarQuestoes({ aoVer }: { aoVer: () => void }) {
               <input id="pasta-i" type="text" placeholder="ex.: Processo Civil II" value={pasta} onChange={(e) => setPasta(e.target.value)} />
             </div>
             <div className="campo">
-              <label htmlFor="etq-i">Etiquetas (separadas por vírgula)</label>
-              <input id="etq-i" type="text" value={etiquetas} onChange={(e) => setEtiquetas(e.target.value)} />
+              <label htmlFor="etq-i">Assuntos de todas estas questões (separados por vírgula)</label>
+              <input id="etq-i" type="text" placeholder="ex.: sentença" value={etiquetas} onChange={(e) => setEtiquetas(e.target.value)} />
             </div>
           </div>
           <div className="campo">
@@ -404,11 +414,14 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
   const [editandoQz, setEditandoQz] = useState<Questionario | 'novo' | null>(null);
   const [editandoQ, setEditandoQ] = useState<Questao | null>(null);
   const [busca, setBusca] = useState('');
+  const [assunto, setAssunto] = useState<string | null>(null);
   const [aberto, setAberto] = useState<string | null>(null);
   const filtradas = filtrarMateriais(
     questoes.map((q) => ({ ...q, nome: q.enunciado })),
     busca,
+    assunto,
   );
+  const assuntos = assuntosDasQuestoes(questoes);
   const pastas = todasPastas(questoes.map((q) => ({ ...q, nome: q.enunciado })));
 
   if (!questoes.length && !questionarios.length) {
@@ -478,7 +491,17 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
       ) : (
         <>
           <div className="filtros-mat">
-            <input className="busca-mat" type="search" placeholder="Buscar por enunciado, pasta ou etiqueta" value={busca} onChange={(e) => setBusca(e.target.value)} />
+            <input className="busca-mat" type="search" placeholder="Buscar por enunciado, pasta ou assunto" value={busca} onChange={(e) => setBusca(e.target.value)} />
+            {assuntos.length > 0 && (
+              <div className="etiquetas" aria-label="Filtrar por assunto">
+                <span className="ajuda" style={{ margin: 0 }}>Assuntos:</span>
+                {assuntos.map(({ assunto: a, total }) => (
+                  <button key={a} type="button" className={`etiqueta-mat${assunto === a ? ' ativa' : ''}`} onClick={() => setAssunto(assunto === a ? null : a)}>
+                    {a} <span className="total">{total}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             {pastas.length > 0 && (
               <div className="linha-opcoes">
                 {pastas.map((p) => (
@@ -498,7 +521,7 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
                 <p className="ajuda" style={{ margin: 0 }}>
                   {q.tipo === 'vf' ? `V/F · ${q.correta === 0 ? 'Verdadeiro' : 'Falso'}` : `Múltipla escolha · correta ${LETRAS[q.correta]}) ${q.alternativas[q.correta]}`} ·{' '}
                   {q.tempo}s{q.fundamento && ` · fundamento: ${q.fundamento}`} · {nomePasta(q.pasta)}
-                  {q.etiquetas.length > 0 && ` · ${q.etiquetas.join(', ')}`}
+                  {q.etiquetas.length > 0 && ` · assuntos: ${q.etiquetas.join(', ')}`}
                 </p>
                 <div className="linha-opcoes" style={{ marginTop: 8 }}>
                   <button className="botao pequeno" onClick={() => setEditandoQ(q)}>

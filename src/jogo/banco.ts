@@ -39,10 +39,16 @@ export async function salvarQuestao(
 
 /** Adiciona várias questões (importação) e, se pedido, cria um questionário com elas. */
 export async function adicionarQuestoes(
-  lista: QuestaoJogo[],
+  lista: (QuestaoJogo & { assuntos?: string[] })[],
   extra: { pasta: string; etiquetas: string[]; questionario?: string },
 ): Promise<{ questoes: Questao[]; questionario: Questionario | null }> {
-  const questoes = lista.map((q) => ({ ...base(), ...q, pasta: extra.pasta, etiquetas: extra.etiquetas }));
+  // Assuntos de cada questão (do texto colado) + os assuntos escolhidos para todas.
+  const questoes = lista.map(({ assuntos = [], ...q }) => ({
+    ...base(),
+    ...q,
+    pasta: extra.pasta,
+    etiquetas: [...new Set([...extra.etiquetas, ...assuntos])],
+  }));
   let questionario: Questionario | null = null;
   await db.transaction('rw', db.questoes, db.questionarios, async () => {
     await db.questoes.bulkAdd(questoes);
@@ -116,4 +122,23 @@ export function resultadoCsv(r: ResultadoJogo): string {
     linhas.push([i + 1, esc(p.enunciado), 'ABCD'[p.correta], pct, ...resp, p.semResposta].join(';'));
   });
   return '﻿' + linhas.join('\r\n');
+}
+
+/** Assuntos usados nas questões, com quantas questões há em cada um (mais usados primeiro). */
+export function assuntosDasQuestoes(questoes: Pick<Questao, 'etiquetas'>[]): { assunto: string; total: number }[] {
+  const c = new Map<string, number>();
+  for (const q of questoes) for (const a of q.etiquetas ?? []) c.set(a, (c.get(a) ?? 0) + 1);
+  return [...c.entries()]
+    .map(([assunto, total]) => ({ assunto, total }))
+    .sort((a, b) => b.total - a.total || a.assunto.localeCompare(b.assunto, 'pt-BR'));
+}
+
+/** Sorteia até `quantas` questões do assunto (null = de todos), em ordem aleatória. */
+export function sortearQuestoes<T extends Pick<Questao, 'etiquetas'>>(questoes: T[], assunto: string | null, quantas: number, aleatorio = Math.random): T[] {
+  const lista = questoes.filter((q) => !assunto || (q.etiquetas ?? []).includes(assunto));
+  for (let i = lista.length - 1; i > 0; i--) {
+    const j = Math.floor(aleatorio() * (i + 1));
+    [lista[i], lista[j]] = [lista[j], lista[i]];
+  }
+  return lista.slice(0, Math.max(0, quantas));
 }

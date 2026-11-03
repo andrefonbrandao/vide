@@ -9,6 +9,7 @@
 //   Tempo: 30
 //   Explicação: art. 335 do CPC.
 //   Fundamento: 335
+//   Assunto: contestação, prazos
 //
 //   2. A citação válida induz litispendência.
 //   Resposta: V
@@ -24,8 +25,11 @@ export interface ErroImportacao {
   mensagem: string;
 }
 
+/** Questão lida do texto, com os assuntos indicados nela ("Assunto: sentença"). */
+export type QuestaoImportada = QuestaoJogo & { assuntos: string[] };
+
 export interface ResultadoImportacao {
-  questoes: QuestaoJogo[];
+  questoes: QuestaoImportada[];
   erros: ErroImportacao[];
 }
 
@@ -38,14 +42,16 @@ Resposta: C
 Tempo: 30
 Explicação: O prazo é de 15 dias úteis.
 Fundamento: 335
+Assunto: contestação, prazos
 
 2. A citação válida induz litispendência.
 Resposta: V
-Fundamento: 240`;
+Fundamento: 240
+Assunto: citação`;
 
 const RE_ALT = /^\s*(\*)?\s*([A-Da-d])\s*[).\-–]\s+(.+?)\s*$/;
 const RE_NUMERO = /^\s*(?:quest[aã]o\s*)?(?:q\s*)?\d{1,3}\s*[.):\-–]\s*/i;
-const RE_CHAVE = /^\s*(resposta|gabarito|correta|alternativa correta|tempo|explica[cç][aã]o|coment[aá]rio|fundamento|dispositivo|base legal)\s*[:\-–]\s*(.*)$/i;
+const RE_CHAVE = /^\s*(resposta|gabarito|correta|alternativa correta|tempo|explica[cç][aã]o|coment[aá]rio|fundamento|dispositivo|base legal|assuntos?|temas?)\s*[:\-–]\s*(.*)$/i;
 
 interface Rascunho {
   numero: number;
@@ -56,6 +62,7 @@ interface Rascunho {
   tempo: number | null;
   explicacao: string[];
   fundamento: string;
+  assuntos: string[];
   /** O que a próxima linha comum continua. */
   continuar: 'enunciado' | 'explicacao' | null;
 }
@@ -70,6 +77,7 @@ function novo(numero: number, primeira: string): Rascunho {
     tempo: null,
     explicacao: [],
     fundamento: '',
+    assuntos: [],
     continuar: 'enunciado',
   };
 }
@@ -112,6 +120,8 @@ export function importarQuestoes(texto: string): ResultadoImportacao {
       else if (/^(explica|coment)/.test(nome)) {
         atual.explicacao = valor ? [valor] : [];
         atual.continuar = 'explicacao';
+      } else if (/^(assunto|tema)/.test(nome)) {
+        atual.assuntos.push(...valor.split(/[,;]/).map((a) => a.trim().toLowerCase()).filter(Boolean));
       } else atual.fundamento = valor.replace(/^art(igo)?\.?\s*/i, '');
       emBranco = false;
       continue;
@@ -143,7 +153,7 @@ export function importarQuestoes(texto: string): ResultadoImportacao {
     emBranco = false;
   }
 
-  const questoes: QuestaoJogo[] = [];
+  const questoes: QuestaoImportada[] = [];
   const erros: ErroImportacao[] = [];
   for (const r of rascunhos) {
     const enunciado = r.enunciado.join(' ').trim();
@@ -181,6 +191,7 @@ export function importarQuestoes(texto: string): ResultadoImportacao {
       tempo,
       explicacao: r.explicacao.join(' ').trim(),
       fundamento: r.fundamento,
+      assuntos: [...new Set(r.assuntos)],
     });
   }
   return { questoes, erros };

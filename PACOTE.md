@@ -18,3 +18,4 @@ Pacote aberto em 2026-11-03, a partir da versão 0.16.0 (já publicada).
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | Na Aula, o botão "Perguntas" passa a se chamar "Atividades" (e a janela que ele abre também) | Pronta |
+| 2 | Assuntos nas questões (campo "Assuntos", linha "Assunto:" ao colar, filtro no banco) e, em Atividades, "Sortear por assunto": escolher o assunto e quantas questões (ex.: 10 sobre sentença) e abrir a sala na hora | Pronta |

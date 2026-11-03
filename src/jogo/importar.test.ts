@@ -66,3 +66,22 @@ Resposta: E
     expect(r.erros[1].mensagem).toMatch(/não corresponde/);
   });
 });
+
+describe('assuntos', () => {
+  test('linha "Assunto:" vira assunto da questão', () => {
+    const r = importarQuestoes(`1. Pergunta
+A) x
+B) y
+Resposta: A
+Assunto: Sentença, Recursos
+
+2. Afirmação
+Resposta: F
+Temas: sentença`);
+    expect(r.erros).toEqual([]);
+    expect(r.questoes.map((q) => q.assuntos)).toEqual([['sentença', 'recursos'], ['sentença']]);
+  });
+  test('o modelo traz assuntos', () => {
+    expect(importarQuestoes(MODELO_IMPORTACAO).questoes[0].assuntos).toEqual(['contestação', 'prazos']);
+  });
+});

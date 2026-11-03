@@ -1,9 +1,9 @@
 // Jogo de perguntas na tela do professor: escolher o questionário e conduzir o jogo.
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { anfitriao, rankingPreferido } from '../jogo/anfitriao';
-import { listarQuestionarios, questoesDo } from '../jogo/banco';
+import { assuntosDasQuestoes, listarQuestionarios, listarQuestoes, questoesDo, sortearQuestoes } from '../jogo/banco';
 import { rotuloAvancar } from '../jogo/motor';
-import type { Questionario } from '../jogo/tipos';
+import type { Questao, QuestaoJogo, Questionario } from '../jogo/tipos';
 import { JogoTela } from './JogoTela';
 import type { ControladorAula } from './controlador';
 
@@ -12,40 +12,68 @@ export function useJogo() {
   return useSyncExternalStore(a.assinar, a.obter);
 }
 
-/** Janela para escolher o questionário e abrir a sala. */
+type Modo = 'assunto' | 'questionario';
+const CHAVE_MODO = 'vide.jogoModo';
+
+function paraJogo(q: Questao): QuestaoJogo {
+  const { tipo, enunciado, alternativas, correta, tempo, explicacao, fundamento } = q;
+  return { tipo, enunciado, alternativas, correta, tempo, explicacao, fundamento };
+}
+
+/** Janela para abrir a sala: sorteio por assunto ou um questionário pronto. */
 export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
   const [lista, setLista] = useState<(Questionario & { total: number })[] | null>(null);
+  const [banco, setBanco] = useState<Questao[]>([]);
   const [escolhido, setEscolhido] = useState<string>('');
   const [ranking, setRanking] = useState(rankingPreferido());
+  const [modo, setModoEstado] = useState<Modo>(() => {
+    try {
+      return (localStorage.getItem(CHAVE_MODO) as Modo) || 'assunto';
+    } catch {
+      return 'assunto';
+    }
+  });
+  const [assunto, setAssunto] = useState<string>('');
+  const [quantas, setQuantas] = useState(10);
+  const setModo = (m: Modo) => {
+    setModoEstado(m);
+    try {
+      localStorage.setItem(CHAVE_MODO, m);
+    } catch {
+      /* ignore */
+    }
+  };
 
   useEffect(() => {
     void (async () => {
-      const qs = await listarQuestionarios();
+      const [qs, todas] = await Promise.all([listarQuestionarios(), listarQuestoes()]);
       const comTotal = await Promise.all(qs.map(async (q) => ({ ...q, total: (await questoesDo(q)).length })));
       setLista(comTotal);
+      setBanco(todas);
       setEscolhido(comTotal.find((q) => q.total > 0)?.id ?? '');
+      setAssunto(assuntosDasQuestoes(todas)[0]?.assunto ?? '*');
     })();
   }, []);
 
+  const assuntos = assuntosDasQuestoes(banco);
+  const disponiveis = assunto === '*' ? banco.length : (assuntos.find((a) => a.assunto === assunto)?.total ?? 0);
+  const vaiTer = Math.min(quantas, disponiveis);
+
   const abrir = async () => {
-    const q = lista?.find((x) => x.id === escolhido);
-    if (!q) return;
-    const questoes = await questoesDo(q);
-    anfitriao().iniciar(
-      q.nome,
-      questoes.map(({ tipo, enunciado, alternativas, correta, tempo, explicacao, fundamento }) => ({
-        tipo,
-        enunciado,
-        alternativas,
-        correta,
-        tempo,
-        explicacao,
-        fundamento,
-      })),
-      ranking,
-    );
+    if (modo === 'assunto') {
+      const sorteadas = sortearQuestoes(banco, assunto === '*' ? null : assunto, quantas);
+      if (!sorteadas.length) return;
+      const nome = `${sorteadas.length} ${sorteadas.length === 1 ? 'questão' : 'questões'} · ${assunto === '*' ? 'todos os assuntos' : assunto}`;
+      anfitriao().iniciar(nome, sorteadas.map(paraJogo), ranking);
+    } else {
+      const q = lista?.find((x) => x.id === escolhido);
+      if (!q) return;
+      anfitriao().iniciar(q.nome, (await questoesDo(q)).map(paraJogo), ranking);
+    }
     aoFechar();
   };
+
+  const podeAbrir = modo === 'assunto' ? vaiTer > 0 : !!escolhido;
 
   return (
     <div className="modal-fundo" data-ui onMouseDown={(ev) => ev.target === ev.currentTarget && aoFechar()}>
@@ -55,8 +83,63 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
         <p className="ajuda">
           Os alunos entram pelo celular (QR code ou código no projetor), só com um apelido, e respondem às questões.
         </p>
+        <div className="linha-opcoes" role="tablist" style={{ marginBottom: 10 }}>
+          <button role="tab" aria-selected={modo === 'assunto'} className={`botao pequeno${modo === 'assunto' ? ' escuro' : ''}`} onClick={() => setModo('assunto')}>
+            Sortear por assunto
+          </button>
+          <button role="tab" aria-selected={modo === 'questionario'} className={`botao pequeno${modo === 'questionario' ? ' escuro' : ''}`} onClick={() => setModo('questionario')}>
+            Questionário pronto
+          </button>
+        </div>
         {lista === null ? (
           <p className="ajuda">Carregando…</p>
+        ) : modo === 'assunto' ? (
+          banco.length === 0 ? (
+            <p className="aviso">
+              Nenhuma questão ainda. Cadastre em <strong>Acervo › Questões</strong>.
+            </p>
+          ) : (
+            <div className="sorteio-assunto">
+              <div className="campo">
+                <label htmlFor="assunto-jogo">Assunto</label>
+                <select id="assunto-jogo" className="seletor" value={assunto} onChange={(e) => setAssunto(e.target.value)}>
+                  {assuntos.map((a) => (
+                    <option key={a.assunto} value={a.assunto}>
+                      {a.assunto} ({a.total} {a.total === 1 ? 'questão' : 'questões'})
+                    </option>
+                  ))}
+                  <option value="*">Todos os assuntos ({banco.length})</option>
+                </select>
+                {assuntos.length === 0 && (
+                  <span className="ajuda">As questões ainda não têm assunto: cadastre em Acervo › Questões (campo "Assuntos").</span>
+                )}
+              </div>
+              <div className="campo">
+                <label htmlFor="quantas-jogo">Quantas questões</label>
+                <div className="linha-opcoes">
+                  {[5, 10, 15, 20].map((n) => (
+                    <button key={n} type="button" className={`botao pequeno${quantas === n ? ' escuro' : ''}`} onClick={() => setQuantas(n)}>
+                      {n}
+                    </button>
+                  ))}
+                  <input
+                    id="quantas-jogo"
+                    type="number"
+                    min={1}
+                    max={200}
+                    value={quantas}
+                    onChange={(e) => setQuantas(Math.max(1, Math.min(200, Number(e.target.value) || 1)))}
+                    style={{ width: 80 }}
+                  />
+                </div>
+                <span className="ajuda" style={{ margin: 0 }}>
+                  {disponiveis < quantas
+                    ? `Só há ${disponiveis} ${disponiveis === 1 ? 'questão' : 'questões'} deste assunto: o jogo terá ${vaiTer}.`
+                    : `Serão sorteadas ${vaiTer} questões, em ordem aleatória.`}
+                </span>
+              </div>
+            </div>
+          )
         ) : lista.length === 0 ? (
           <p className="aviso">
             Nenhum questionário ainda. Crie um em <strong>Acervo › Questões</strong>.
@@ -85,7 +168,7 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
           <button className="botao" onClick={aoFechar}>
             Cancelar
           </button>
-          <button className="botao primario" onClick={() => void abrir()} disabled={!escolhido}>
+          <button className="botao primario" onClick={() => void abrir()} disabled={!podeAbrir}>
             Abrir a sala
           </button>
         </div>
