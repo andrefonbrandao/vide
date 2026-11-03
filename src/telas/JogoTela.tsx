@@ -69,7 +69,8 @@ function TelaConceito({ jogo }: { jogo: TelaJogo }) {
   const decorrido = agora - jogo.inicio;
   const visiveis = revelada ? dicas.length : dicasVisiveis(dicas.length, tempoMs, decorrido);
   const prox = revelada ? null : proximaDica(dicas.length, tempoMs, decorrido);
-  const nomes = jogo.ranking;
+  // Sem nomes: só quantos acertaram com 1, 2, 3… dicas.
+  const porDicas = dicas.map((_, i) => jogo.acertaram.filter((a) => a.dicas === i + 1).length);
   return (
     <div className="jogo-tela jogo-conceito">
       <div className="jogo-topo">
@@ -102,13 +103,15 @@ function TelaConceito({ jogo }: { jogo: TelaJogo }) {
         <span className="jogo-contagem" style={{ margin: 0 }}>
           <strong>{jogo.acertaram.length}</strong> de {jogo.aResponder} acertaram
         </span>
-        {nomes && (
+        {jogo.acertaram.length > 0 && (
           <div className="jogo-nomes">
-            {jogo.acertaram.slice(0, 30).map((a, i) => (
-              <span key={`${a.apelido}-${i}`}>
-                {i + 1}º {a.apelido} · {a.dicas} {a.dicas === 1 ? 'dica' : 'dicas'}
-              </span>
-            ))}
+            {porDicas.map((n, i) =>
+              n ? (
+                <span key={i}>
+                  {n} com {i + 1} {i === 0 ? 'dica' : 'dicas'}
+                </span>
+              ) : null,
+            )}
           </div>
         )}
       </div>

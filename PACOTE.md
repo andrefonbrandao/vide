@@ -19,6 +19,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 |---|-------|----------|
 | 1 | Treino em casa: botões para baixar o QR code como imagem (PNG) e copiar a imagem, para divulgar no Moodle, em slides ou impresso (imagem PNG com o QR, o título e o link) | Pronta |
 | 2 | Atividades: escolher o tempo ao abrir a sala, separado para múltipla escolha/V-F e para "Adivinhe o conceito" (ou manter o tempo sugerido de cada questão); a escolha fica guardada; no cadastro, o tempo vira "sugerido" | Pronta |
+| 3 | "Adivinhe o conceito": o projetor deixa de mostrar quem acertou; mostra só quantos acertaram com 1, 2, 3… dicas | Pronta |
 
 ## Pacotes anteriores
 

@@ -166,7 +166,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
   Assunto: sentença
   ```
 - Na aula, o projetor mostra "Quem sou eu?" e a 1ª dica; as outras aparecem em intervalos iguais (60 s e 3 dicas: 0 s, 20 s e 40 s). O aluno digita a resposta no celular; maiúsculas, acentos e "a/o" no início não importam. Se errar, espera 5 segundos para tentar de novo.
-- Quem acerta antes ganha mais pontos (de 1.000 no início a 300 no fim). O projetor mostra quem já acertou e com quantas dicas (com o ranking desligado, só a quantidade). No fim do tempo (ou quando todos acertam), aparece a resposta.
+- Quem acerta antes ganha mais pontos (de 1.000 no início a 300 no fim). O projetor mostra quantos já acertaram e com quantas dicas (ex.: "3 com 1 dica · 2 com 2 dicas"), sem nomes. No fim do tempo (ou quando todos acertam), aparece a resposta.
 - No sorteio por assunto, escolha em **Tipo de questão**: todos, só múltipla escolha e V/F, ou só "Adivinhe o conceito".
 
 **Treino em casa (link para os alunos):**
