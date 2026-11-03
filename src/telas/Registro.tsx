@@ -49,6 +49,10 @@ export function Registro() {
   const recarregar = async () => setSessoes(await listarSessoes());
   useEffect(() => {
     void recarregar();
+    // Aulas que chegaram de outro computador (Google Drive).
+    const r = () => void recarregar();
+    window.addEventListener('vide-registro-mudou', r);
+    return () => window.removeEventListener('vide-registro-mudou', r);
   }, []);
   useEffect(() => {
     if (aberta) void eventosDaSessao(aberta).then(setEventos);

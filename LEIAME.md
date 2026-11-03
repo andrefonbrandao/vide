@@ -53,6 +53,13 @@ O computador continua mostrando a projeção; o iPhone vira microfone e controle
 - Na Aula, **Perguntas** abre uma sala: os alunos entram pelo celular (QR code ou `/j` + código de 6 números) só com um apelido, respondem e veem o resultado. Ranking com pódio é opcional (ligado por padrão).
 - Por dentro: o computador do professor conduz o jogo (`src/jogo/`); um Durable Object "Jogo" no Cloudflare (`worker/index.ts`) só repassa as mensagens. Nada de nomes é gravado; o resultado guardado tem só números por questão.
 
+## Google Drive (acervo em vários computadores)
+
+- Botão **Google Drive** no alto: login do próprio Google (Google Identity Services), com a permissão `drive.file` — o Vide só enxerga os arquivos que ele mesmo cria.
+- Pasta **Vide** no Drive: `Vide - dados.json` (questões, questionários, resultados e os dados de materiais, leis e aulas), um arquivo por lei, por material e por aula registrada.
+- Sincronização automática (`src/drive/`): vale a alteração mais recente de cada item; exclusões viajam como marcas. O banco do navegador continua sendo a cópia usada na aula.
+- Configuração no Google Cloud (projeto "Vide", cliente OAuth "Aplicativo da Web", origem `https://vide.andre-pge-rs.workers.dev`, app em modo Teste com o e-mail do professor como usuário de teste). O ID do cliente fica em `src/drive/google.ts`.
+
 ## Publicar no Cloudflare (sem instalar nada no notebook)
 
 Você faz isso **uma vez só**, pelo navegador. Depois, cada atualização que eu enviar ao GitHub é publicada sozinha.

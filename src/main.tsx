@@ -13,6 +13,7 @@ import { Projecao } from './telas/Projecao';
 import { Registro } from './telas/Registro';
 import { Controle } from './telas/Controle';
 import { Jogar } from './telas/Jogar';
+import { BotaoDrive } from './telas/PainelDrive';
 
 type Aba = 'aula' | 'acervo' | 'registro';
 
@@ -30,6 +31,7 @@ function App() {
           ))}
         </nav>
         <span className="espaco" />
+        <BotaoDrive />
         <span className="ajuda" style={{ margin: 0, fontSize: 13 }}>protótipo de teste · v{__VERSAO__.replace(/\.0$/, "")}</span>
       </header>
       <main className="conteudo">

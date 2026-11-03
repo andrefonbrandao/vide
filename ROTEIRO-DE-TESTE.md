@@ -150,6 +150,17 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 
 **Cuidados:** cada aluno precisa de internet no celular. Não recarregue nem feche a página do Vide no computador durante o jogo: o jogo roda nela. Se um aluno recarregar a página, ele volta ao jogo com os mesmos pontos.
 
+## Guardar o acervo no Google Drive (vários computadores)
+
+1. No alto do Vide, clique em **Google Drive** › **Entrar com o Google** e entre com a sua conta. Na primeira vez, o Google pede para autorizar o Vide a usar o Drive: autorize.
+2. O Vide cria a pasta **Vide** no seu Drive e envia o acervo: leis, materiais (PDFs), questões e o registro das aulas. A primeira vez pode levar alguns minutos.
+3. Em outro computador: abra o Vide, clique em **Google Drive** › **Entrar com o Google** com a mesma conta. O Vide traz tudo.
+4. Daí em diante é automático: o que você muda sobe em poucos segundos (o registro da aula, a cada 5 minutos e ao fechar a página), e o Vide busca novidades a cada 2 minutos e quando você volta para a janela.
+5. O botão no alto mostra a situação: **Drive ✓ 14:32** (sincronizado), **Drive: sincronizando…**, ou **Drive: reconectar**. O login do Google dura cerca de 1 hora; quando expira, basta clicar em **Drive: reconectar**. Nada se perde: as mudanças ficam guardadas no computador até lá.
+6. Em computador emprestado, ao terminar: **Google Drive** › **Sair e apagar deste computador**. O Drive continua com tudo.
+
+**Não mexa à mão nos arquivos da pasta Vide no Drive.** Se apagar algo lá por engano, recupere pela lixeira do Drive.
+
 ## Como medir os acertos
 
 Com o .csv aberto no Excel, use a coluna **tipo** para filtrar. Anote:

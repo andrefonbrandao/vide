@@ -5,7 +5,7 @@ import type { Diploma, EventoRegistro, Item, Material } from './modelo';
 import type { Questao, Questionario, ResultadoJogo } from '../jogo/tipos';
 import { agoraISO } from './modelo';
 
-class BancoVide extends Dexie {
+export class BancoVide extends Dexie {
   itens!: Table<Item, string>;
   diplomas!: Table<Diploma, string>;
   registro!: Table<EventoRegistro, number>;
@@ -13,9 +13,11 @@ class BancoVide extends Dexie {
   questoes!: Table<Questao, string>;
   questionarios!: Table<Questionario, string>;
   jogos!: Table<ResultadoJogo, string>;
+  /** Marcas do que foi apagado de vez (ex.: registro de uma aula), para levar a exclusão a outros computadores. */
+  apagados!: Table<{ chave: string; em: string }, string>;
 
-  constructor() {
-    super('vide');
+  constructor(nome = 'vide') {
+    super(nome);
     this.version(1).stores({
       // Primeiro campo = chave primária. Os demais são índices de busca.
       itens: 'id, chave, tipo, atualizado_em, excluido_em, *gatilhos',
@@ -44,6 +46,8 @@ class BancoVide extends Dexie {
       questionarios: 'id, nome, atualizado_em, excluido_em',
       jogos: 'id, em',
     });
+    // Versão 5: marcas de exclusão (sincronização com o Google Drive).
+    this.version(5).stores({ apagados: 'chave' });
   }
 }
 

@@ -97,7 +97,10 @@ export async function eventosDaSessao(id: string): Promise<EventoRegistro[]> {
 }
 
 export async function apagarSessao(id: string): Promise<void> {
-  await db.registro.where('sessao_id').equals(id).delete();
+  await db.transaction('rw', db.registro, db.apagados, async () => {
+    await db.registro.where('sessao_id').equals(id).delete();
+    await db.apagados.put({ chave: `sessao:${id}`, em: agoraISO() });
+  });
 }
 
 function hora(iso: string): string {

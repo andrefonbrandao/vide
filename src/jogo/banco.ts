@@ -97,7 +97,10 @@ export async function guardarResultado(dados: {
 }
 
 export async function excluirResultado(id: string): Promise<void> {
-  await db.jogos.delete(id);
+  const r = await db.jogos.get(id);
+  if (!r) return;
+  const agora = agoraISO();
+  await db.jogos.put({ ...r, excluido_em: agora, atualizado_em: agora });
   avisarMudanca();
 }
 

@@ -571,3 +571,10 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .opcao-pasta { font-weight: 800; }
 .opcao-pasta .icone { flex: none; color: var(--tinta-2); }
 .opcao-mat.opcao-pasta .opcao-mat-nome { min-width: 0; }
+
+/* ---------- Google Drive ---------- */
+.botao-drive { display: inline-flex; align-items: center; gap: 6px; margin-right: 10px; }
+.botao-drive .luz { width: 9px; height: 9px; border-radius: 50%; background: var(--linha); }
+.botao-drive.ok .luz { background: #2e7d4f; }
+.botao-drive.alerta { border-color: var(--destaque); }
+.botao-drive.alerta .luz { background: var(--destaque); }
