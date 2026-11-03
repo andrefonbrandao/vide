@@ -29,7 +29,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 1. Na aba **Aula**, clique em **Iniciar escuta**.
 2. O navegador vai perguntar se o site pode usar o microfone. Clique em **Permitir**. O indicador deve mostrar **"Ouvindo"**, com a luz verde.
 3. Fale em voz normal: "Vamos ver o artigo 70 do CPC." Em 1 ou 2 segundos devem aparecer:
-   - a frase na **Transcrição bruta**, à direita;
+   - a frase na **Transcrição bruta**, à direita (ela fica oculta por padrão: clique em **mostrar transcrição bruta**, embaixo à direita);
    - o candidato **art. 70 CPC**, à esquerda.
 4. Clique em **Abrir projeção**. Uma segunda janela abre.
    - Sem projetor, ela fica por cima. Arraste-a para o lado.

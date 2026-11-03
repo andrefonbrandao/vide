@@ -598,3 +598,10 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .jogar-form-conceito { display: flex; flex-direction: column; gap: 10px; }
 .jogar-form-conceito .jogar-campo { text-align: left; }
 .jogar-errou { margin: 0; font-weight: 800; text-align: center; }
+
+/* Transcrição bruta oculta: as referências ocupam a coluna. */
+.secao-dir.detectados-cheio { flex: 1; min-height: 0; overflow: auto; border-bottom: none; }
+.secao-dir.detectados-cheio .detectados { max-height: none; }
+.rodape-dir { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.link-discreto { margin-left: auto; border: none; background: transparent; padding: 4px 2px; color: var(--tinta-3); font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.link-discreto:hover { color: var(--tinta); }

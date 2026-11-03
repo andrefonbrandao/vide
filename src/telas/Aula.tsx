@@ -117,6 +117,22 @@ export function Aula({ ativa }: { ativa: boolean }) {
   const [, setRelogio] = useState(0);
   const transcricaoRef = useRef<HTMLDivElement>(null);
   const suporte = !!obterConstrutor();
+  // Transcrição bruta: oculta por padrão; a escolha fica guardada neste navegador.
+  const [verTranscricao, setVerTranscricaoEstado] = useState(() => {
+    try {
+      return localStorage.getItem('vide.verTranscricao') === 'sim';
+    } catch {
+      return false;
+    }
+  });
+  const setVerTranscricao = (v: boolean) => {
+    setVerTranscricaoEstado(v);
+    try {
+      localStorage.setItem('vide.verTranscricao', v ? 'sim' : 'nao');
+    } catch {
+      /* ignore */
+    }
+  };
 
   // Atualiza a "idade" dos candidatos a cada segundo.
   useEffect(() => {
@@ -128,7 +144,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
   useEffect(() => {
     const el = transcricaoRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [e.finais.length, e.parcial]);
+  }, [e.finais.length, e.parcial, verTranscricao]);
 
   // Mouse e teclado (só quando a aba Aula está visível).
   useEffect(() => {
@@ -439,7 +455,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
 
       <aside className="aula-dir">
         <div className="secao-dir">
-          <h3>Transcrição bruta (ao vivo)</h3>
+          {verTranscricao && <h3>Transcrição bruta (ao vivo)</h3>}
           <p className="sessao-info">
             Sessão iniciada às{' '}
             <strong>{new Date(e.sessaoInicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</strong>
@@ -447,19 +463,21 @@ export function Aula({ ativa }: { ativa: boolean }) {
               ` de ${new Date(e.sessaoInicio).toLocaleDateString('pt-BR')}`}
           </p>
         </div>
-        <div className="transcricao" ref={transcricaoRef}>
-          {e.finais.length === 0 && !e.parcial && (
-            <p className="ajuda">O que o reconhecedor entender aparece aqui: em preto o texto definitivo, em cinza o provisório.</p>
-          )}
-          {e.finais.map((f) => (
-            <p key={f.id} className="final">
-              <span className="hora">{new Date(f.em).toLocaleTimeString('pt-BR', { hour12: false })}</span>
-              {f.texto}
-            </p>
-          ))}
-          {e.parcial && <p className="parcial">{e.parcial}</p>}
-        </div>
-        <div className="secao-dir" style={{ borderTop: '1px solid var(--linha)' }}>
+        {verTranscricao && (
+          <div className="transcricao" ref={transcricaoRef}>
+            {e.finais.length === 0 && !e.parcial && (
+              <p className="ajuda">O que o reconhecedor entender aparece aqui: em preto o texto definitivo, em cinza o provisório.</p>
+            )}
+            {e.finais.map((f) => (
+              <p key={f.id} className="final">
+                <span className="hora">{new Date(f.em).toLocaleTimeString('pt-BR', { hour12: false })}</span>
+                {f.texto}
+              </p>
+            ))}
+            {e.parcial && <p className="parcial">{e.parcial}</p>}
+          </div>
+        )}
+        <div className={`secao-dir${verTranscricao ? '' : ' detectados-cheio'}`} style={{ borderTop: verTranscricao ? '1px solid var(--linha)' : undefined }}>
           <h3>Referências detectadas</h3>
           {e.detectados.length === 0 ? (
             <p className="ajuda" style={{ margin: 0 }}>Nenhuma ainda.</p>
@@ -485,6 +503,13 @@ export function Aula({ ativa }: { ativa: boolean }) {
             }}
           >
             <IcNovaSessao /> Nova sessão
+          </button>
+          <button
+            className="link-discreto"
+            onClick={() => setVerTranscricao(!verTranscricao)}
+            title="A transcrição continua sendo gravada no Registro mesmo oculta"
+          >
+            {verTranscricao ? 'ocultar transcrição bruta' : 'mostrar transcrição bruta'}
           </button>
         </div>
       </aside>
