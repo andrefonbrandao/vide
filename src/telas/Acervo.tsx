@@ -29,7 +29,8 @@ import { chaveItemArtigo, resolver } from '../comum/legislacao';
 import { Detector, chaveReferencia } from '../voz/detector';
 import { Folha } from './Projecao';
 import { AdicionarMaterial, ListaMateriais } from './Materiais';
-import { IcLei, IcMais, IcPasta, IcTeste } from '../comum/Icones';
+import { IcLei, IcMais, IcPasta, IcPerguntas, IcTeste } from '../comum/Icones';
+import { AdicionarQuestoes, ListaQuestoes } from './Questoes';
 
 interface Parte {
   def: DefDiploma;
@@ -63,7 +64,7 @@ function montarItens(artigos: ArtigoFatiado[], def: DefDiploma, arquivo: string,
 
 const OUTRA = '__outra';
 
-type AbaAcervo = 'legislacao' | 'materiais' | 'testes' | 'nova-norma' | 'novo-material';
+type AbaAcervo = 'legislacao' | 'materiais' | 'questoes' | 'testes' | 'nova-norma' | 'novo-material' | 'novas-questoes';
 
 export function Acervo() {
   const [aba, setAbaEstado] = useState<AbaAcervo>(() => {
@@ -117,10 +118,11 @@ export function Acervo() {
       <nav className="menu-acervo" aria-label="Seções do acervo">
         {botaoAba('legislacao', 'Legislação', <IcLei />)}
         {botaoAba('materiais', 'Materiais', <IcPasta />)}
+        {botaoAba('questoes', 'Questões', <IcPerguntas />)}
         {botaoAba('testes', 'Testes', <IcTeste />)}
         <div className="mais-acervo" ref={maisRef}>
           <button
-            className={`botao-mais${aba === 'nova-norma' || aba === 'novo-material' ? ' ativo' : ''}`}
+            className={`botao-mais${aba === 'nova-norma' || aba === 'novo-material' || aba === 'novas-questoes' ? ' ativo' : ''}`}
             onClick={() => setMenuMais(!menuMais)}
             aria-label="Adicionar norma ou material"
             title="Adicionar norma ou material"
@@ -144,6 +146,13 @@ export function Acervo() {
                   <span className="opcao-menu-desc">Carregar slides em PDF ou imagens.</span>
                 </span>
               </button>
+              <button type="button" role="menuitem" className="opcao-menu" onClick={() => { setAba('novas-questoes'); setMenuMais(false); }}>
+                <IcPerguntas />
+                <span>
+                  <strong>Adicionar questões</strong>
+                  <span className="opcao-menu-desc">Escrever ou colar questões para o jogo de perguntas.</span>
+                </span>
+              </button>
             </div>
           )}
         </div>
@@ -151,6 +160,8 @@ export function Acervo() {
 
       {aba === 'legislacao' && <LeisNoAcervo leis={leis} recarregar={recarregar} aoAdicionar={() => setAba('nova-norma')} />}
       {aba === 'materiais' && <ListaMateriais aoAdicionar={() => setAba('novo-material')} />}
+      {aba === 'questoes' && <ListaQuestoes aoAdicionar={() => setAba('novas-questoes')} />}
+      {aba === 'novas-questoes' && <AdicionarQuestoes aoVer={() => setAba('questoes')} />}
       {aba === 'testes' && (
         <>
           <Conferir leis={leis} />

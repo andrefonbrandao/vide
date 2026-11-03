@@ -11,9 +11,11 @@ export class ConexaoSala<Entrada, Saida> {
 
   constructor(
     readonly codigo: string,
-    private papel: 'computador' | 'celular',
+    private papel: string,
     private aoMensagem: (m: Entrada) => void,
-    private aoStatus: (s: StatusConexao) => void,
+    private aoStatus: (s: StatusConexao, tentativas: number) => void,
+    /** rota: "sala" (celular do professor) ou "jogo"; extras: parâmetros a mais no endereço. */
+    private opcoes: { rota?: string; extras?: Record<string, string> } = {},
   ) {
     this.abrir();
     // Ao voltar para a página (ex.: o iPhone desbloqueou), reconecta na hora.
@@ -43,7 +45,7 @@ export class ConexaoSala<Entrada, Saida> {
       /* ignore */
     }
     this.ws = null;
-    this.aoStatus('desconectada');
+    this.aoStatus('desconectada', 0);
   }
 
   private aoVisibilidade = () => {
@@ -57,8 +59,9 @@ export class ConexaoSala<Entrada, Saida> {
   private abrir() {
     if (!this.ativa) return;
     const protocolo = location.protocol === 'https:' ? 'wss' : 'ws';
-    const url = `${protocolo}://${location.host}/api/sala/${this.codigo}?papel=${this.papel}`;
-    this.aoStatus('conectando');
+    const extras = new URLSearchParams({ papel: this.papel, ...(this.opcoes.extras ?? {}) });
+    const url = `${protocolo}://${location.host}/api/${this.opcoes.rota ?? 'sala'}/${this.codigo}?${extras}`;
+    this.aoStatus('conectando', this.tentativas);
     let ws: WebSocket;
     try {
       ws = new WebSocket(url);
@@ -69,7 +72,7 @@ export class ConexaoSala<Entrada, Saida> {
     this.ws = ws;
     ws.onopen = () => {
       this.tentativas = 0;
-      this.aoStatus('conectada');
+      this.aoStatus('conectada', 0);
       if (this.batimento !== null) window.clearInterval(this.batimento);
       // Mantém a conexão viva (o serviço responde "pong" sozinho).
       this.batimento = window.setInterval(() => this.aberta && this.ws!.send('ping'), 25_000);
@@ -87,7 +90,7 @@ export class ConexaoSala<Entrada, Saida> {
       if (this.batimento !== null) window.clearInterval(this.batimento);
       this.ws = null;
       if (this.ativa) {
-        this.aoStatus('desconectada');
+        this.aoStatus('desconectada', this.tentativas);
         this.agendarReconexao();
       }
     };

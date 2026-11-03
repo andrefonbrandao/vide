@@ -2,7 +2,8 @@
 // e, por cima, o artigo projetado — ao lado do material ou em tela cheia.
 // Texto sempre em #1E3A34 sobre #EEF0EA (ou o inverso no destaque); nunca em laranja.
 import { useEffect, useRef, useState } from 'react';
-import { abrirCanal, type LayoutArtigo, type Mensagem } from '../comum/canal';
+import { abrirCanal, type LayoutArtigo, type Mensagem, type TelaJogo } from '../comum/canal';
+import { JogoTela } from './JogoTela';
 import type { Projetavel } from '../comum/legislacao';
 import { CanvasMaterial } from '../material/CanvasMaterial';
 import { IcTelaCheia } from '../comum/Icones';
@@ -68,6 +69,7 @@ export function Projecao() {
   /** Barra do rodapé com o botão de tela cheia (aparece com o mouse perto da borda de baixo). */
   const [barra, setBarra] = useState(true);
   const [tela, setTela] = useState({ w: window.innerWidth, h: window.innerHeight });
+  const [jogo, setJogo] = useState<TelaJogo | null>(null);
   const folhaRef = useRef<HTMLDivElement>(null);
   const enviarRef = useRef<(m: Mensagem) => void>(() => {});
   const itemRef = useRef<Projetavel | null>(null);
@@ -106,6 +108,8 @@ export function Projecao() {
       } else if (m.t === 'rolar') {
         const f = folhaRef.current;
         if (f) f.scrollBy({ top: m.delta * f.clientHeight * 0.18, behavior: 'smooth' });
+      } else if (m.t === 'jogo') {
+        setJogo(m.jogo);
       } else if (m.t === 'recarregar') {
         location.reload();
       } else if (m.t === 'ping') {
@@ -219,8 +223,9 @@ export function Projecao() {
     return () => window.removeEventListener('keydown', tecla);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const comMaterial = !!material.id && !material.preta && !!documento;
-  const lateral = !!item && comMaterial && layout === 'lateral';
+  // O jogo de perguntas fica por cima do material enquanto estiver aberto.
+  const comMaterial = !jogo && !!material.id && !material.preta && !!documento;
+  const lateral = !!item && (comMaterial || !!jogo) && layout === 'lateral';
   const painelDentro = !!item && !saindo && !entrando;
 
   // Slide ao lado do artigo: o slide inteiro encolhe e desliza para a esquerda
@@ -249,6 +254,13 @@ export function Projecao() {
           </div>
         </div>
       )}
+      {jogo && (
+        <div className={`proj-jogo${lateral && painelDentro ? ' encolhido' : ''}${item && !lateral && painelDentro ? ' oculto' : ''}`}>
+          <div className="jogo-quadro">
+            <JogoTela jogo={jogo} />
+          </div>
+        </div>
+      )}
       {item && (
         <div
           className={`projecao-folha${lateral ? ' lateral' : ' cheia'}${painelDentro ? '' : ' fora'}`}
@@ -265,7 +277,7 @@ export function Projecao() {
         </button>
         <span className="proj-barra-dica">ou duplo clique na tela · tecla F</span>
       </div>
-      {!telaCheia && !item && !comMaterial && (
+      {!telaCheia && !item && !comMaterial && !jogo && (
         <div className="projecao-convite">
           <button className="caixa" onClick={entrarTelaCheia}>
             Esta é a janela de projeção.

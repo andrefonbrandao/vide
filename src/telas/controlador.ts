@@ -14,6 +14,8 @@ import { Detector, chaveReferencia, type Referencia } from '../voz/detector';
 import { lerDigitado } from '../voz/digitado';
 import { Reconhecedor, nomeNavegador, type StatusVoz } from '../voz/reconhecedor';
 import { ConexaoSala, type StatusConexao } from '../remoto/conexao';
+import { anfitriao } from '../jogo/anfitriao';
+import { rotuloAvancar } from '../jogo/motor';
 import { gerarCodigo, type EnvioDoComputador, type MsgDoCelular, type MsgDoComputador } from '../remoto/protocolo';
 
 const CHAVE_ESCALA = 'vide.escalaFonte';
@@ -194,6 +196,7 @@ export class ControladorAula {
     }
     // A cada mudança, manda o retrato da aula para o celular (no máximo ~6 vezes por segundo).
     this.ouvintes.add(() => this.agendarEnvioRemoto());
+    anfitriao().assinar(() => this.agendarEnvioRemoto());
   }
 
   // ---------- estado / React ----------
@@ -350,6 +353,9 @@ export class ControladorAula {
         else if (m.delta > 0) this.aumentarFonte('celular');
         else this.diminuirFonte('celular');
         break;
+      case 'jogo-avancar':
+        anfitriao().avancar();
+        break;
       case 'marcar':
         this.marcar();
         break;
@@ -383,6 +389,12 @@ export class ControladorAula {
       escutaComputador: e.escutando,
       projecaoConectada: e.projecao.conectada,
       ultimaFala: (e.parcial ? `${ultimas} ${e.parcial}` : ultimas).slice(-240),
+      jogo: (() => {
+        const j = anfitriao().obter().tela;
+        return j
+          ? { fase: j.fase, indice: j.indice, total: j.total, respondidas: j.respondidas, aResponder: j.aResponder, avancar: rotuloAvancar(j) }
+          : null;
+      })(),
     });
   }
 
@@ -710,7 +722,8 @@ export class ControladorAula {
   }
 
   private layoutAtual(): LayoutArtigo {
-    return this.estado.material && !this.estado.telaPreta ? this.estado.layoutArtigo : 'cheia';
+    // Com slide ou jogo de perguntas na tela, o artigo pode entrar ao lado.
+    return (this.estado.material && !this.estado.telaPreta) || anfitriao().ativo ? this.estado.layoutArtigo : 'cheia';
   }
 
   /**

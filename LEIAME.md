@@ -47,6 +47,12 @@ O computador continua mostrando a projeção; o iPhone vira microfone e controle
 - Os dois aparelhos precisam de internet. O texto falado passa pelo Cloudflare só para chegar ao computador; não fica guardado lá.
 - Por dentro: um Worker do Cloudflare (`worker/index.ts`) com um Durable Object ("Sala") repassa as mensagens entre o computador e o celular por WebSocket.
 
+## Jogo de perguntas
+
+- Questões (múltipla escolha e verdadeiro/falso) e questionários ficam em **Acervo › Questões**; dá para colar várias questões de uma vez em texto simples.
+- Na Aula, **Perguntas** abre uma sala: os alunos entram pelo celular (QR code ou `/j` + código de 6 números) só com um apelido, respondem e veem o resultado. Ranking com pódio é opcional (ligado por padrão).
+- Por dentro: o computador do professor conduz o jogo (`src/jogo/`); um Durable Object "Jogo" no Cloudflare (`worker/index.ts`) só repassa as mensagens. Nada de nomes é gravado; o resultado guardado tem só números por questão.
+
 ## Publicar no Cloudflare (sem instalar nada no notebook)
 
 Você faz isso **uma vez só**, pelo navegador. Depois, cada atualização que eu enviar ao GitHub é publicada sozinha.

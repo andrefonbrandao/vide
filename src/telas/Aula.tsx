@@ -8,8 +8,10 @@ import { controlador, type EstadoAula } from './controlador';
 import { PainelMaterial } from './PainelMaterial';
 import { importarMaterial } from '../material/documento';
 import { SeletorMaterial, marcarUsado } from './Materiais';
-import { IcCelular, IcMicrofone, IcNovaSessao, IcPausa, IcPin, IcProjecao, IcSair, IcTelaCheia } from '../comum/Icones';
+import { IcPerguntas, IcCelular, IcMicrofone, IcNovaSessao, IcPausa, IcPin, IcProjecao, IcSair, IcTelaCheia } from '../comum/Icones';
 import { PareamentoCelular } from './PareamentoCelular';
+import { IniciarJogo, PainelJogo, useJogo } from './PainelJogo';
+import { anfitriao } from '../jogo/anfitriao';
 import type { StatusVoz } from '../voz/reconhecedor';
 import { obterConstrutor } from '../voz/reconhecedor';
 
@@ -144,7 +146,9 @@ export function Aula({ ativa }: { ativa: boolean }) {
       const passo = acumulado > 0 ? 1 : -1;
       acumulado = 0;
       ultimoPasso = agora;
-      ctl.roda(passo);
+      // No jogo de perguntas, a roda escolhe a alternativa (ou rola o artigo projetado).
+      if (anfitriao().ativo && ctl.obter().modoRoda !== 'rolar') ctl.mover(passo);
+      else ctl.roda(passo);
     };
     const botao = (ev: MouseEvent) => {
       if (ev.button === 1) {
@@ -158,7 +162,8 @@ export function Aula({ ativa }: { ativa: boolean }) {
         const card = ev.target instanceof Element ? ev.target.closest<HTMLElement>('[data-candidato]') : null;
         if (card?.dataset.candidato) return ctl.projetarCandidato(card.dataset.candidato);
         if (ehInterface(ev.target)) return;
-        ctl.cliqueProjetar();
+        if (anfitriao().ativo) anfitriao().avancar();
+        else ctl.cliqueProjetar();
       }
     };
     const semMenu = (ev: MouseEvent) => ev.preventDefault();
@@ -169,7 +174,11 @@ export function Aula({ ativa }: { ativa: boolean }) {
       if (ehInterface(ev.target) && (ev.target as Element).matches('input, textarea')) return;
       const est = ctl.obter();
       const k = ev.key;
-      if (k === 'PageDown' || k === 'PageUp') {
+      if (anfitriao().ativo && (k === 'PageDown' || k === 'Enter' || k === ' ' || k === 'ArrowRight')) {
+        // Jogo de perguntas: o passador e o Enter avançam o jogo.
+        ev.preventDefault();
+        anfitriao().avancar();
+      } else if (k === 'PageDown' || k === 'PageUp') {
         // Passador de slides: com material, sempre passa a página.
         ev.preventDefault();
         const passo = k === 'PageDown' ? 1 : -1;
@@ -222,6 +231,8 @@ export function Aula({ ativa }: { ativa: boolean }) {
   const agora = Date.now();
   const arquivoRef = useRef<HTMLInputElement>(null);
   const [verCelular, setVerCelular] = useState(false);
+  const [verJogo, setVerJogo] = useState(false);
+  const jogo = useJogo();
   const [carregando, setCarregando] = useState(false);
 
   const carregarMaterial = async (arquivo: File | undefined) => {
@@ -247,7 +258,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
   };
 
   return (
-    <div className={`aula${e.material ? ' com-material' : ''}`}>
+    <div className={`aula${e.material || jogo.ativo ? ' com-material' : ''}`}>
       <div className="aula-topo" data-ui>
         {!e.escutando ? (
           <button className="botao primario com-icone" onClick={() => ctl.iniciar()} disabled={!suporte}>
@@ -268,6 +279,13 @@ export function Aula({ ativa }: { ativa: boolean }) {
         </button>
         <button className="botao com-icone" onClick={telaCheia}>
           <IcTelaCheia /> Tela cheia
+        </button>
+        <button
+          className={`botao com-icone${jogo.ativo ? ' escuro' : ''}`}
+          onClick={() => !jogo.ativo && setVerJogo(true)}
+          title="Jogo de perguntas: os alunos respondem pelo celular"
+        >
+          <IcPerguntas /> {jogo.ativo ? `Jogo aberto · ${jogo.codigo}` : 'Perguntas'}
         </button>
         <span className="espaco" />
         <button
@@ -415,7 +433,8 @@ export function Aula({ ativa }: { ativa: boolean }) {
         </div>
       </div>
 
-      {e.material && <PainelMaterial e={e} ctl={ctl} />}
+      {jogo.ativo ? <PainelJogo ctl={ctl} /> : e.material && <PainelMaterial e={e} ctl={ctl} />}
+      {verJogo && <IniciarJogo aoFechar={() => setVerJogo(false)} />}
       {verCelular && <PareamentoCelular e={e} ctl={ctl} aoFechar={() => setVerCelular(false)} />}
 
       <aside className="aula-dir">

@@ -2,6 +2,16 @@
 // Funciona só entre janelas do mesmo navegador, no mesmo aparelho.
 import type { Projetavel } from './legislacao';
 import type { Regiao } from '../material/regiao';
+import type { VisaoTela } from '../jogo/motor';
+
+/** O jogo de perguntas como a projeção o desenha. */
+export interface TelaJogo extends VisaoTela {
+  codigo: string;
+  /** Endereço curto para os alunos digitarem (sem https://). */
+  enderecoCurto: string;
+  /** Endereço completo (QR code). */
+  url: string;
+}
 
 /** Como o artigo aparece quando há material na tela: ao lado ou por cima de tudo. */
 export type LayoutArtigo = 'lateral' | 'cheia';
@@ -17,6 +27,8 @@ export type Mensagem =
   | { t: 'material'; id: string | null; pagina: number; regiao: Regiao; preta: boolean }
   /** Pede à janela de projeção para se recarregar (quando está com versão antiga). */
   | { t: 'recarregar' }
+  /** Jogo de perguntas na tela (null = sem jogo). */
+  | { t: 'jogo'; jogo: TelaJogo | null }
   | { t: 'ping' }
   // projeção -> apresentador
   | { t: 'ola' }

@@ -27,6 +27,8 @@ export interface EstadoRemoto {
   projecaoConectada: boolean;
   /** Últimas falas reconhecidas (para conferir no celular). */
   ultimaFala: string;
+  /** Jogo de perguntas aberto (resumo para o controle). */
+  jogo?: { fase: string; indice: number; total: number; respondidas: number; aResponder: number; avancar: string | null } | null;
 }
 
 export type ComandoRemoto =
@@ -39,6 +41,7 @@ export type ComandoRemoto =
   | { t: 'cmd'; acao: 'rolar'; delta: number }
   | { t: 'cmd'; acao: 'marcar' }
   | { t: 'cmd'; acao: 'fonte'; delta: number }
+  | { t: 'cmd'; acao: 'jogo-avancar' }
   | { t: 'cmd'; acao: 'digitar'; texto: string };
 
 /** Celular -> computador. */

@@ -2,6 +2,7 @@
 // Tudo fica no aparelho: a aula não depende de internet para o acervo.
 import Dexie, { type Table } from 'dexie';
 import type { Diploma, EventoRegistro, Item, Material } from './modelo';
+import type { Questao, Questionario, ResultadoJogo } from '../jogo/tipos';
 import { agoraISO } from './modelo';
 
 class BancoVide extends Dexie {
@@ -9,6 +10,9 @@ class BancoVide extends Dexie {
   diplomas!: Table<Diploma, string>;
   registro!: Table<EventoRegistro, number>;
   materiais!: Table<Material, string>;
+  questoes!: Table<Questao, string>;
+  questionarios!: Table<Questionario, string>;
+  jogos!: Table<ResultadoJogo, string>;
 
   constructor() {
     super('vide');
@@ -34,6 +38,12 @@ class BancoVide extends Dexie {
             m.etiquetas ??= [];
           }),
       );
+    // Versão 4: questões, questionários e resultados dos jogos (só números, sem nomes de alunos).
+    this.version(4).stores({
+      questoes: 'id, pasta, *etiquetas, atualizado_em, excluido_em',
+      questionarios: 'id, nome, atualizado_em, excluido_em',
+      jogos: 'id, em',
+    });
   }
 }
 

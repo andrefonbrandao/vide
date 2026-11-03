@@ -201,3 +201,12 @@ export const IcProxima = (p: P) => (
     <path d="M9 5l7 7-7 7" />
   </Svg>
 );
+
+/** Perguntas (balão com interrogação). */
+export const IcPerguntas = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 5h16v11H9l-5 4z" />
+    <path d="M10 9a2 2 0 1 1 3 1.7c-.6.4-1 .8-1 1.5" />
+    <path d="M12 14.5v.01" />
+  </Svg>
+);

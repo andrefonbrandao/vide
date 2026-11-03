@@ -12,6 +12,7 @@ import { Aula } from './telas/Aula';
 import { Projecao } from './telas/Projecao';
 import { Registro } from './telas/Registro';
 import { Controle } from './telas/Controle';
+import { Jogar } from './telas/Jogar';
 
 type Aba = 'aula' | 'acervo' | 'registro';
 
@@ -47,8 +48,19 @@ const parametros = new URLSearchParams(location.search);
 const tela = parametros.get('tela');
 const sala = (parametros.get('sala') ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
+// Página dos alunos no jogo de perguntas: /j ou /j/123456.
+const rotaJogo = /^\/j(?:\/(\d{6}))?\/?$/.exec(location.pathname);
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {tela === 'projecao' ? <Projecao /> : tela === 'controle' && sala ? <Controle codigo={sala} /> : <App />}
+    {rotaJogo ? (
+      <Jogar codigoInicial={rotaJogo[1] ?? ''} />
+    ) : tela === 'projecao' ? (
+      <Projecao />
+    ) : tela === 'controle' && sala ? (
+      <Controle codigo={sala} />
+    ) : (
+      <App />
+    )}
   </StrictMode>,
 );

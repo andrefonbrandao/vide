@@ -420,3 +420,130 @@ button.etiqueta-mat:hover { background: rgba(30, 58, 52, 0.08); }
 .controle-fonte-valor:disabled { opacity: 1; border-color: transparent; }
 .controle-fonte-cel { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 6px 0 14px; }
 .controle-fonte-cel .botao { min-height: 48px; min-width: 56px; font-size: 18px; }
+
+/* ---------- Jogo de perguntas (projetor e prévia) ---------- */
+/* Tudo em cqw: porcentagem da largura do quadro onde o jogo é desenhado. */
+.jogo-quadro { container-type: inline-size; position: relative; width: 100%; background: var(--fundo); color: var(--tinta); overflow: hidden; }
+.jogo-tela { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 3cqw 4cqw; gap: 1.6cqw; font-weight: 700; }
+.jogo-rotulo { margin: 0; font-size: 2cqw; font-weight: 700; color: var(--tinta-2); }
+.jogo-sala { flex-direction: row; align-items: center; gap: 5cqw; }
+.jogo-sala-qr { flex: 0 0 34cqw; }
+.jogo-qr svg { width: 100%; height: auto; display: block; }
+.jogo-qr svg path { fill: var(--tinta); }
+.jogo-qr svg rect { fill: var(--fundo); }
+.jogo-sala-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.6cqw; }
+.jogo-endereco { margin: 0; font-size: 3.6cqw; font-weight: 800; word-break: break-all; }
+.jogo-codigo { margin: 0; font-size: 9cqw; font-weight: 800; letter-spacing: 0.06em; line-height: 1; }
+.jogo-contagem { margin: 1.5cqw 0 0; font-size: 2.4cqw; }
+.jogo-contagem strong { font-size: 3.4cqw; }
+.jogo-nomes { display: flex; flex-wrap: wrap; gap: 0.6cqw; max-height: 14cqw; overflow: hidden; }
+.jogo-nomes span { background: var(--tinta); color: var(--fundo); border-radius: 99cqw; padding: 0.4cqw 1.2cqw; font-size: 1.6cqw; }
+.jogo-topo { display: flex; align-items: center; justify-content: space-between; min-height: 7cqw; }
+.jogo-cronometro { position: relative; width: 7cqw; height: 7cqw; }
+.jogo-cronometro svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.jogo-cron-fundo { fill: none; stroke: var(--linha); stroke-width: 9; }
+.jogo-cron-arco { fill: none; stroke: var(--destaque); stroke-width: 9; transition: stroke-dashoffset 0.2s linear; }
+.jogo-cronometro span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 2.8cqw; font-weight: 800; }
+.jogo-enunciado { margin: 0; font-size: 3.4cqw; line-height: 1.25; font-weight: 800; }
+.jogo-alternativas { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 1.4cqw; min-height: 0; }
+.jogo-alt {
+  position: relative; display: flex; align-items: center; gap: 1.4cqw; background: var(--tinta); color: var(--fundo);
+  border-radius: 1.2cqw; padding: 1.2cqw 1.8cqw; font-size: 2.8cqw; line-height: 1.2; overflow: hidden; transition: background 0.3s, color 0.3s;
+}
+.jogo-alt-marca { display: inline-flex; align-items: center; gap: 0.6cqw; font-size: 2.6cqw; flex: none; }
+.jogo-alt-texto { position: relative; z-index: 1; flex: 1; }
+.jogo-alt.apagada { background: var(--fundo); color: var(--tinta); box-shadow: inset 0 0 0 0.25cqw var(--linha); }
+.jogo-alt.certa { box-shadow: 0 0 0 0.5cqw var(--destaque); }
+.jogo-alt-contagem { position: absolute; left: 0; right: 0; bottom: 0; height: 100%; display: flex; align-items: flex-end; justify-content: flex-end; gap: 0.8cqw; padding: 0.6cqw 1.2cqw; pointer-events: none; }
+.jogo-alt-contagem b { position: relative; font-size: 2.4cqw; }
+.jogo-barra { position: absolute; left: 0; bottom: 0; height: 0.7cqw; background: var(--destaque); }
+.jogo-certa-selo { position: relative; font-size: 1.6cqw; background: var(--fundo); color: var(--tinta); border-radius: 99cqw; padding: 0.2cqw 1cqw; align-self: flex-end; }
+.jogo-alternativas.duas .jogo-alt { font-size: 3.4cqw; }
+.jogo-rodape { display: flex; align-items: center; justify-content: space-between; gap: 2cqw; font-size: 2.2cqw; min-height: 3cqw; }
+.jogo-explicacao { font-size: 2cqw; font-weight: 600; line-height: 1.35; }
+.jogo-acerto { flex: none; font-weight: 800; }
+.jogo-placar { align-items: stretch; justify-content: center; }
+.jogo-lista-placar { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.2cqw; }
+.jogo-lista-placar li { display: flex; align-items: center; gap: 2cqw; background: var(--tinta); color: var(--fundo); border-radius: 1.2cqw; padding: 1.2cqw 2.4cqw; font-size: 3cqw; font-weight: 800; }
+.jogo-pos { width: 6cqw; }
+.jogo-nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jogo-fim { align-items: center; justify-content: center; text-align: center; }
+.jogo-podio { display: flex; align-items: flex-end; justify-content: center; gap: 2cqw; width: 100%; height: 34cqw; }
+.jogo-degrau { width: 22cqw; display: flex; flex-direction: column; align-items: center; gap: 0.6cqw; font-size: 2.6cqw; font-weight: 800; }
+.jogo-degrau .jogo-nome { max-width: 100%; text-align: center; }
+.jogo-degrau .jogo-pts { font-size: 1.8cqw; color: var(--tinta-2); }
+.jogo-bloco { width: 100%; background: var(--tinta); color: var(--fundo); border-radius: 1cqw 1cqw 0 0; display: flex; justify-content: center; padding-top: 1cqw; font-size: 4cqw; }
+.lugar-1 .jogo-bloco { height: 20cqw; box-shadow: inset 0 0.6cqw 0 var(--destaque); }
+.lugar-2 .jogo-bloco { height: 14cqw; }
+.lugar-3 .jogo-bloco { height: 10cqw; }
+.jogo-acertos { display: flex; align-items: flex-end; gap: 1cqw; height: 16cqw; margin-top: 2cqw; }
+.jogo-acerto-q { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 0.4cqw; font-size: 1.4cqw; width: 3.6cqw; }
+.jogo-barra-v { width: 100%; background: var(--tinta); border-radius: 0.4cqw 0.4cqw 0 0; }
+
+/* No projetor: o quadro ocupa a tela; com artigo ao lado, encolhe para a esquerda. */
+.proj-jogo { position: absolute; top: 0; bottom: 0; left: 0; width: 100%; background: var(--fundo); transition: width 0.65s cubic-bezier(0.22, 0.61, 0.36, 1); display: flex; align-items: center; }
+.proj-jogo.encolhido { width: 58%; }
+.proj-jogo .jogo-quadro { height: 100%; }
+.previa-jogo .jogo-quadro { aspect-ratio: 16 / 9; border-radius: 10px; border: 2px solid var(--linha); }
+.proj-jogo.oculto { visibility: hidden; }
+.caixa-marcar { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; margin-top: 12px; }
+.caixa-marcar input { width: 18px; height: 18px; accent-color: var(--tinta); }
+.lista-questionarios { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow: auto; }
+.opcao-questionario { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 2px solid var(--linha); border-radius: 12px; cursor: pointer; background: var(--papel); }
+.opcao-questionario.atual { border-color: var(--tinta); }
+.opcao-questionario input { accent-color: var(--tinta); }
+.painel-jogo .previa-jogo { width: 100%; }
+.painel-jogo-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.painel-jogo-acoes .caixa-marcar { margin-top: 0; }
+
+/* ---------- Página do aluno (jogo) ---------- */
+.jogar { min-height: 100dvh; background: var(--fundo); color: var(--tinta); padding: 14px 16px 28px; display: flex; flex-direction: column; gap: 14px; max-width: 640px; margin: 0 auto; }
+.jogar-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.jogar-centro { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 14px; text-align: center; }
+.jogar-rotulo { margin: 0; font-weight: 700; color: var(--tinta-2); font-size: 17px; }
+.jogar-campo { font-size: 22px; font-weight: 700; text-align: center; border: 2px solid var(--linha); border-radius: 14px; padding: 14px; background: #fff; width: 100%; }
+.jogar-campo:focus { outline: none; border-color: var(--tinta); }
+.jogar-codigo { font-size: 36px; letter-spacing: 0.2em; }
+.jogar-grande { margin: 0; font-size: 26px; font-weight: 800; line-height: 1.25; }
+.jogar-pergunta { display: flex; flex-direction: column; gap: 12px; }
+.jogar-info { display: flex; justify-content: space-between; font-weight: 700; color: var(--tinta-2); }
+.jogar-tempo { color: var(--tinta); font-weight: 800; font-variant-numeric: tabular-nums; }
+.jogar-barra-tempo { height: 6px; background: var(--linha); border-radius: 99px; overflow: hidden; }
+.jogar-barra-tempo span { display: block; height: 100%; background: var(--destaque); transition: width 0.25s linear; }
+.jogar-enunciado { margin: 0; font-size: 20px; font-weight: 800; line-height: 1.3; }
+.jogar-alternativas { display: flex; flex-direction: column; gap: 10px; }
+.jogar-alt {
+  display: flex; align-items: center; gap: 14px; text-align: left; border: none; border-radius: 16px; padding: 16px 18px;
+  background: var(--tinta); color: var(--fundo); font-size: 18px; font-weight: 700; min-height: 64px; cursor: pointer;
+}
+.jogar-alt:disabled { cursor: default; }
+.jogar-alt.escolhida { box-shadow: 0 0 0 4px var(--destaque); }
+.jogar-alt.apagada { opacity: 0.35; }
+.jogar-alt-marca { display: inline-flex; align-items: center; gap: 6px; font-size: 22px; flex: none; }
+.jogar-enviada { margin: 0; text-align: center; font-weight: 700; color: var(--tinta-2); }
+.jogar-resultado { margin: 0; font-size: 34px; font-weight: 800; border-radius: 18px; padding: 22px; }
+.jogar-resultado.certo { background: var(--tinta); color: var(--fundo); }
+.jogar-resultado.errado { background: var(--papel); border: 3px solid var(--tinta); }
+.jogar-posicao { margin: 0; font-size: 20px; }
+.jogar .botao-grande { width: 100%; }
+
+/* ---------- Acervo › Questões ---------- */
+.linha-opcoes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.linha-opcoes .caixa-marcar { margin-top: 0; }
+.form-questao textarea, .form-questao select { width: 100%; }
+.linha-alt { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+.linha-alt input[type='text'] { flex: 1; }
+.linha-alt input[type='radio'] { width: 18px; height: 18px; accent-color: var(--tinta); }
+.lista-ordem { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.lista-ordem li { display: flex; align-items: center; gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--linha); }
+.lista-ordem li:last-child { border-bottom: none; }
+ol.lista-ordem { counter-reset: q; }
+ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-weight: 800; min-width: 1.6em; }
+.lista-ordem.disponiveis { max-height: 320px; overflow: auto; margin-top: 8px; }
+.texto-questao { flex: 1; min-width: 0; margin: 0; line-height: 1.4; }
+.lista-questoes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.modelo-questoes { background: #fff; border: 1px solid var(--linha); border-radius: 10px; padding: 12px; white-space: pre-wrap; margin: 8px 0; }
+.previa-importacao { margin: 8px 0 12px; }
+.lista-previa { margin: 6px 0 0; padding-left: 22px; line-height: 1.5; }
+.editor-questionario h3 { margin: 14px 0 6px; }
+.controle-jogo { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }

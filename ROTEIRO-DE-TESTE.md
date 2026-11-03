@@ -125,6 +125,31 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 7. Para voltar ao microfone do computador, clique em **Iniciar escuta** no computador. O celular para de escutar.
 8. Se o celular perder a conexão, ele reconecta sozinho quando a internet voltar. O código da sala fica guardado: na próxima aula, basta abrir o mesmo link (ou gerar o QR de novo).
 
+## Jogo de perguntas (alunos respondendo pelo celular)
+
+**Preparar (em casa):**
+1. Na aba **Acervo**, clique em **+** › **Adicionar questões**.
+   - **Colar várias de uma vez:** cole as questões no formato mostrado na tela (enunciado, alternativas A a D e "Resposta: C"; sem alternativas, a questão é de verdadeiro ou falso, com "Resposta: V" ou "F"). "Tempo", "Explicação" e "Fundamento" (ex.: `485 VI`) são opcionais. Se pedir questões ao Claude ou ao Gemini, use **Copiar o modelo** e mande junto.
+   - O Vide mostra quantas questões entendeu e aponta as que têm problema.
+   - Dê um nome em **Criar um questionário com estas questões** para já montar o jogo.
+   - Ou use **Escrever uma questão** para fazer uma por vez.
+2. Na aba **Questões** do Acervo você edita as questões, monta outros questionários (escolhendo e ordenando as questões) e vê os resultados dos jogos.
+
+**Na aula:**
+1. Abra a projeção normalmente e clique em **Perguntas** (no alto da tela da Aula).
+2. Escolha o questionário. **Ranking com pontos e pódio** vem ligado; desmarque se não quiser placar. Clique em **Abrir a sala**.
+3. O projetor mostra um **QR code** e um **código de 6 números**. Os alunos apontam a câmera do celular para o QR code (ou entram no endereço que aparece e digitam o código) e escrevem um apelido ou o nome. Não há cadastro.
+4. Quando todos tiverem entrado, **clique** (ou Enter, ou o passador) para começar.
+5. A cada questão: os alunos respondem no celular; o tempo acaba sozinho (ou quando todos respondem), ou você encerra antes com um clique. O projetor mostra quantos marcaram cada alternativa e qual era a correta.
+6. Se a questão tiver fundamento, o botão **Projetar fundamento** põe o artigo ao lado da questão. **Clique direito** recolhe.
+7. Os próximos cliques mostram o **placar** (se o ranking estiver ligado) e a próxima questão. No fim, o projetor mostra o **pódio** (ou o percentual de acerto da turma, sem ranking).
+8. Clique em **Encerrar jogo**. Os celulares dos alunos mostram que o jogo terminou.
+9. O iPhone (controle) também tem o botão para avançar o jogo.
+
+**O que fica guardado:** só os números de cada questão (quantos marcaram cada alternativa), em **Acervo › Questões › Resultados dos jogos**, com exportação para Excel. Nenhum apelido ou nome é guardado.
+
+**Cuidados:** cada aluno precisa de internet no celular. Não recarregue nem feche a página do Vide no computador durante o jogo: o jogo roda nela. Se um aluno recarregar a página, ele volta ao jogo com os mesmos pontos.
+
 ## Como medir os acertos
 
 Com o .csv aberto no Excel, use a coluna **tipo** para filtrar. Anote:
