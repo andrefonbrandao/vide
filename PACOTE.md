@@ -13,14 +13,15 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 3** aberto em 2026-11-03, a partir da versão 0.18.0 (já publicada).
+**Pacote 3** aberto em 2026-11-03, a partir da versão 0.18.0. **Fechado e publicado como versão 0.19.0.**
+O próximo pacote recomeça esta seção a partir da versão publicada.
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| 1 | Treino em casa: botões para baixar o QR code como imagem (PNG) e copiar a imagem, para divulgar no Moodle, em slides ou impresso (imagem PNG com o QR, o título e o link) | Pronta |
-| 2 | Atividades: escolher o tempo ao abrir a sala, separado para múltipla escolha/V-F e para "Adivinhe o conceito" (ou manter o tempo sugerido de cada questão); a escolha fica guardada; no cadastro, o tempo vira "sugerido" | Pronta |
-| 3 | "Adivinhe o conceito": o projetor deixa de mostrar quem acertou; mostra só quantos acertaram com 1, 2, 3… dicas | Pronta |
-| 4 | Jogo: QR code pequeno e código fixos no canto do projetor durante as perguntas, resultados e placar, para alunos entrarem com o jogo já começado | Pronta |
+| 1 | Treino em casa: botões para baixar o QR code como imagem (PNG) e copiar a imagem, para divulgar no Moodle, em slides ou impresso (imagem PNG com o QR, o título e o link) | Publicada (0.19.0) |
+| 2 | Atividades: escolher o tempo ao abrir a sala, separado para múltipla escolha/V-F e para "Adivinhe o conceito" (ou manter o tempo sugerido de cada questão); a escolha fica guardada; no cadastro, o tempo vira "sugerido" | Publicada (0.19.0) |
+| 3 | "Adivinhe o conceito": o projetor deixa de mostrar quem acertou; mostra só quantos acertaram com 1, 2, 3… dicas | Publicada (0.19.0) |
+| 4 | Jogo: QR code pequeno e código fixos no canto do projetor durante as perguntas, resultados e placar, para alunos entrarem com o jogo já começado | Publicada (0.19.0) |
 
 ## Pacotes anteriores
 
