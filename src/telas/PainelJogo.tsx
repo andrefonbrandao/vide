@@ -49,8 +49,9 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
 
   return (
     <div className="modal-fundo" data-ui onMouseDown={(ev) => ev.target === ev.currentTarget && aoFechar()}>
-      <div className="modal" role="dialog" aria-label="Jogo de perguntas">
-        <h2>Jogo de perguntas</h2>
+      <div className="modal" role="dialog" aria-label="Atividades">
+        <h2>Atividades</h2>
+        <p className="jogar-rotulo" style={{ margin: '-6px 0 6px', fontSize: 15 }}>Jogo de perguntas</p>
         <p className="ajuda">
           Os alunos entram pelo celular (QR code ou código no projetor), só com um apelido, e respondem às questões.
         </p>

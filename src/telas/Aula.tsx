@@ -283,9 +283,9 @@ export function Aula({ ativa }: { ativa: boolean }) {
         <button
           className={`botao com-icone${jogo.ativo ? ' escuro' : ''}`}
           onClick={() => !jogo.ativo && setVerJogo(true)}
-          title="Jogo de perguntas: os alunos respondem pelo celular"
+          title="Atividades: jogo de perguntas, com os alunos respondendo pelo celular"
         >
-          <IcPerguntas /> {jogo.ativo ? `Jogo aberto · ${jogo.codigo}` : 'Perguntas'}
+          <IcPerguntas /> {jogo.ativo ? `Jogo aberto · ${jogo.codigo}` : 'Atividades'}
         </button>
         <span className="espaco" />
         <button

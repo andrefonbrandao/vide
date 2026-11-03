@@ -17,4 +17,4 @@ Pacote aberto em 2026-11-03, a partir da versão 0.16.0 (já publicada).
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| — | (nenhuma ainda) | — |
+| 1 | Na Aula, o botão "Perguntas" passa a se chamar "Atividades" (e a janela que ele abre também) | Pronta |

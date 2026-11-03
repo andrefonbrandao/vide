@@ -427,7 +427,7 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
       <h2>Questionários</h2>
       <p className="ajuda">
         Um questionário é a sequência de questões de um jogo. Para jogar, vá na <strong>Aula</strong> e clique em{' '}
-        <strong>Perguntas</strong>.
+        <strong>Atividades</strong>.
       </p>
       {editandoQz ? (
         <EditorQuestionario inicial={editandoQz === 'novo' ? undefined : editandoQz} questoes={questoes} aoFechar={() => setEditandoQz(null)} />

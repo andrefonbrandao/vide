@@ -136,7 +136,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 2. Na aba **Questões** do Acervo você edita as questões, monta outros questionários (escolhendo e ordenando as questões) e vê os resultados dos jogos.
 
 **Na aula:**
-1. Abra a projeção normalmente e clique em **Perguntas** (no alto da tela da Aula).
+1. Abra a projeção normalmente e clique em **Atividades** (no alto da tela da Aula).
 2. Escolha o questionário. **Ranking com pontos e pódio** vem ligado; desmarque se não quiser placar. Clique em **Abrir a sala**.
 3. O projetor mostra um **QR code** e um **código de 6 números**. Os alunos apontam a câmera do celular para o QR code (ou entram no endereço que aparece e digitam o código) e escrevem um apelido ou o nome. Não há cadastro.
 4. Quando todos tiverem entrado, **clique** (ou Enter, ou o passador) para começar.
