@@ -15,9 +15,41 @@ export function useJogo() {
 type Modo = 'assunto' | 'questionario';
 const CHAVE_MODO = 'vide.jogoModo';
 
-function paraJogo(q: Questao): QuestaoJogo {
-  const { tipo, enunciado, alternativas, correta, tempo, explicacao, fundamento, dicas, aceitas } = q;
-  return { tipo, enunciado, alternativas, correta, tempo, explicacao, fundamento, dicas, aceitas };
+/** Tempo escolhido ao abrir a atividade: 0 = o tempo sugerido de cada questão. */
+interface Tempos {
+  alternativas: number;
+  conceito: number;
+}
+const CHAVE_TEMPOS = 'vide.jogoTempos';
+const OPCOES_TEMPO = [10, 15, 20, 30, 45, 60, 90, 120, 180];
+
+function temposGuardados(): Tempos {
+  try {
+    const t = JSON.parse(localStorage.getItem(CHAVE_TEMPOS) ?? 'null') as Tempos | null;
+    if (t && Number.isFinite(t.alternativas) && Number.isFinite(t.conceito)) return t;
+  } catch {
+    /* ignore */
+  }
+  return { alternativas: 0, conceito: 0 };
+}
+
+function paraJogo(q: Questao, tempos: Tempos = { alternativas: 0, conceito: 0 }): QuestaoJogo {
+  const { tipo, enunciado, alternativas, correta, explicacao, fundamento, dicas, aceitas } = q;
+  const escolhido = tipo === 'conceito' ? tempos.conceito : tempos.alternativas;
+  return { tipo, enunciado, alternativas, correta, tempo: escolhido || q.tempo, explicacao, fundamento, dicas, aceitas };
+}
+
+function SeletorTempo({ id, valor, aoMudar }: { id: string; valor: number; aoMudar: (v: number) => void }) {
+  return (
+    <select id={id} className="seletor" value={valor} onChange={(e) => aoMudar(Number(e.target.value))}>
+      <option value={0}>O tempo sugerido de cada questão</option>
+      {OPCOES_TEMPO.map((t) => (
+        <option key={t} value={t}>
+          {t} segundos para todas
+        </option>
+      ))}
+    </select>
+  );
 }
 
 /** Janela para abrir a sala: sorteio por assunto ou um questionário pronto. */
@@ -37,6 +69,15 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
   const [quantas, setQuantas] = useState(10);
   const [tipos, setTipos] = useState<FiltroTipo>('todos');
   const [buscaAssunto, setBuscaAssunto] = useState('');
+  const [tempos, setTemposEstado] = useState<Tempos>(temposGuardados);
+  const setTempos = (t: Tempos) => {
+    setTemposEstado(t);
+    try {
+      localStorage.setItem(CHAVE_TEMPOS, JSON.stringify(t));
+    } catch {
+      /* ignore */
+    }
+  };
   const setModo = (m: Modo) => {
     setModoEstado(m);
     try {
@@ -71,11 +112,11 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
       const sorteadas = sortearQuestoes(banco, assunto === '*' ? null : assunto, quantas, Math.random, tipos);
       if (!sorteadas.length) return;
       const nome = `${sorteadas.length} ${sorteadas.length === 1 ? 'questão' : 'questões'} · ${assunto === '*' ? 'todos os assuntos' : assunto}`;
-      anfitriao().iniciar(nome, sorteadas.map(paraJogo), ranking);
+      anfitriao().iniciar(nome, sorteadas.map((q) => paraJogo(q, tempos)), ranking);
     } else {
       const q = lista?.find((x) => x.id === escolhido);
       if (!q) return;
-      anfitriao().iniciar(q.nome, (await questoesDo(q)).map(paraJogo), ranking);
+      anfitriao().iniciar(q.nome, (await questoesDo(q)).map((x) => paraJogo(x, tempos)), ranking);
     }
     aoFechar();
   };
@@ -205,6 +246,22 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
                 </span>
               </label>
             ))}
+          </div>
+        )}
+        {lista !== null && (
+          <div className="grade-2 tempos-jogo">
+            {(modo !== 'assunto' || tipos !== 'conceito') && (
+              <div className="campo">
+                <label htmlFor="tempo-alt">Tempo — múltipla escolha e V/F</label>
+                <SeletorTempo id="tempo-alt" valor={tempos.alternativas} aoMudar={(v) => setTempos({ ...tempos, alternativas: v })} />
+              </div>
+            )}
+            {(modo !== 'assunto' || tipos !== 'alternativas') && (
+              <div className="campo">
+                <label htmlFor="tempo-conceito">Tempo — "Adivinhe o conceito"</label>
+                <SeletorTempo id="tempo-conceito" valor={tempos.conceito} aoMudar={(v) => setTempos({ ...tempos, conceito: v })} />
+              </div>
+            )}
           </div>
         )}
         <label className="caixa-marcar">

@@ -143,6 +143,8 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
    - **Sortear por assunto:** digite parte do assunto no campo de busca (maiúsculas e acentos não importam; Enter escolhe o primeiro encontrado) ou clique nele na lista (ou em "Todos os assuntos") e quantas questões (5, 10, 15, 20 ou outro número). O Vide sorteia as questões, em ordem aleatória. Se houver menos questões do assunto do que o pedido, ele avisa e usa todas.
    - **Questionário pronto:** a sequência que você montou no Acervo.
 
+   Escolha o **tempo**: "o tempo sugerido de cada questão" (o do cadastro) ou um tempo igual para todas, separado para múltipla escolha/V-F e para "Adivinhe o conceito" (as dicas se espalham pelo tempo escolhido). O Vide lembra a última escolha.
+
    **Ranking com pontos e pódio** vem ligado; desmarque se não quiser placar. Clique em **Abrir a sala**.
 3. O projetor mostra um **QR code** e um **código de 6 números**. Os alunos apontam a câmera do celular para o QR code (ou entram no endereço que aparece e digitam o código) e escrevem um apelido ou o nome. Não há cadastro.
 4. Quando todos tiverem entrado, **clique** (ou Enter, ou o passador) para começar.

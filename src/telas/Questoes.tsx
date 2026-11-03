@@ -222,7 +222,7 @@ export function FormQuestao({
       )}
       <div className="grade-2">
         <div className="campo">
-          <label htmlFor="tempo">Tempo para responder</label>
+          <label htmlFor="tempo">Tempo sugerido (dá para trocar ao abrir a atividade)</label>
           <select id="tempo" className="seletor" value={tempo} onChange={(e) => setTempo(Number(e.target.value))}>
             {[...new Set([...TEMPOS, tempo])].sort((a, b) => a - b).map((t) => (
               <option key={t} value={t}>
