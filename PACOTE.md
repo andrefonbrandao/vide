@@ -17,7 +17,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| — | (nenhuma ainda) | — |
+| 1 | Atividades › Sortear por assunto: campo de busca de assunto (sem diferença de maiúsculas e acentos; Enter escolhe o primeiro) com a lista filtrada, no lugar da caixa de seleção | Pronta |
 
 ## Pacotes anteriores
 

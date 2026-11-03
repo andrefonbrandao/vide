@@ -36,6 +36,7 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
   const [assunto, setAssunto] = useState<string>('');
   const [quantas, setQuantas] = useState(10);
   const [tipos, setTipos] = useState<FiltroTipo>('todos');
+  const [buscaAssunto, setBuscaAssunto] = useState('');
   const setModo = (m: Modo) => {
     setModoEstado(m);
     try {
@@ -58,6 +59,10 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
 
   const doTipo = banco.filter((q) => tipos === 'todos' || (tipos === 'conceito') === (q.tipo === 'conceito'));
   const assuntos = assuntosDasQuestoes(doTipo);
+  // Procura ignorando maiúsculas e acentos; todas as palavras digitadas precisam aparecer.
+  const semAcento = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const termos = semAcento(buscaAssunto).split(/\s+/).filter(Boolean);
+  const encontrados = assuntos.filter((a) => termos.every((t) => semAcento(a.assunto).includes(t)));
   const disponiveis = assunto === '*' ? doTipo.length : (assuntos.find((a) => a.assunto === assunto)?.total ?? 0);
   const vaiTer = Math.min(quantas, disponiveis);
 
@@ -103,16 +108,47 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
           ) : (
             <div className="sorteio-assunto">
               <div className="campo">
-                <label htmlFor="assunto-jogo">Assunto</label>
-                <select id="assunto-jogo" className="seletor" value={assunto} onChange={(e) => setAssunto(e.target.value)}>
-                  {assuntos.map((a) => (
-                    <option key={a.assunto} value={a.assunto}>
-                      {a.assunto} ({a.total} {a.total === 1 ? 'questão' : 'questões'})
-                    </option>
+                <label htmlFor="assunto-busca">Assunto</label>
+                <input
+                  id="assunto-busca"
+                  className="busca-mat"
+                  type="search"
+                  placeholder="Procurar assunto…"
+                  autoComplete="off"
+                  value={buscaAssunto}
+                  onChange={(e) => setBuscaAssunto(e.target.value)}
+                  onKeyDown={(e) => {
+                    // Enter escolhe o primeiro assunto encontrado.
+                    if (e.key === 'Enter' && encontrados[0]) {
+                      e.preventDefault();
+                      setAssunto(encontrados[0].assunto);
+                    }
+                  }}
+                />
+                <div className="lista-assuntos" role="listbox" aria-label="Assuntos" data-rolavel>
+                  {encontrados.map((a) => (
+                    <button
+                      key={a.assunto}
+                      type="button"
+                      role="option"
+                      aria-selected={assunto === a.assunto}
+                      className={`opcao-assunto${assunto === a.assunto ? ' atual' : ''}`}
+                      onClick={() => setAssunto(a.assunto)}
+                    >
+                      <span>{a.assunto}</span>
+                      <span className="total">
+                        {a.total} {a.total === 1 ? 'questão' : 'questões'}
+                      </span>
+                    </button>
                   ))}
-                  {assunto !== '*' && !assuntos.some((a) => a.assunto === assunto) && <option value={assunto}>{assunto} (0)</option>}
-                  <option value="*">Todos os assuntos ({doTipo.length})</option>
-                </select>
+                  {!buscaAssunto.trim() && (
+                    <button type="button" role="option" aria-selected={assunto === '*'} className={`opcao-assunto${assunto === '*' ? ' atual' : ''}`} onClick={() => setAssunto('*')}>
+                      <span>Todos os assuntos</span>
+                      <span className="total">{doTipo.length} questões</span>
+                    </button>
+                  )}
+                  {buscaAssunto.trim() && !encontrados.length && <p className="ajuda" style={{ margin: 6 }}>Nenhum assunto com "{buscaAssunto.trim()}".</p>}
+                </div>
                 {assuntos.length === 0 && (
                   <span className="ajuda">As questões ainda não têm assunto: cadastre em Acervo › Questões (campo "Assuntos").</span>
                 )}

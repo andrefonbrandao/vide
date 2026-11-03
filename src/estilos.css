@@ -610,3 +610,8 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
   background: transparent; color: var(--tinta-2); font-size: 24px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
 }
 .fechar-material:hover { border-color: var(--tinta); color: var(--tinta); background: rgba(30, 58, 52, 0.08); }
+.lista-assuntos { display: flex; flex-direction: column; gap: 2px; max-height: 190px; overflow: auto; margin-top: 6px; border: 2px solid var(--linha); border-radius: 12px; padding: 4px; background: var(--papel); }
+.opcao-assunto { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: none; background: transparent; padding: 7px 10px; border-radius: 8px; text-align: left; font-weight: 700; cursor: pointer; color: var(--tinta); }
+.opcao-assunto:hover { background: rgba(30, 58, 52, 0.08); }
+.opcao-assunto.atual { background: var(--tinta); color: var(--fundo); }
+.opcao-assunto .total { font-weight: 600; font-size: 13px; opacity: 0.8; white-space: nowrap; }

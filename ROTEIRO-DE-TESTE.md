@@ -140,7 +140,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 **Na aula:**
 1. Abra a projeção normalmente e clique em **Atividades** (no alto da tela da Aula).
 2. Escolha como montar o jogo:
-   - **Sortear por assunto:** escolha o assunto (ou "Todos os assuntos") e quantas questões (5, 10, 15, 20 ou outro número). O Vide sorteia as questões, em ordem aleatória. Se houver menos questões do assunto do que o pedido, ele avisa e usa todas.
+   - **Sortear por assunto:** digite parte do assunto no campo de busca (maiúsculas e acentos não importam; Enter escolhe o primeiro encontrado) ou clique nele na lista (ou em "Todos os assuntos") e quantas questões (5, 10, 15, 20 ou outro número). O Vide sorteia as questões, em ordem aleatória. Se houver menos questões do assunto do que o pedido, ele avisa e usa todas.
    - **Questionário pronto:** a sequência que você montou no Acervo.
 
    **Ranking com pontos e pódio** vem ligado; desmarque se não quiser placar. Clique em **Abrir a sala**.
