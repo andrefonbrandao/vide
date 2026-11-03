@@ -659,3 +659,13 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .qr-treino svg { width: 100%; height: auto; display: block; }
 .link-treino-url { word-break: break-all; font-size: 15px; font-weight: 700; margin: 0 0 8px; }
 .form-treino .lista-ordem.disponiveis { max-height: 280px; }
+
+/* QR code no canto durante o jogo (para quem chegar depois) */
+.jogo-topo .espaco { flex: 1; }
+.jogo-topo { gap: 1.6cqw; }
+.jogo-entrada-canto { display: flex; align-items: center; gap: 1cqw; }
+.jogo-entrada-canto .jogo-qr { width: 8cqw; flex: none; }
+.jogo-entrada-texto { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.15; }
+.jogo-entrada-texto span { font-size: 1.3cqw; font-weight: 700; color: var(--tinta-2); }
+.jogo-entrada-texto strong { font-size: 2.4cqw; font-weight: 800; letter-spacing: 0.04em; }
+.jogo-placar .jogo-topo { min-height: 0; }

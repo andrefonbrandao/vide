@@ -54,6 +54,21 @@ function QR({ url }: { url: string }) {
   return <div className="jogo-qr" dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
+/** QR code pequeno e código, no canto, para quem chegar com o jogo já começado. */
+function EntradaCanto({ jogo }: { jogo: TelaJogo }) {
+  return (
+    <div className="jogo-entrada-canto">
+      <div className="jogo-entrada-texto">
+        <span>Entre: {jogo.enderecoCurto}</span>
+        <strong>
+          {jogo.codigo.slice(0, 3)} {jogo.codigo.slice(3)}
+        </strong>
+      </div>
+      <QR url={jogo.url} />
+    </div>
+  );
+}
+
 /** Adivinhe o conceito no projetor: dicas aparecendo, quem já acertou e, no fim, a resposta. */
 function TelaConceito({ jogo }: { jogo: TelaJogo }) {
   const q = jogo.questao!;
@@ -77,6 +92,8 @@ function TelaConceito({ jogo }: { jogo: TelaJogo }) {
         <span className="jogo-rotulo">
           Adivinhe o conceito · questão {jogo.indice + 1} de {jogo.total}
         </span>
+        <span className="espaco" />
+        <EntradaCanto jogo={jogo} />
         {jogo.fase === 'pergunta' ? <Cronometro inicio={jogo.inicio} prazo={jogo.prazo} /> : <span className="jogo-rotulo">Resultado</span>}
       </div>
       {revelada ? (
@@ -165,6 +182,8 @@ export function JogoTela({ jogo }: { jogo: TelaJogo }) {
           <span className="jogo-rotulo">
             Questão {jogo.indice + 1} de {jogo.total}
           </span>
+          <span className="espaco" />
+          <EntradaCanto jogo={jogo} />
           {jogo.fase === 'pergunta' ? (
             <Cronometro inicio={jogo.inicio} prazo={jogo.prazo} />
           ) : (
@@ -214,9 +233,13 @@ export function JogoTela({ jogo }: { jogo: TelaJogo }) {
   if (jogo.fase === 'ranking') {
     return (
       <div className="jogo-tela jogo-placar">
-        <p className="jogo-rotulo">
-          Placar · depois da questão {jogo.indice + 1} de {jogo.total}
-        </p>
+        <div className="jogo-topo">
+          <p className="jogo-rotulo">
+            Placar · depois da questão {jogo.indice + 1} de {jogo.total}
+          </p>
+          <span className="espaco" />
+          <EntradaCanto jogo={jogo} />
+        </div>
         <ol className="jogo-lista-placar">
           {jogo.classificacao.slice(0, 5).map((c) => (
             <li key={c.apelido}>
