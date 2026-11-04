@@ -669,3 +669,4 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .jogo-entrada-texto span { font-size: 1.3cqw; font-weight: 700; color: var(--tinta-2); }
 .jogo-entrada-texto strong { font-size: 2.4cqw; font-weight: 800; letter-spacing: 0.04em; }
 .jogo-placar .jogo-topo { min-height: 0; }
+.treino .jogar-info { gap: 14px; align-items: center; }

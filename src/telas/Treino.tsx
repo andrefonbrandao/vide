@@ -112,6 +112,8 @@ export function Treino({ codigo }: { codigo: string }) {
   const [dicasVistas, setDicasVistas] = useState(1);
   const [texto, setTexto] = useState('');
   const [errou, setErrou] = useState(false);
+  /** Resultado parcial (para salvar o PDF antes de terminar). */
+  const [parcial, setParcial] = useState(false);
 
   const setSessao = (s: Sessao | null) => {
     setSessaoEstado(s);
@@ -134,6 +136,7 @@ export function Treino({ codigo }: { codigo: string }) {
   const comecar = () => {
     if (!dados) return;
     const ordem = dados.modo === 'sorteio' ? embaralhar(dados.questoes.length).slice(0, dados.quantas) : dados.questoes.map((_, i) => i);
+    setParcial(false);
     setSessao({ ordem, i: 0, respostas: ordem.map(() => null), inicio: new Date().toISOString(), nome: nome.trim(), terminada: false });
     novaQuestao();
   };
@@ -250,9 +253,14 @@ export function Treino({ codigo }: { codigo: string }) {
     );
   }
 
-  // Resultado
-  if (sessao.terminada) {
+  // Resultado (final, ou parcial com as questões já respondidas)
+  if (sessao.terminada || parcial) {
     const data = new Date(sessao.inicio);
+    const ehParcial = !sessao.terminada;
+    const respondidas = sessao.respostas.filter(Boolean).length;
+    const faltam = sessao.ordem.length - respondidas;
+    // No parcial, as questões sem resposta não entram (para não mostrar a resposta certa delas).
+    const itens = sessao.ordem.map((pos, k) => ({ pos, k })).filter(({ k }) => !ehParcial || sessao.respostas[k]);
     return (
       <div className="jogar treino treino-resultado">
         {topo}
@@ -263,22 +271,39 @@ export function Treino({ codigo }: { codigo: string }) {
             {data.toLocaleDateString('pt-BR')} {data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
-        <p className="jogar-resultado certo">
-          {acertos} de {sessao.ordem.length} {sessao.ordem.length === 1 ? 'acerto' : 'acertos'}
-        </p>
+        {ehParcial ? (
+          <p className="jogar-resultado certo">
+            Parcial: {acertos} {acertos === 1 ? 'acerto' : 'acertos'} em {respondidas} {respondidas === 1 ? 'respondida' : 'respondidas'} (de {sessao.ordem.length})
+          </p>
+        ) : (
+          <p className="jogar-resultado certo">
+            {acertos} de {sessao.ordem.length} {sessao.ordem.length === 1 ? 'acerto' : 'acertos'}
+          </p>
+        )}
+        {ehParcial && faltam > 0 && (
+          <p className="ajuda">
+            {faltam} {faltam === 1 ? 'questão ainda sem resposta (não aparece' : 'questões ainda sem resposta (não aparecem'} neste resultado).
+          </p>
+        )}
         <div className="linha-opcoes nao-imprimir">
           <button className="botao-grande primario" onClick={() => window.print()}>
             Salvar em PDF
           </button>
-          <button className="botao-grande" onClick={comecar}>
-            {dados.modo === 'sorteio' ? 'Treinar de novo (novo sorteio)' : 'Refazer'}
-          </button>
+          {ehParcial ? (
+            <button className="botao-grande" onClick={() => (setParcial(false), window.scrollTo({ top: 0 }))}>
+              Voltar às questões
+            </button>
+          ) : (
+            <button className="botao-grande" onClick={comecar}>
+              {dados.modo === 'sorteio' ? 'Treinar de novo (novo sorteio)' : 'Refazer'}
+            </button>
+          )}
         </div>
         <p className="ajuda nao-imprimir">
           Em "Salvar em PDF", escolha <strong>Salvar como PDF</strong> como destino (no iPhone: Compartilhar › Salvar em Arquivos).
         </p>
         <ol className="treino-lista">
-          {sessao.ordem.map((pos, k) => {
+          {itens.map(({ pos, k }) => {
             const qq = dados.questoes[pos];
             const r = sessao.respostas[k];
             return (
@@ -322,6 +347,14 @@ export function Treino({ codigo }: { codigo: string }) {
         <span>
           Questão {sessao.i + 1} de {n}
         </span>
+        <span className="espaco" />
+        <button
+          className="link-discreto nao-imprimir"
+          onClick={() => (setParcial(true), window.scrollTo({ top: 0 }))}
+          title="Ver e salvar em PDF o resultado das questões já respondidas"
+        >
+          salvar PDF até aqui
+        </button>
         <button className="link-discreto nao-imprimir" onClick={() => setSessaoEstado(null)}>
           sair
         </button>

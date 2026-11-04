@@ -13,8 +13,16 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 3** aberto em 2026-11-03, a partir da versão 0.18.0. **Fechado e publicado como versão 0.19.0.**
-O próximo pacote recomeça esta seção a partir da versão publicada.
+**Pacote 4** aberto em 2026-11-04, a partir da versão 0.19.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | Treino em casa: o aluno pode salvar o PDF a qualquer momento, mesmo sem terminar (link "salvar PDF até aqui" durante a sessão: resultado parcial só com as questões já respondidas, sem mostrar as que faltam) | Pronta |
+
+## Pacotes anteriores
+
+### Pacote 3 (publicado como 0.19.0 em 2026-11-03)
+
 
 | # | Ideia | Situação |
 |---|-------|----------|
@@ -22,8 +30,6 @@ O próximo pacote recomeça esta seção a partir da versão publicada.
 | 2 | Atividades: escolher o tempo ao abrir a sala, separado para múltipla escolha/V-F e para "Adivinhe o conceito" (ou manter o tempo sugerido de cada questão); a escolha fica guardada; no cadastro, o tempo vira "sugerido" | Publicada (0.19.0) |
 | 3 | "Adivinhe o conceito": o projetor deixa de mostrar quem acertou; mostra só quantos acertaram com 1, 2, 3… dicas | Publicada (0.19.0) |
 | 4 | Jogo: QR code pequeno e código fixos no canto do projetor durante as perguntas, resultados e placar, para alunos entrarem com o jogo já começado | Publicada (0.19.0) |
-
-## Pacotes anteriores
 
 ### Pacote 2 (publicado como 0.18.0 em 2026-11-03)
 
