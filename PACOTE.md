@@ -13,13 +13,14 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 4** aberto em 2026-11-04, a partir da versão 0.19.0 (já publicada).
+**Pacote 4** aberto em 2026-11-04, a partir da versão 0.19.0. **Fechado e publicado como versão 0.20.0.**
+O próximo pacote recomeça esta seção a partir da versão publicada.
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| 1 | Treino em casa: o aluno pode salvar o PDF a qualquer momento, mesmo sem terminar (link "salvar PDF até aqui" durante a sessão: resultado parcial só com as questões já respondidas, sem mostrar as que faltam) | Pronta |
-| 2 | Projetor do jogo: texto das alternativas, das dicas e do enunciado diminui sozinho para caber inteiro no quadro (em vez de ficar cortado) | Pronta |
-| 3 | Jogo: QR code do canto maior (de 8% para 14% da largura da tela) e botão "Mostrar QR grande" no painel do professor, que põe o QR grande no meio do projetor até ser escondido | Pronta |
+| 1 | Treino em casa: o aluno pode salvar o PDF a qualquer momento, mesmo sem terminar (link "salvar PDF até aqui" durante a sessão: resultado parcial só com as questões já respondidas, sem mostrar as que faltam) | Publicada (0.20.0) |
+| 2 | Projetor do jogo: texto das alternativas, das dicas e do enunciado diminui sozinho para caber inteiro no quadro (em vez de ficar cortado) | Publicada (0.20.0) |
+| 3 | Jogo: QR code do canto maior (de 8% para 14% da largura da tela) e botão "Mostrar QR grande" no painel do professor, que põe o QR grande no meio do projetor até ser escondido | Publicada (0.20.0) |
 
 ## Pacotes anteriores
 
