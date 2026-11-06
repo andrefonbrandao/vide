@@ -664,7 +664,7 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .jogo-topo .espaco { flex: 1; }
 .jogo-topo { gap: 1.6cqw; }
 .jogo-entrada-canto { display: flex; align-items: center; gap: 1cqw; }
-.jogo-entrada-canto .jogo-qr { width: 8cqw; flex: none; }
+.jogo-entrada-canto .jogo-qr { width: 14cqw; flex: none; }
 .jogo-entrada-texto { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.15; }
 .jogo-entrada-texto span { font-size: 1.3cqw; font-weight: 700; color: var(--tinta-2); }
 .jogo-entrada-texto strong { font-size: 2.4cqw; font-weight: 800; letter-spacing: 0.04em; }
@@ -688,3 +688,10 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .conceito-dicas-caixa .conceito-dicas { gap: 0.43em; }
 .conceito-dicas-caixa .conceito-dicas li { padding: 0.5em 0.7em; border-radius: 0.43em; gap: 0.57em; }
 .conceito-dicas-caixa .conceito-num { min-width: 3.2em; }
+.jogo-entrada-texto span { font-size: 1.5cqw; }
+.jogo-entrada-texto strong { font-size: 3cqw; }
+/* QR grande no meio do projetor, a pedido do professor */
+.jogo-qr-grande { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(30, 58, 52, 0.55); z-index: 5; }
+.jogo-qr-grande-cartao { display: flex; align-items: center; gap: 4cqw; background: var(--fundo); color: var(--tinta); border-radius: 2cqw; padding: 3cqw 4cqw; box-shadow: 0 1cqw 4cqw rgba(0, 0, 0, 0.35); }
+.jogo-qr-grande-cartao .jogo-qr { width: 34cqw; }
+.jogo-qr-grande-cartao .jogo-codigo { font-size: 7cqw; }

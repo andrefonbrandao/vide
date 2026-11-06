@@ -11,6 +11,8 @@ export interface TelaJogo extends VisaoTela {
   enderecoCurto: string;
   /** Endereço completo (QR code). */
   url: string;
+  /** O professor pediu o QR code grande no meio da tela (para quem chegou depois). */
+  qrGrande?: boolean;
 }
 
 /** Como o artigo aparece quando há material na tela: ao lado ou por cima de tudo. */

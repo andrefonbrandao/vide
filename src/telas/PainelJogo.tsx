@@ -321,6 +321,11 @@ export function PainelJogo({ ctl }: { ctl: ControladorAula }) {
             Projetar fundamento ({j.fundamento})
           </button>
         )}
+        {tela.fase !== 'sala' && tela.fase !== 'fim' && (
+          <button className={`botao${tela.qrGrande ? ' escuro' : ''}`} onClick={() => anfitriao().alternarQrGrande()} title="Mostra o QR code grande no meio do projetor, para quem chegou depois">
+            {tela.qrGrande ? 'Esconder QR grande' : 'Mostrar QR grande'}
+          </button>
+        )}
         <label className="caixa-marcar">
           <input type="checkbox" checked={tela.ranking} onChange={(ev) => anfitriao().definirRanking(ev.target.checked)} />
           Ranking e pódio

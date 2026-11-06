@@ -147,7 +147,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 
    **Ranking com pontos e pódio** vem ligado; desmarque se não quiser placar. Clique em **Abrir a sala**.
 3. O projetor mostra um **QR code** e um **código de 6 números**. Os alunos apontam a câmera do celular para o QR code (ou entram no endereço que aparece e digitam o código) e escrevem um apelido ou o nome. Não há cadastro.
-4. Quando todos tiverem entrado, **clique** (ou Enter, ou o passador) para começar. Quem chegar depois ainda pode entrar: um QR code pequeno e o código ficam no canto do projetor durante todo o jogo (quem entra atrasado começa com 0 ponto, a partir da questão em andamento).
+4. Quando todos tiverem entrado, **clique** (ou Enter, ou o passador) para começar. Quem chegar depois ainda pode entrar: um QR code e o código ficam no canto do projetor durante todo o jogo; se chegar um grupo, clique em **Mostrar QR grande** no painel do professor (o QR aparece grande no meio da tela; o tempo da questão continua correndo) e depois em **Esconder QR grande** (quem entra atrasado começa com 0 ponto, a partir da questão em andamento).
 5. A cada questão: os alunos respondem no celular; o tempo acaba sozinho (ou quando todos respondem), ou você encerra antes com um clique. O projetor mostra quantos marcaram cada alternativa e qual era a correta.
 6. Se a questão tiver fundamento, o botão **Projetar fundamento** põe o artigo ao lado da questão. **Clique direito** recolhe.
 7. Os próximos cliques mostram o **placar** (se o ranking estiver ligado) e a próxima questão. No fim, o projetor mostra o **pódio** (ou o percentual de acerto da turma, sem ranking).

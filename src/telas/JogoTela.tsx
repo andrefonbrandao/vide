@@ -192,6 +192,29 @@ function TelaConceito({ jogo }: { jogo: TelaJogo }) {
 }
 
 export function JogoTela({ jogo }: { jogo: TelaJogo }) {
+  return (
+    <>
+      <TelaDoJogo jogo={jogo} />
+      {jogo.qrGrande && (
+        <div className="jogo-qr-grande">
+          <div className="jogo-qr-grande-cartao">
+            <QR url={jogo.url} />
+            <div>
+              <p className="jogo-rotulo">Entre pelo celular</p>
+              <p className="jogo-endereco">{jogo.enderecoCurto}</p>
+              <p className="jogo-rotulo">e digite o código</p>
+              <p className="jogo-codigo">
+                {jogo.codigo.slice(0, 3)} {jogo.codigo.slice(3)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function TelaDoJogo({ jogo }: { jogo: TelaJogo }) {
   const q = jogo.questao;
   const revelada = jogo.fase === 'resultado';
   if ((jogo.fase === 'pergunta' || jogo.fase === 'resultado') && q?.tipo === 'conceito') return <TelaConceito jogo={jogo} />;

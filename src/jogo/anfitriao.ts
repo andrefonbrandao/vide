@@ -37,6 +37,7 @@ class Anfitriao {
   private relogio: number | null = null;
   /** Conceito: quantas dicas já foram mandadas aos celulares (para mandar a próxima quando aparecer). */
   private dicasEnviadas = 0;
+  private qrGrande = false;
   private canal = abrirCanal((m) => {
     // Janela de projeção (re)aberta: manda o jogo de novo.
     if (m.t === 'ola' && this.estado.tela) this.canal.enviar({ t: 'jogo', jogo: this.estado.tela });
@@ -68,6 +69,7 @@ class Anfitriao {
     const codigo = gerarCodigoJogo();
     const chave = gerarToken();
     this.motor = new MotorJogo(questoes, ranking);
+    this.qrGrande = false;
     this.sala = new ConexaoSala<ParaAnfitriao, unknown>(
       codigo,
       'anfitriao',
@@ -89,6 +91,12 @@ class Anfitriao {
     if (!this.motor) return;
     this.motor.avancar(Date.now());
     this.publicar();
+  }
+
+  /** QR code grande no meio do projetor (liga/desliga). */
+  alternarQrGrande(): void {
+    this.qrGrande = !this.qrGrande;
+    this.publicar(false);
   }
 
   definirRanking(ligado: boolean): void {
@@ -209,6 +217,7 @@ class Anfitriao {
       codigo: this.estado.codigo,
       enderecoCurto: `${location.host}/j`,
       url: urlDoJogo(this.estado.codigo),
+      qrGrande: this.qrGrande && m.fase !== 'sala' && m.fase !== 'fim',
     };
     if (m.fase === 'pergunta') this.dicasEnviadas = tela.dicasVisiveis;
     this.canal.enviar({ t: 'jogo', jogo: tela });
