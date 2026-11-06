@@ -18,6 +18,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | Treino em casa: o aluno pode salvar o PDF a qualquer momento, mesmo sem terminar (link "salvar PDF até aqui" durante a sessão: resultado parcial só com as questões já respondidas, sem mostrar as que faltam) | Pronta |
+| 2 | Projetor do jogo: texto das alternativas, das dicas e do enunciado diminui sozinho para caber inteiro no quadro (em vez de ficar cortado) | Pronta |
 
 ## Pacotes anteriores
 

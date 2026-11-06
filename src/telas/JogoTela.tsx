@@ -2,10 +2,55 @@
 // Medidas em "cqw" (porcentagem da largura do quadro), para servir nos dois tamanhos.
 // Texto sempre verde-escuro sobre claro (ou o inverso); o laranja só em detalhes.
 import qrcode from 'qrcode-generator';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { TelaJogo } from '../comum/canal';
 import { LETRAS } from '../jogo/tipos';
 import { dicasVisiveis, proximaDica } from '../jogo/conceito';
+
+/**
+ * Texto que se ajusta ao espaço: se não couber no quadro (o elemento "pai"),
+ * a letra diminui aos poucos até caber inteiro (sem cortar), até um mínimo de 35%.
+ * modo "pai": cabe na altura útil do elemento pai; "max": cabe na altura máxima (max-height) do pai.
+ */
+function Cabe({ children, className, modo = 'pai', chave }: { children: ReactNode; className?: string; modo?: 'pai' | 'max'; chave: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const pai = el?.parentElement;
+    if (!el || !pai) return;
+    const ajustar = () => {
+      const est = getComputedStyle(pai);
+      const util =
+        modo === 'max' && est.maxHeight !== 'none'
+          ? parseFloat(est.maxHeight)
+          : pai.clientHeight - parseFloat(est.paddingTop) - parseFloat(est.paddingBottom);
+      const estoura = (e: number) => {
+        el.style.fontSize = `${e}em`;
+        return el.scrollHeight > util + 1 || el.scrollWidth > el.clientWidth + 1;
+      };
+      if (!estoura(1)) return;
+      // Busca o maior tamanho que cabe (entre 35% e 100%).
+      let baixo = 0.35;
+      let alto = 1;
+      for (let i = 0; i < 9; i++) {
+        const meio = (baixo + alto) / 2;
+        if (estoura(meio)) alto = meio;
+        else baixo = meio;
+      }
+      el.style.fontSize = `${baixo}em`;
+    };
+    ajustar();
+    const ro = new ResizeObserver(ajustar);
+    ro.observe(pai);
+    void document.fonts?.ready.then(ajustar);
+    return () => ro.disconnect();
+  }, [chave, modo]);
+  return (
+    <span ref={ref} className={`cabe${className ? ` ${className}` : ''}`}>
+      {children}
+    </span>
+  );
+}
 
 /** Formas que distinguem as alternativas (além da letra). */
 export function Forma({ i, tamanho = '1em' }: { i: number; tamanho?: string }) {
@@ -104,6 +149,8 @@ function TelaConceito({ jogo }: { jogo: TelaJogo }) {
       ) : (
         <h1 className="jogo-enunciado">Quem sou eu?</h1>
       )}
+      <div className="conceito-dicas-caixa">
+      <Cabe chave={`${jogo.indice}:${visiveis}:${revelada}`} className="cabe-bloco">
       <ol className="conceito-dicas">
         {dicas.map((d, i) => (
           <li key={i} className={i < visiveis ? 'visivel' : 'oculta'}>
@@ -116,6 +163,8 @@ function TelaConceito({ jogo }: { jogo: TelaJogo }) {
           </li>
         ))}
       </ol>
+      </Cabe>
+      </div>
       <div className="conceito-acertos">
         <span className="jogo-contagem" style={{ margin: 0 }}>
           <strong>{jogo.acertaram.length}</strong> de {jogo.aResponder} acertaram
@@ -190,7 +239,11 @@ export function JogoTela({ jogo }: { jogo: TelaJogo }) {
             <span className="jogo-rotulo">Resultado</span>
           )}
         </div>
-        <h1 className="jogo-enunciado">{q.enunciado}</h1>
+        <div className="jogo-enunciado-caixa">
+          <Cabe chave={q.enunciado} modo="max" className="cabe-bloco">
+            <h1 className="jogo-enunciado">{q.enunciado}</h1>
+          </Cabe>
+        </div>
         <div className={`jogo-alternativas${q.alternativas.length <= 2 ? ' duas' : ''}`}>
           {q.alternativas.map((a, i) => {
             const certa = i === q.correta;
@@ -200,7 +253,9 @@ export function JogoTela({ jogo }: { jogo: TelaJogo }) {
                   <Forma i={i} />
                   <b>{LETRAS[i]}</b>
                 </span>
-                <span className="jogo-alt-texto">{a}</span>
+                <Cabe chave={`${a}:${revelada}`} className="jogo-alt-texto">
+                  {a}
+                </Cabe>
                 {revelada && dist && (
                   <span className="jogo-alt-contagem">
                     <span className="jogo-barra" style={{ width: `${(dist[i] / maior) * 100}%` }} />

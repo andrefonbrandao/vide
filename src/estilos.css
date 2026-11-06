@@ -670,3 +670,21 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .jogo-entrada-texto strong { font-size: 2.4cqw; font-weight: 800; letter-spacing: 0.04em; }
 .jogo-placar .jogo-topo { min-height: 0; }
 .treino .jogar-info { gap: 14px; align-items: center; }
+
+/* Texto que diminui para caber no quadro (projetor do jogo) */
+.cabe { overflow-wrap: anywhere; }
+.cabe-bloco { display: block; }
+.cabe-bloco > .jogo-enunciado { font-size: inherit; }
+.jogo-enunciado-caixa { flex: none; max-height: 15cqw; overflow: hidden; font-size: 3.4cqw; font-weight: 800; }
+.jogo-alt { min-height: 0; }
+.jogo-alt-texto { display: block; max-height: 100%; }
+.conceito-dicas-caixa { flex: 1; min-height: 0; overflow: hidden; }
+.conceito-dicas-caixa .conceito-dicas { flex: none; }
+.conceito-dicas-caixa .conceito-dicas li { font-size: 1em; }
+.conceito-dicas-caixa { font-size: 2.8cqw; }
+.jogo-alternativas { grid-auto-rows: minmax(0, 1fr); }
+.conceito-dicas-caixa .conceito-num { font-size: 0.65em; }
+/* Nas dicas, os espaços também diminuem junto com a letra. */
+.conceito-dicas-caixa .conceito-dicas { gap: 0.43em; }
+.conceito-dicas-caixa .conceito-dicas li { padding: 0.5em 0.7em; border-radius: 0.43em; gap: 0.57em; }
+.conceito-dicas-caixa .conceito-num { min-width: 3.2em; }
