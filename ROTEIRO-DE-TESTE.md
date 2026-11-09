@@ -135,7 +135,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
    - Dê um nome em **Criar um questionário com estas questões** para já montar o jogo.
    - **Assuntos:** escreva os assuntos no campo **Assuntos** (valem para todas as questões coladas) ou numa linha "Assunto: sentença, recursos" dentro de cada questão. Na aba **Questões**, os assuntos aparecem como botões para filtrar o banco.
    - Ou use **Escrever uma questão** para fazer uma por vez.
-2. Na aba **Questões** do Acervo você edita as questões, monta outros questionários (escolhendo e ordenando as questões) e vê os resultados dos jogos.
+2. A aba **Questões** do Acervo abre numa tela de **início** com os atalhos **Novo treino em casa**, **Adicionar questões** e **Novo questionário**. Os botões no alto levam às seções: **Questões** (editar e filtrar o banco), **Questionários**, **Treinos em casa** (links criados) e **Resultados** dos jogos.
 
 **Na aula:**
 1. Abra a projeção normalmente e clique em **Atividades** (no alto da tela da Aula).

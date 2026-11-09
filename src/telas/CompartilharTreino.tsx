@@ -287,9 +287,18 @@ function FormTreino({ questoes, questionarios, aoFechar }: { questoes: Questao[]
 }
 
 /** Seção da aba Questões: links de treino em casa. */
-export function TreinosEmCasa({ questoes, questionarios }: { questoes: Questao[]; questionarios: Questionario[] }) {
+export function TreinosEmCasa({
+  questoes,
+  questionarios,
+  criarAoAbrir = false,
+}: {
+  questoes: Questao[];
+  questionarios: Questionario[];
+  /** Já abre o formulário de novo treino (atalho da tela inicial). */
+  criarAoAbrir?: boolean;
+}) {
   const [links, setLinks] = useState<LinkTreino[]>([]);
-  const [criando, setCriando] = useState(false);
+  const [criando, setCriando] = useState(criarAoAbrir && questoes.length > 0);
   const [aberto, setAberto] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   useEffect(() => {

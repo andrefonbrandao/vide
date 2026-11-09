@@ -312,7 +312,17 @@ export function AdicionarQuestoes({ aoVer }: { aoVer: () => void }) {
       {feito && (
         <div className="aviso">
           {feito}{' '}
-          <button className="botao pequeno" onClick={aoVer}>
+          <button
+            className="botao pequeno"
+            onClick={() => {
+              try {
+                sessionStorage.setItem('vide.secaoQuestoes', 'banco');
+              } catch {
+                /* ignore */
+              }
+              aoVer();
+            }}
+          >
             Ver questões
           </button>
         </div>
@@ -477,8 +487,30 @@ function EditorQuestionario({ inicial, questoes, aoFechar }: { inicial?: Questio
   );
 }
 
+type SecaoQuestoes = 'inicio' | 'banco' | 'questionarios' | 'treinos' | 'resultados';
+const CHAVE_SECAO = 'vide.secaoQuestoes';
+
 export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
   const { questoes, questionarios, resultados } = useDados();
+  // Seção aberta (lembrada enquanto a aba do navegador estiver aberta). Começa no início.
+  const [secao, setSecaoEstado] = useState<SecaoQuestoes>(() => {
+    try {
+      return (sessionStorage.getItem(CHAVE_SECAO) as SecaoQuestoes) || 'inicio';
+    } catch {
+      return 'inicio';
+    }
+  });
+  const [criarTreino, setCriarTreino] = useState(false);
+  const setSecao = (s: SecaoQuestoes) => {
+    setSecaoEstado(s);
+    setCriarTreino(false);
+    try {
+      sessionStorage.setItem(CHAVE_SECAO, s);
+    } catch {
+      /* ignore */
+    }
+    window.scrollTo({ top: 0 });
+  };
   const [editandoQz, setEditandoQz] = useState<Questionario | 'novo' | null>(null);
   const [editandoQ, setEditandoQ] = useState<Questao | null>(null);
   const [busca, setBusca] = useState('');
@@ -492,19 +524,83 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
   const assuntos = assuntosDasQuestoes(questoes);
   const pastas = todasPastas(questoes.map((q) => ({ ...q, nome: q.enunciado })));
 
-  if (!questoes.length && !questionarios.length) {
-    return (
-      <div className="vazio-acervo">
-        <p>Nenhuma questão guardada ainda.</p>
-        <button className="botao primario com-icone" onClick={aoAdicionar}>
-          + Adicionar questões
+  const vazio = !questoes.length;
+  const nav = (
+    <nav className="secoes-questoes" aria-label="Seções de questões">
+      {(
+        [
+          ['inicio', 'Início'],
+          ['banco', `Questões (${questoes.length})`],
+          ['questionarios', `Questionários (${questionarios.length})`],
+          ['treinos', 'Treinos em casa'],
+          ['resultados', `Resultados (${resultados.length})`],
+        ] as [SecaoQuestoes, string][]
+      ).map(([s, r]) => (
+        <button key={s} className={`botao pequeno${secao === s ? ' escuro' : ''}`} aria-current={secao === s ? 'page' : undefined} onClick={() => setSecao(s)}>
+          {r}
         </button>
-      </div>
+      ))}
+    </nav>
+  );
+
+  if (secao === 'inicio') {
+    return (
+      <>
+        {nav}
+        <h2>O que você quer fazer?</h2>
+        <div className="atalhos-questoes">
+          <button
+            className="atalho-questoes destaque"
+            disabled={vazio}
+            onClick={() => {
+              setSecao('treinos');
+              setCriarTreino(true);
+            }}
+          >
+            <strong>Novo treino em casa</strong>
+            <span>Gerar um link e um QR code com um grupo de questões para os alunos treinarem sozinhos.</span>
+          </button>
+          <button className="atalho-questoes" onClick={aoAdicionar}>
+            <strong>Adicionar questões</strong>
+            <span>Escrever uma questão ou colar várias de uma vez (múltipla escolha, V/F ou "Adivinhe o conceito").</span>
+          </button>
+          <button
+            className="atalho-questoes"
+            disabled={vazio}
+            onClick={() => {
+              setSecao('questionarios');
+              setEditandoQz('novo');
+            }}
+          >
+            <strong>Novo questionário</strong>
+            <span>Montar uma sequência de questões para um jogo em sala ou um treino.</span>
+          </button>
+        </div>
+        {vazio && <p className="ajuda">Comece adicionando questões: os outros atalhos ficam disponíveis depois.</p>}
+        <p className="ajuda">
+          Para um <strong>jogo em sala</strong> (os alunos respondendo pelo celular), vá na <strong>Aula</strong> e clique em <strong>Atividades</strong>.
+        </p>
+        <div className="resumo-questoes">
+          <button onClick={() => setSecao('banco')}>
+            <strong>{questoes.length}</strong> {questoes.length === 1 ? 'questão' : 'questões'} no banco
+          </button>
+          <button onClick={() => setSecao('questionarios')}>
+            <strong>{questionarios.length}</strong> {questionarios.length === 1 ? 'questionário' : 'questionários'}
+          </button>
+          <button onClick={() => setSecao('treinos')}>links de treino em casa</button>
+          <button onClick={() => setSecao('resultados')}>
+            <strong>{resultados.length}</strong> {resultados.length === 1 ? 'resultado de jogo' : 'resultados de jogos'}
+          </button>
+        </div>
+      </>
     );
   }
 
   return (
     <>
+      {nav}
+      {secao === 'questionarios' && (
+      <>
       <h2>Questionários</h2>
       <p className="ajuda">
         Um questionário é a sequência de questões de um jogo. Para jogar, vá na <strong>Aula</strong> e clique em{' '}
@@ -546,7 +642,19 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
         </>
       )}
 
+      </>
+      )}
+
+      {secao === 'banco' && (
+      <>
       <h2>Banco de questões ({questoes.length})</h2>
+      {!editandoQ && (
+        <p>
+          <button className="botao" onClick={aoAdicionar}>
+            + Adicionar questões
+          </button>
+        </p>
+      )}
       {editandoQ ? (
         <FormQuestao
           inicial={editandoQ}
@@ -610,8 +718,13 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
         </>
       )}
 
-      <TreinosEmCasa questoes={questoes} questionarios={questionarios} />
+      </>
+      )}
 
+      {secao === 'treinos' && <TreinosEmCasa questoes={questoes} questionarios={questionarios} criarAoAbrir={criarTreino} />}
+
+      {secao === 'resultados' && (
+      <>
       <h2>Resultados dos jogos</h2>
       <p className="ajuda">Só os números de cada questão (quantos marcaram cada alternativa). Nenhum apelido é guardado.</p>
       {!resultados.length && <p className="ajuda">Nenhum jogo encerrado ainda.</p>}
@@ -663,6 +776,8 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
           </div>
         );
       })}
+      </>
+      )}
     </>
   );
 }

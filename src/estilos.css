@@ -695,3 +695,22 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .jogo-qr-grande-cartao { display: flex; align-items: center; gap: 4cqw; background: var(--fundo); color: var(--tinta); border-radius: 2cqw; padding: 3cqw 4cqw; box-shadow: 0 1cqw 4cqw rgba(0, 0, 0, 0.35); }
 .jogo-qr-grande-cartao .jogo-qr { width: 34cqw; }
 .jogo-qr-grande-cartao .jogo-codigo { font-size: 7cqw; }
+
+/* ---------- Acervo › Questões: início e seções ---------- */
+.secoes-questoes { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 6px; }
+.atalhos-questoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.atalho-questoes {
+  display: flex; flex-direction: column; gap: 6px; text-align: left; cursor: pointer; border-radius: 16px; padding: 18px 18px;
+  border: 2px solid var(--tinta); background: var(--papel); color: var(--tinta);
+}
+.atalho-questoes strong { font-size: 19px; font-weight: 800; }
+.atalho-questoes span { font-size: 14px; line-height: 1.4; color: var(--tinta-2); }
+.atalho-questoes:hover:not(:disabled) { background: rgba(30, 58, 52, 0.06); }
+.atalho-questoes.destaque { background: var(--tinta); color: var(--fundo); }
+.atalho-questoes.destaque span { color: var(--fundo); opacity: 0.85; }
+.atalho-questoes.destaque:hover:not(:disabled) { filter: brightness(1.15); background: var(--tinta); }
+.atalho-questoes:disabled { opacity: 0.45; cursor: default; }
+.resumo-questoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.resumo-questoes button { border: 1px solid var(--linha); background: transparent; border-radius: 999px; padding: 6px 14px; cursor: pointer; color: var(--tinta-2); font-weight: 600; }
+.resumo-questoes button:hover { border-color: var(--tinta); color: var(--tinta); }
+.resumo-questoes strong { color: var(--tinta); }
