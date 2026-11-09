@@ -13,14 +13,19 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 6** aberto em 2026-11-09, a partir da versão 0.21.0. **Fechado e publicado como versão 0.22.0.**
-O próximo pacote recomeça esta seção a partir da versão publicada.
+**Pacote 7** aberto em 2026-11-09, a partir da versão 0.22.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | Novo jogo "Consulta": um personagem (elenco desenhado no estilo do Vide, sorteado, com expressões) conta um caso em balões no projetor; a turma discute em grupo (tempo folgado, com pausar e +1 minuto); no fim, o advogado ou o juiz responde no balão, com o fundamento. Sem celular. Também no treino em casa | Em preparação |
+
+## Pacotes anteriores
+
+### Pacote 6 (publicado como 0.22.0 em 2026-11-09)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | Jogo de forca: em sala, a turma toda (cada aluno vota numa letra pelo celular; a mais votada entra; quem souber pode digitar a palavra; até 6 erros; sem ranking); no treino em casa, forca individual (formato "Forca" ao gerar o link). A palavra é o conceito das questões "Adivinhe o conceito" | Publicada (0.22.0) |
-
-## Pacotes anteriores
 
 ### Pacote 5 (publicado como 0.21.0 em 2026-11-09)
 
