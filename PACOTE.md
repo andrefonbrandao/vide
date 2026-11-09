@@ -13,13 +13,14 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 5** aberto em 2026-11-09, a partir da versão 0.20.0 (já publicada).
+**Pacote 5** aberto em 2026-11-09, a partir da versão 0.20.0. **Fechado e publicado como versão 0.21.0.**
+O próximo pacote recomeça esta seção a partir da versão publicada.
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| 1 | Acervo › Questões: tela inicial com atalhos (novo treino em casa, adicionar questões, novo questionário) e seções separadas (Questões, Questionários, Treinos em casa, Resultados), em vez de tudo numa página longa | Pronta |
-| 2 | "Adivinhe o conceito": resposta tolerante (pequenos erros de digitação, plural, hífen/espaço, "é a…"; nunca a resposta exata de outro conceito); mensagem de erro com o texto digitado; no fim da rodada o aluno vê o que digitou; respostas digitadas guardadas sem nomes nos Resultados, com "Aceitar nas próximas"; mesma tolerância no treino em casa | Pronta |
-| 3 | Tela de aula em coluna única: só as alternativas; a transcrição e as referências detectadas aparecem apenas ao clicar em "mostrar transcrição e referências" (na barra de baixo, junto com Nova sessão) | Pronta |
+| 1 | Acervo › Questões: tela inicial com atalhos (novo treino em casa, adicionar questões, novo questionário) e seções separadas (Questões, Questionários, Treinos em casa, Resultados), em vez de tudo numa página longa | Publicada (0.21.0) |
+| 2 | "Adivinhe o conceito": resposta tolerante (pequenos erros de digitação, plural, hífen/espaço, "é a…"; nunca a resposta exata de outro conceito); mensagem de erro com o texto digitado; no fim da rodada o aluno vê o que digitou; respostas digitadas guardadas sem nomes nos Resultados, com "Aceitar nas próximas"; mesma tolerância no treino em casa | Publicada (0.21.0) |
+| 3 | Tela de aula em coluna única: só as alternativas; a transcrição e as referências detectadas aparecem apenas ao clicar em "mostrar transcrição e referências" (na barra de baixo, junto com Nova sessão) | Publicada (0.21.0) |
 
 ## Pacotes anteriores
 
