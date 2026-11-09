@@ -720,3 +720,9 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .tentativas-conceito li { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .selo-tentativa { font-size: 12px; font-weight: 800; border: 2px solid var(--linha); border-radius: 999px; padding: 1px 8px; color: var(--tinta-2); }
 .selo-tentativa.ok { border-color: var(--tinta); color: var(--tinta); }
+
+/* Aula sem a coluna da direita (transcrição oculta): uma coluna só, ou alternativas + material/jogo. */
+.aula.sem-lateral { grid-template-columns: minmax(0, 1fr); }
+.aula.com-material.sem-lateral { grid-template-columns: minmax(300px, 1fr) minmax(0, 2.2fr); }
+.aula-esq-rodape .link-discreto { margin-left: auto; }
+.aula-esq-rodape .controle-fonte { margin-left: 0; }

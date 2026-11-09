@@ -274,7 +274,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
   };
 
   return (
-    <div className={`aula${e.material || jogo.ativo ? ' com-material' : ''}`}>
+    <div className={`aula${e.material || jogo.ativo ? ' com-material' : ''}${verTranscricao ? '' : ' sem-lateral'}`}>
       <div className="aula-topo" data-ui>
         {!e.escutando ? (
           <button className="botao primario com-icone" onClick={() => ctl.iniciar()} disabled={!suporte}>
@@ -434,6 +434,17 @@ export function Aula({ ativa }: { ativa: boolean }) {
           <button className="botao com-icone" onClick={() => ctl.marcar()} title="Anota no registro de teste que algo deu errado aqui (tecla M)">
             <IcPin /> Registrar momento
           </button>
+          <button
+            className="botao com-icone"
+            title={`Limpa a tela e começa uma nova sessão no registro (a anterior fica guardada). Sessão atual iniciada às ${new Date(e.sessaoInicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.`}
+            onClick={() => {
+              if (confirm('Começar uma nova sessão? A tela será limpa; o registro da sessão anterior continua guardado.')) {
+                void ctl.novaSessao();
+              }
+            }}
+          >
+            <IcNovaSessao /> Nova sessão
+          </button>
           <div className="controle-fonte" role="group" aria-label="Tamanho da fonte na projeção">
             <span className="controle-fonte-rotulo">Fonte</span>
             <button className="botao pequeno" onClick={() => ctl.diminuirFonte('mouse')} disabled={e.escala <= 0.6} title="Diminuir a fonte da norma projetada (tecla −)" aria-label="Diminuir fonte">
@@ -446,6 +457,13 @@ export function Aula({ ativa }: { ativa: boolean }) {
               A+
             </button>
           </div>
+          <button
+            className="link-discreto"
+            onClick={() => setVerTranscricao(!verTranscricao)}
+            title="Mostra, numa coluna à direita, a transcrição bruta e as referências detectadas. A transcrição é gravada no Registro mesmo oculta."
+          >
+            {verTranscricao ? 'ocultar transcrição' : 'mostrar transcrição e referências'}
+          </button>
         </div>
       </div>
 
@@ -453,17 +471,17 @@ export function Aula({ ativa }: { ativa: boolean }) {
       {verJogo && <IniciarJogo aoFechar={() => setVerJogo(false)} />}
       {verCelular && <PareamentoCelular e={e} ctl={ctl} aoFechar={() => setVerCelular(false)} />}
 
-      <aside className="aula-dir">
-        <div className="secao-dir">
-          {verTranscricao && <h3>Transcrição bruta (ao vivo)</h3>}
-          <p className="sessao-info">
-            Sessão iniciada às{' '}
-            <strong>{new Date(e.sessaoInicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</strong>
-            {new Date(e.sessaoInicio).toDateString() !== new Date().toDateString() &&
-              ` de ${new Date(e.sessaoInicio).toLocaleDateString('pt-BR')}`}
-          </p>
-        </div>
-        {verTranscricao && (
+      {verTranscricao && (
+        <aside className="aula-dir">
+          <div className="secao-dir">
+            <h3>Transcrição bruta (ao vivo)</h3>
+            <p className="sessao-info">
+              Sessão iniciada às{' '}
+              <strong>{new Date(e.sessaoInicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</strong>
+              {new Date(e.sessaoInicio).toDateString() !== new Date().toDateString() &&
+                ` de ${new Date(e.sessaoInicio).toLocaleDateString('pt-BR')}`}
+            </p>
+          </div>
           <div className="transcricao" ref={transcricaoRef}>
             {e.finais.length === 0 && !e.parcial && (
               <p className="ajuda">O que o reconhecedor entender aparece aqui: em preto o texto definitivo, em cinza o provisório.</p>
@@ -476,43 +494,28 @@ export function Aula({ ativa }: { ativa: boolean }) {
             ))}
             {e.parcial && <p className="parcial">{e.parcial}</p>}
           </div>
-        )}
-        <div className={`secao-dir${verTranscricao ? '' : ' detectados-cheio'}`} style={{ borderTop: verTranscricao ? '1px solid var(--linha)' : undefined }}>
-          <h3>Referências detectadas</h3>
-          {e.detectados.length === 0 ? (
-            <p className="ajuda" style={{ margin: 0 }}>Nenhuma ainda.</p>
-          ) : (
-            <ul className="detectados">
-              {[...e.detectados].reverse().map((d) => (
-                <li key={d.id}>
-                  <span className="hora mono">{new Date(d.em).toLocaleTimeString('pt-BR', { hour12: false })}</span>{' '}
-                  <strong>{d.titulo}</strong> — {d.situacao}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <div className="secao-dir rodape-dir" data-ui>
-          <button
-            className="botao com-icone"
-            title="Limpa a tela e começa uma nova sessão no registro (a anterior fica guardada)"
-            onClick={() => {
-              if (confirm('Começar uma nova sessão? A tela será limpa; o registro da sessão anterior continua guardado.')) {
-                void ctl.novaSessao();
-              }
-            }}
-          >
-            <IcNovaSessao /> Nova sessão
-          </button>
-          <button
-            className="link-discreto"
-            onClick={() => setVerTranscricao(!verTranscricao)}
-            title="A transcrição continua sendo gravada no Registro mesmo oculta"
-          >
-            {verTranscricao ? 'ocultar transcrição bruta' : 'mostrar transcrição bruta'}
-          </button>
-        </div>
-      </aside>
+          <div className="secao-dir" style={{ borderTop: '1px solid var(--linha)' }}>
+            <h3>Referências detectadas</h3>
+            {e.detectados.length === 0 ? (
+              <p className="ajuda" style={{ margin: 0 }}>Nenhuma ainda.</p>
+            ) : (
+              <ul className="detectados">
+                {[...e.detectados].reverse().map((d) => (
+                  <li key={d.id}>
+                    <span className="hora mono">{new Date(d.em).toLocaleTimeString('pt-BR', { hour12: false })}</span>{' '}
+                    <strong>{d.titulo}</strong> — {d.situacao}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className="secao-dir rodape-dir" data-ui>
+            <button className="link-discreto" onClick={() => setVerTranscricao(false)}>
+              ocultar transcrição
+            </button>
+          </div>
+        </aside>
+      )}
     </div>
   );
 }
