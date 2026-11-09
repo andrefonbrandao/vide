@@ -8,6 +8,7 @@ import type { DoAluno, ParaAluno } from '../jogo/protocolo';
 import { gerarToken } from '../jogo/protocolo';
 import { LETRAS } from '../jogo/tipos';
 import { Forma } from './JogoTela';
+import { DesenhoForca, PalavraForca, TecladoForca } from './Forca';
 
 type Retrato = Extract<ParaAluno, { t: 'jogo' }>;
 
@@ -57,6 +58,8 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
   const [enviandoTexto, setEnviandoTexto] = useState(false);
   /** Conceito: o último texto enviado (para mostrar "'x' não é a resposta"). */
   const [ultimoEnviado, setUltimoEnviado] = useState('');
+  /** Forca: quando fecha a votação atual (relógio deste celular). */
+  const [votoAte, setVotoAte] = useState(0);
   const indiceRef = useRef(-1);
   const [agora, setAgora] = useState(Date.now());
   const salaRef = useRef<ConexaoSala<ParaAluno, DoAluno> | null>(null);
@@ -99,6 +102,7 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
             }
             setProximaDicaEm(m.pergunta.proximaDicaMs == null ? null : Date.now() + m.pergunta.proximaDicaMs);
           }
+          if (m.forca) setVotoAte(Date.now() + m.forca.votoRestanteMs);
           setLiberaEm(m.voce?.aguardarMs ? Date.now() + m.voce.aguardarMs : 0);
           setEnviandoTexto(false);
         } else if (m.t === 'tentativa') {
@@ -136,6 +140,21 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
     // Mostra a escolha na hora; a confirmação vem do professor.
     setRetrato({ ...retrato, voce: retrato.voce ? { ...retrato.voce, resposta: alt } : retrato.voce });
     if (navigator.vibrate) navigator.vibrate(20);
+  };
+
+  const votar = (letra: string) => {
+    if (!retrato?.pergunta || !retrato.voce) return;
+    salaRef.current?.enviar({ t: 'votar', indice: retrato.indice, letra });
+    setRetrato({ ...retrato, voce: { ...retrato.voce, voto: letra } });
+    if (navigator.vibrate) navigator.vibrate(15);
+  };
+
+  const enviarTexto = () => {
+    const t = textoResposta.trim();
+    if (!retrato || !t || agora < liberaEm || enviandoTexto) return;
+    setEnviandoTexto(true);
+    setUltimoEnviado(t);
+    salaRef.current?.enviar({ t: 'responder-texto', indice: retrato.indice, texto: t });
   };
 
   const sair = () => {
@@ -293,7 +312,80 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
         </div>
       )}
 
-      {retrato.fase === 'pergunta' && p && (
+      {retrato.fase === 'pergunta' && p && retrato.forca && (
+        <div className="jogar-pergunta">
+          <div className="jogar-info">
+            <span>
+              Forca · palavra {retrato.indice + 1} de {retrato.total}
+            </span>
+            <span className="jogar-tempo">{Math.ceil(Math.max(0, votoAte - agora) / 1000)}s</span>
+          </div>
+          <div className="jogar-barra-tempo">
+            <span style={{ width: `${Math.max(0, Math.min(100, ((votoAte - agora) / Math.max(1, retrato.forca.votoMs)) * 100))}%` }} />
+          </div>
+          <div className="jogar-forca-topo">
+            <DesenhoForca erros={retrato.forca.erros} />
+            <div className="forca-info">
+              <span>
+                {retrato.forca.erros} de {retrato.forca.max} erros
+              </span>
+              {retrato.forca.erradas.length > 0 && <span className="forca-erradas">{retrato.forca.erradas.join(' ')}</span>}
+              {retrato.forca.ultima && (
+                <span className="ajuda" style={{ margin: 0 }}>
+                  A turma escolheu {retrato.forca.ultima.letra}: {retrato.forca.ultima.acertou ? 'está na palavra' : 'não está'}
+                </span>
+              )}
+            </div>
+          </div>
+          <PalavraForca mascara={retrato.forca.mascara} />
+          {(p.dicas ?? []).length > 0 && (
+            <ol className="jogar-dicas">
+              {(p.dicas ?? []).map((d, i) => (
+                <li key={i} className={i === (p.dicas?.length ?? 0) - 1 && i > 0 ? 'nova' : ''}>
+                  <span className="jogar-dica-num">Dica {i + 1}</span> {d}
+                </li>
+              ))}
+            </ol>
+          )}
+          <p className="forca-votacao">{v.voto ? `Seu voto: ${v.voto} (pode trocar)` : 'Vote numa letra:'}</p>
+          <TecladoForca usadas={retrato.forca.letras} erradas={retrato.forca.erradas} escolhida={v.voto} aoEscolher={votar} />
+          <details className="forca-chute" open={!!v.errou}>
+            <summary>Já sei a palavra</summary>
+            <form
+              className="jogar-form-conceito"
+              onSubmit={(ev) => {
+                ev.preventDefault();
+                enviarTexto();
+              }}
+            >
+              <input
+                className="jogar-campo"
+                value={textoResposta}
+                onChange={(e) => setTextoResposta(e.target.value)}
+                placeholder="A palavra inteira"
+                maxLength={120}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                enterKeyHint="send"
+                aria-label="A palavra inteira"
+              />
+              <button className="botao-grande primario" disabled={!textoResposta.trim() || agora < liberaEm || enviandoTexto}>
+                {agora < liberaEm ? `Aguarde ${Math.ceil((liberaEm - agora) / 1000)} s` : 'Enviar a palavra'}
+              </button>
+              {v.errou && (
+                <p className="jogar-errou">
+                  {ultimoEnviado ? <>“{ultimoEnviado}” não é a palavra. </> : 'Não é a palavra. '}
+                  {agora < liberaEm ? `Tente de novo em ${Math.ceil((liberaEm - agora) / 1000)} s.` : 'Tente outra.'}
+                </p>
+              )}
+            </form>
+          </details>
+        </div>
+      )}
+
+      {retrato.fase === 'pergunta' && p && !retrato.forca && (
         <div className="jogar-pergunta">
           <div className="jogar-info">
             <span>
@@ -326,11 +418,7 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
                   className="jogar-form-conceito"
                   onSubmit={(ev) => {
                     ev.preventDefault();
-                    const t = textoResposta.trim();
-                    if (!t || agora < liberaEm || enviandoTexto) return;
-                    setEnviandoTexto(true);
-                    setUltimoEnviado(t);
-                    salaRef.current?.enviar({ t: 'responder-texto', indice: retrato.indice, texto: t });
+                    enviarTexto();
                   }}
                 >
                   <input
@@ -383,7 +471,27 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
         </div>
       )}
 
-      {(retrato.fase === 'resultado' || retrato.fase === 'ranking') && (
+      {retrato.fase === 'resultado' && retrato.forca && (
+        <div className="jogar-centro">
+          <p className={`jogar-resultado ${retrato.forca.fim === 'venceu' ? 'certo' : 'errado'}`}>
+            {retrato.forca.fim === 'venceu' ? 'A turma descobriu!' : retrato.forca.fim === 'perdeu' ? 'A forca venceu' : 'Rodada encerrada'}
+          </p>
+          <DesenhoForca erros={retrato.forca.erros} className={retrato.forca.fim === 'perdeu' ? 'perdeu' : ''} />
+          {v.digitou && (
+            <p className="jogar-digitou">
+              Você digitou: <strong>{v.digitou}</strong>
+            </p>
+          )}
+          {retrato.conceito && (
+            <p className="jogar-posicao">
+              A palavra: <strong>{retrato.conceito}</strong>
+            </p>
+          )}
+          <p className="ajuda">Olhe para o projetor: a próxima palavra começa quando o professor quiser.</p>
+        </div>
+      )}
+
+      {(retrato.fase === 'resultado' || retrato.fase === 'ranking') && !retrato.forca && (
         <div className="jogar-centro">
           <p className={`jogar-resultado ${v.acertou ? 'certo' : 'errado'}`}>
             {v.acertou ? 'Acertou!' : v.resposta == null && !retrato.conceito ? 'Sem resposta' : 'Não foi dessa vez'}
@@ -437,9 +545,15 @@ function Final({ r }: { r: Retrato }) {
           Você ficou em <strong>{v.posicao}º</strong> com {v.pontos} pontos.
         </p>
       ) : null}
-      <p className="ajuda">
-        Você acertou {v.acertos} de {r.total} {r.total === 1 ? 'questão' : 'questões'}.
-      </p>
+      {r.modo === 'forca' ? (
+        <p className="ajuda">
+          A turma descobriu {r.placar ?? 0} de {r.total} {r.total === 1 ? 'palavra' : 'palavras'}.
+        </p>
+      ) : (
+        <p className="ajuda">
+          Você acertou {v.acertos} de {r.total} {r.total === 1 ? 'questão' : 'questões'}.
+        </p>
+      )}
     </>
   );
 }

@@ -4,9 +4,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Logo } from '../comum/Logo';
 import { respostaCerta } from '../jogo/conceito';
+import { dicasForca, errosForca, MAX_ERROS_FORCA, mascararPalavra, palavraCompleta } from '../jogo/forca';
 import { LETRAS } from '../jogo/tipos';
 import type { DadosTreino, QuestaoTreino } from '../treino/tipos';
 import { Forma } from './JogoTela';
+import { DesenhoForca, PalavraForca, TecladoForca } from './Forca';
 
 interface Resposta {
   /** Múltipla escolha / V-F: alternativa marcada. */
@@ -17,6 +19,8 @@ interface Resposta {
   dicas?: number;
   tentativas?: number;
   desistiu?: boolean;
+  /** Forca: quantos erros teve. */
+  erros?: number;
   acertou: boolean;
 }
 
@@ -115,6 +119,9 @@ export function Treino({ codigo }: { codigo: string }) {
   const [textoErrado, setTextoErrado] = useState('');
   /** Resultado parcial (para salvar o PDF antes de terminar). */
   const [parcial, setParcial] = useState(false);
+  /** Forca: letras escolhidas e palavras erradas digitadas (cada uma conta um erro). */
+  const [letras, setLetras] = useState<string[]>([]);
+  const [chutesErrados, setChutesErrados] = useState(0);
 
   const setSessao = (s: Sessao | null) => {
     setSessaoEstado(s);
@@ -147,6 +154,8 @@ export function Treino({ codigo }: { codigo: string }) {
     setDicasVistas(1);
     setTexto('');
     setErrou(false);
+    setLetras([]);
+    setChutesErrados(0);
     window.scrollTo({ top: 0 });
   };
 
@@ -185,6 +194,36 @@ export function Treino({ codigo }: { codigo: string }) {
       setErrou(true);
       setTextoErrado(texto.trim());
     }
+  };
+
+  const ehForca = dados?.jogo === 'forca' && q?.tipo === 'conceito';
+  const errosAgora = q && ehForca ? errosForca(q.enunciado, letras) + chutesErrados : 0;
+  const erradasForca = q && ehForca ? letras.filter((l) => errosForca(q.enunciado, [l]) === 1) : [];
+  const dicasForcaVistas = q && ehForca ? Math.max(dicasVistas, dicasForca(q.dicas?.length ?? 0, errosAgora)) : 0;
+
+  const escolherLetra = (l: string) => {
+    if (!q || respostaAtual || letras.includes(l)) return;
+    const novas = [...letras, l];
+    setLetras(novas);
+    const erros = errosForca(q.enunciado, novas) + chutesErrados;
+    if (palavraCompleta(q.enunciado, novas)) registrar({ texto: q.enunciado, erros, acertou: true });
+    else if (erros >= MAX_ERROS_FORCA) registrar({ texto: '', erros, acertou: false });
+  };
+
+  const chutarPalavra = () => {
+    if (!q || !texto.trim() || respostaAtual) return;
+    const outras = dados!.questoes.filter((x) => x !== q && x.tipo === 'conceito').flatMap((x) => [x.enunciado, ...(x.aceitas ?? [])]);
+    if (respostaCerta(texto, q.enunciado, q.aceitas ?? [], outras)) {
+      registrar({ texto: texto.trim(), erros: errosAgora, acertou: true });
+      return;
+    }
+    // Na forca, palavra errada conta um erro.
+    const erros = errosAgora + 1;
+    setChutesErrados(chutesErrados + 1);
+    setErrou(true);
+    setTextoErrado(texto.trim());
+    setTexto('');
+    if (erros >= MAX_ERROS_FORCA) registrar({ texto: texto.trim(), erros, acertou: false });
   };
 
   const acertos = useMemo(() => (sessao ? sessao.respostas.filter((r) => r?.acertou).length : 0), [sessao]);
@@ -227,7 +266,7 @@ export function Treino({ codigo }: { codigo: string }) {
         <div className="jogar-centro">
           <p className="jogar-grande">{dados.titulo}</p>
           <p className="ajuda">
-            {dados.quantas} {dados.quantas === 1 ? 'questão' : 'questões'}
+            {dados.jogo === 'forca' ? `Forca · ${dados.quantas} ${dados.quantas === 1 ? 'palavra' : 'palavras'}` : `${dados.quantas} ${dados.quantas === 1 ? 'questão' : 'questões'}`}
             {dados.modo === 'sorteio' ? ', sorteadas a cada sessão' : ''} · sem tempo e sem competição ·{' '}
             {dados.mostrar === 'cada' ? 'a resposta certa aparece depois de cada questão' : 'as respostas certas aparecem no fim'}
           </p>
@@ -313,13 +352,20 @@ export function Treino({ codigo }: { codigo: string }) {
             return (
               <li key={k} className={r?.acertou ? 'certo' : 'errado'}>
                 <p className="treino-q">
-                  <b>{k + 1}.</b> {qq.tipo === 'conceito' ? `Adivinhe o conceito — dicas: ${(qq.dicas ?? []).join(' · ')}` : qq.enunciado}
+                  <b>{k + 1}.</b>{' '}
+                  {qq.tipo === 'conceito' ? `${dados.jogo === 'forca' ? 'Forca' : 'Adivinhe o conceito'} — dicas: ${(qq.dicas ?? []).join(' · ')}` : qq.enunciado}
                 </p>
                 <p>
                   <span className="treino-selo">{r?.acertou ? '✓ acertou' : '✗ errou'}</span> Sua resposta:{' '}
                   <strong>
                     {!r
                       ? '—'
+                      : qq.tipo === 'conceito' && dados.jogo === 'forca'
+                        ? r.desistiu
+                          ? '(não respondeu)'
+                          : r.acertou
+                            ? `descobriu com ${r.erros ?? 0} ${r.erros === 1 ? 'erro' : 'erros'}`
+                            : `não descobriu${r.texto ? ` (digitou “${r.texto}”)` : ''}`
                       : qq.tipo === 'conceito'
                         ? r.desistiu
                           ? '(não respondeu)'
@@ -349,7 +395,7 @@ export function Treino({ codigo }: { codigo: string }) {
       {topo}
       <div className="jogar-info">
         <span>
-          Questão {sessao.i + 1} de {n}
+          {dados.jogo === 'forca' ? 'Palavra' : 'Questão'} {sessao.i + 1} de {n}
         </span>
         <span className="espaco" />
         <button
@@ -366,7 +412,74 @@ export function Treino({ codigo }: { codigo: string }) {
       <div className="jogar-barra-tempo">
         <span style={{ width: `${((sessao.i + (respostaAtual ? 1 : 0)) / n) * 100}%` }} />
       </div>
-      {q && q.tipo === 'conceito' ? (
+      {q && ehForca ? (
+        <div className="jogar-pergunta">
+          <div className="jogar-forca-topo">
+            <DesenhoForca erros={respostaAtual ? (respostaAtual.erros ?? errosAgora) : errosAgora} className={respostaAtual && !respostaAtual.acertou ? 'perdeu' : ''} />
+            <div className="forca-info">
+              <span>
+                {errosAgora} de {MAX_ERROS_FORCA} erros
+              </span>
+              {erradasForca.length > 0 && <span className="forca-erradas">{erradasForca.join(' ')}</span>}
+            </div>
+          </div>
+          <PalavraForca mascara={mascararPalavra(q.enunciado, letras)} revelada={mostrarComentario ? q.enunciado : undefined} />
+          <ol className="jogar-dicas">
+            {dicas.slice(0, mostrarComentario ? dicas.length : dicasForcaVistas).map((d, i) => (
+              <li key={i}>
+                <span className="jogar-dica-num">Dica {i + 1}</span> {d}
+              </li>
+            ))}
+          </ol>
+          {!mostrarComentario ? (
+            <>
+              <TecladoForca
+                usadas={letras}
+                erradas={erradasForca}
+                desativado={!!respostaAtual}
+                aoEscolher={escolherLetra}
+              />
+              {dicasForcaVistas < dicas.length && (
+                <button className="botao" onClick={() => setDicasVistas(dicasForcaVistas + 1)}>
+                  Mais uma dica
+                </button>
+              )}
+              <form
+                className="jogar-form-conceito"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  chutarPalavra();
+                }}
+              >
+                <input
+                  className="jogar-campo"
+                  value={texto}
+                  onChange={(e) => (setTexto(e.target.value), setErrou(false))}
+                  placeholder="Já sei a palavra"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  aria-label="A palavra inteira"
+                />
+                <button className="botao-grande" disabled={!texto.trim()}>
+                  Enviar a palavra
+                </button>
+                {errou && <p className="jogar-errou">“{textoErrado}” não é a palavra (conta um erro).</p>}
+              </form>
+              <button
+                className="link-discreto"
+                style={{ marginLeft: 0 }}
+                onClick={() => registrar({ texto: '', erros: errosAgora, desistiu: true, acertou: false })}
+              >
+                não sei — ver a resposta
+              </button>
+            </>
+          ) : (
+            <Feedback r={respostaAtual} q={q} />
+          )}
+        </div>
+      ) : q && q.tipo === 'conceito' ? (
         <div className="jogar-pergunta">
           <p className="jogar-enunciado">Quem sou eu?</p>
           <ol className="jogar-dicas">
@@ -451,7 +564,7 @@ export function Treino({ codigo }: { codigo: string }) {
       )}
       {mostrarComentario && (
         <button className="botao-grande primario" onClick={() => avancar()}>
-          {sessao.i >= n - 1 ? 'Ver o resultado' : 'Próxima questão'}
+          {sessao.i >= n - 1 ? 'Ver o resultado' : dados.jogo === 'forca' ? 'Próxima palavra' : 'Próxima questão'}
         </button>
       )}
     </div>

@@ -4,7 +4,7 @@ import { abrirCanal, type TelaJogo } from '../comum/canal';
 import { registrar } from '../comum/registro';
 import { ConexaoSala, type StatusConexao } from '../remoto/conexao';
 import { guardarResultado } from './banco';
-import { MotorJogo } from './motor';
+import { MotorJogo, type ModoJogo } from './motor';
 import type { DoAluno, ParaAnfitriao } from './protocolo';
 import { gerarCodigoJogo, gerarToken, urlDoJogo } from './protocolo';
 import type { QuestaoJogo } from './tipos';
@@ -58,17 +58,22 @@ class Anfitriao {
     this.ouvintes.forEach((f) => f());
   }
 
-  iniciar(nome: string, questoes: QuestaoJogo[], ranking: boolean): void {
+  iniciar(nome: string, questoes: QuestaoJogo[], ranking: boolean, opcoes: { modo?: ModoJogo; votoS?: number } = {}): void {
     if (this.estado.ativo) this.encerrar();
+    const modo = opcoes.modo ?? 'perguntas';
+    // A forca usa só as questões "Adivinhe o conceito" (a palavra é o conceito).
+    if (modo === 'forca') questoes = questoes.filter((q) => q.tipo === 'conceito' && q.enunciado.trim());
     if (!questoes.length) return;
-    try {
-      localStorage.setItem(PREF_RANKING, ranking ? 'sim' : 'nao');
-    } catch {
-      /* ignore */
+    if (modo !== 'forca') {
+      try {
+        localStorage.setItem(PREF_RANKING, ranking ? 'sim' : 'nao');
+      } catch {
+        /* ignore */
+      }
     }
     const codigo = gerarCodigoJogo();
     const chave = gerarToken();
-    this.motor = new MotorJogo(questoes, ranking);
+    this.motor = new MotorJogo(questoes, ranking, modo, Math.max(3, opcoes.votoS ?? 10) * 1000);
     this.qrGrande = false;
     this.sala = new ConexaoSala<ParaAnfitriao, unknown>(
       codigo,
@@ -81,7 +86,7 @@ class Anfitriao {
       { rota: 'jogo', extras: { chave } },
     );
     this.mudar({ ativo: true, nome, codigo, fundamento: '' });
-    registrar('sessao', `jogo de perguntas aberto: ${nome}`, { questoes: questoes.length, ranking });
+    registrar('sessao', `${modo === 'forca' ? 'forca' : 'jogo de perguntas'} aberto: ${nome}`, { questoes: questoes.length, ranking: modo !== 'forca' && ranking });
     this.relogio = window.setInterval(() => this.verificarTempo(), 250);
     this.publicar();
   }
@@ -100,7 +105,7 @@ class Anfitriao {
   }
 
   definirRanking(ligado: boolean): void {
-    if (!this.motor) return;
+    if (!this.motor || this.motor.forca) return;
     this.motor.ranking = ligado;
     try {
       localStorage.setItem(PREF_RANKING, ligado ? 'sim' : 'nao');
@@ -139,6 +144,10 @@ class Anfitriao {
   private verificarTempo() {
     const m = this.motor;
     if (!m || m.fase !== 'pergunta') return;
+    if (m.forca) {
+      if (m.passoForca(Date.now())) this.publicar();
+      return;
+    }
     if (Date.now() >= m.prazo || m.todosResponderam()) {
       m.encerrarPergunta();
       this.publicar();
@@ -185,6 +194,13 @@ class Anfitriao {
       if (resultado === 'certo') {
         if (m.todosResponderam()) m.encerrarPergunta();
         this.publicar(m.fase !== 'pergunta');
+      }
+    } else if (d?.t === 'votar' && Number.isInteger(d.indice)) {
+      if (m.votar(msg.de, d.indice, d.letra)) {
+        this.enviarPara(msg.de);
+        // Todos votaram: a letra sai na hora.
+        if (m.passoForca(Date.now())) this.publicar();
+        else this.publicar(false);
       }
     } else if (d?.t === 'responder' && Number.isInteger(d.indice) && Number.isInteger(d.alt)) {
       if (m.responder(msg.de, d.indice, d.alt, Date.now())) {

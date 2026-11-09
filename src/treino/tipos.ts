@@ -24,6 +24,8 @@ export interface DadosTreino {
   quantas: number;
   /** Quando o aluno vê a resposta certa: logo após cada questão ou só no fim. */
   mostrar: 'cada' | 'fim';
+  /** forca: cada conceito vira uma forca individual (sem o campo: questões normais). */
+  jogo?: 'forca';
   questoes: QuestaoTreino[];
 }
 
@@ -41,6 +43,7 @@ export interface LinkTreino extends Sincronizavel {
   total: number;
   /** De onde vieram as questões ("Questionário: Revisão", "Assunto: sentença"…). */
   origem: string;
+  jogo?: DadosTreino['jogo'];
 }
 
 export function urlDoTreino(codigo: string): string {

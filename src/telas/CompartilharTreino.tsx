@@ -85,7 +85,10 @@ function FormTreino({ questoes, questionarios, aoFechar }: { questoes: Questao[]
   const [escolhidas, setEscolhidas] = useState<string[]>([]);
   const [busca, setBusca] = useState('');
   const [assunto, setAssunto] = useState('');
-  const [tipos, setTipos] = useState<FiltroTipo>('todos');
+  const [tiposEscolhidos, setTipos] = useState<FiltroTipo>('todos');
+  const [jogo, setJogo] = useState<'questoes' | 'forca'>('questoes');
+  const forca = jogo === 'forca';
+  const tipos: FiltroTipo = forca ? 'conceito' : tiposEscolhidos;
   const [modo, setModo] = useState<'sorteio' | 'fixo'>('sorteio');
   const [quantas, setQuantas] = useState(10);
   const [mostrar, setMostrar] = useState<'cada' | 'fim'>('cada');
@@ -99,15 +102,16 @@ function FormTreino({ questoes, questionarios, aoFechar }: { questoes: Questao[]
     (q) => (!assunto.trim() || q.etiquetas.some((e) => semAcento(e) === semAcento(assunto.trim()))) && (tipos === 'todos' || (tipos === 'conceito') === (q.tipo === 'conceito')),
   );
   const termos = semAcento(busca).split(/\s+/).filter(Boolean);
-  const paraEscolher = questoes.filter((q) => termos.every((t) => semAcento(`${q.enunciado} ${q.etiquetas.join(' ')} ${q.pasta}`).includes(t)));
+  const paraEscolher = questoes.filter((q) => (!forca || q.tipo === 'conceito') && termos.every((t) => semAcento(`${q.enunciado} ${q.etiquetas.join(' ')} ${q.pasta}`).includes(t)));
 
   // Quantas questões vão para o link e quantas cada sessão terá.
-  const conjunto: Questao[] =
+  const conjuntoTodo: Questao[] =
     fonte === 'questionario'
       ? (questionarios.find((x) => x.id === qzId)?.questoes ?? []).map((id) => porId.get(id)).filter((q): q is Questao => !!q)
       : fonte === 'escolher'
         ? escolhidas.map((id) => porId.get(id)).filter((q): q is Questao => !!q)
         : doAssunto;
+  const conjunto = forca ? conjuntoTodo.filter((q) => q.tipo === 'conceito') : conjuntoTodo;
   // O nome do assunto como cadastrado (com acentos), mesmo que digitado sem.
   const assuntoOficial = assuntos.find((a) => semAcento(a.assunto) === semAcento(assunto.trim()))?.assunto ?? assunto.trim();
   const porSessao = fonte === 'assunto' ? Math.min(quantas, conjunto.length) : conjunto.length;
@@ -125,7 +129,7 @@ function FormTreino({ questoes, questionarios, aoFechar }: { questoes: Questao[]
           : fonte === 'escolher'
             ? 'Questões escolhidas'
             : `Assunto: ${assuntoOficial || 'todos'}`;
-      const nomePadrao = fonte === 'assunto' ? `Treino — ${assuntoOficial || 'todos os assuntos'}` : origem.replace(/^Questionário: /, 'Treino — ');
+      const nomePadrao = `${forca ? 'Forca' : 'Treino'} — ${fonte === 'assunto' ? assuntoOficial || 'todos os assuntos' : fonte === 'questionario' ? origem.replace(/^Questionário: /, '') : 'questões escolhidas'}`;
       const link = await criarLinkTreino({
         titulo: titulo.trim() || nomePadrao,
         questoes: lista,
@@ -133,6 +137,7 @@ function FormTreino({ questoes, questionarios, aoFechar }: { questoes: Questao[]
         quantas,
         mostrar,
         origem,
+        ...(forca ? { jogo: 'forca' as const } : {}),
       });
       setPronto(link);
     } catch (e) {
@@ -159,6 +164,22 @@ function FormTreino({ questoes, questionarios, aoFechar }: { questoes: Questao[]
       <div className="campo">
         <label htmlFor="titulo-treino">Título do treino (os alunos veem)</label>
         <input id="titulo-treino" type="text" placeholder="ex.: Treino — Sentença" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
+      </div>
+      <div className="campo">
+        <label>Formato</label>
+        <div className="linha-opcoes">
+          <button type="button" className={`botao pequeno${!forca ? ' escuro' : ''}`} onClick={() => setJogo('questoes')}>
+            Questões
+          </button>
+          <button type="button" className={`botao pequeno${forca ? ' escuro' : ''}`} onClick={() => setJogo('forca')}>
+            Forca
+          </button>
+        </div>
+        {forca && (
+          <span className="ajuda" style={{ margin: 0 }}>
+            Cada conceito ("Adivinhe o conceito") vira uma forca: o aluno escolhe letras ou digita a palavra, até 6 erros. As outras questões ficam de fora.
+          </span>
+        )}
       </div>
       <div className="campo">
         <label>Quais questões</label>
@@ -189,6 +210,7 @@ function FormTreino({ questoes, questionarios, aoFechar }: { questoes: Questao[]
                 ))}
               </datalist>
             </div>
+            {!forca && (
             <div className="campo">
               <label htmlFor="tipos-treino">Tipo de questão</label>
               <select id="tipos-treino" className="seletor" value={tipos} onChange={(e) => setTipos(e.target.value as FiltroTipo)}>
@@ -197,6 +219,7 @@ function FormTreino({ questoes, questionarios, aoFechar }: { questoes: Questao[]
                 <option value="conceito">Só "Adivinhe o conceito"</option>
               </select>
             </div>
+            )}
           </div>
           <div className="campo">
             <label>Como montar</label>
@@ -208,7 +231,7 @@ function FormTreino({ questoes, questionarios, aoFechar }: { questoes: Questao[]
             </label>
           </div>
           <div className="campo">
-            <label htmlFor="quantas-treino">Questões por sessão</label>
+            <label htmlFor="quantas-treino">{forca ? 'Palavras por sessão' : 'Questões por sessão'}</label>
             <input id="quantas-treino" type="number" min={1} max={200} value={quantas} onChange={(e) => setQuantas(Math.max(1, Math.min(200, Number(e.target.value) || 1)))} style={{ width: 90 }} />
           </div>
         </>
@@ -267,10 +290,12 @@ function FormTreino({ questoes, questionarios, aoFechar }: { questoes: Questao[]
 
       <p className="ajuda">
         {conjunto.length === 0
-          ? 'Nenhuma questão encontrada com essa escolha.'
+          ? forca
+            ? 'Nenhum conceito ("Adivinhe o conceito") com essa escolha.'
+            : 'Nenhuma questão encontrada com essa escolha.'
           : fonte === 'assunto' && modo === 'sorteio'
-            ? `${conjunto.length} questões no conjunto; cada sessão sorteia ${porSessao}.`
-            : `O treino terá ${fonte === 'assunto' ? porSessao : conjunto.length} questões.`}{' '}
+            ? `${conjunto.length} ${forca ? 'conceitos' : 'questões'} no conjunto; cada sessão sorteia ${porSessao}.`
+            : `O treino terá ${fonte === 'assunto' ? porSessao : conjunto.length} ${forca ? 'palavras' : 'questões'}.`}{' '}
         Uma cópia destas questões fica publicada no serviço do Vide enquanto o link estiver ativo (as respostas certas vão junto, para o treino funcionar).
       </p>
       {erro && <p className="digitar-msg erro">{erro}</p>}
@@ -333,7 +358,8 @@ export function TreinosEmCasa({
                 <span className="texto-questao">
                   <strong>{l.titulo}</strong>{' '}
                   <span className="ajuda">
-                    · {l.modo === 'sorteio' ? `sorteia ${l.quantas} de ${l.total}` : `${l.total} questões fixas`} ·{' '}
+                    · {l.jogo === 'forca' ? 'forca · ' : ''}
+                    {l.modo === 'sorteio' ? `sorteia ${l.quantas} de ${l.total}` : `${l.total} questões fixas`} ·{' '}
                     {l.mostrar === 'cada' ? 'resposta a cada questão' : 'respostas no fim'} · {l.origem} · criado em{' '}
                     {new Date(l.criado_em).toLocaleDateString('pt-BR')}
                   </span>

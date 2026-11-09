@@ -53,6 +53,8 @@ export interface ResultadoPergunta {
   questaoId?: string;
   /** Adivinhe o conceito: o que foi digitado (sem nomes), com quantas vezes; "parecida" = aceita por semelhança. */
   tentativas?: { texto: string; vezes: number; situacao: 'parecida' | 'errada'; incluida?: boolean }[];
+  /** Forca: se a turma descobriu a palavra, com quantos erros e as letras tentadas (na ordem). */
+  forca?: { venceu: boolean; erros: number; letras: string[] };
 }
 
 /** A questão como entra no jogo (só o necessário). */
@@ -74,5 +76,8 @@ export const TEMPO_PADRAO = 30;
 export const TEMPO_PADRAO_CONCEITO = 60;
 /** Depois de uma resposta errada no "Adivinhe o conceito", espera antes de tentar de novo. */
 export const ESPERA_NOVA_TENTATIVA_MS = 5_000;
+/** Forca em sala: tempo de cada votação de letra (segundos). */
+export const VOTO_PADRAO_FORCA = 10;
+export const OPCOES_VOTO_FORCA = [5, 8, 10, 15, 20, 30];
 export const TEMPOS = [10, 20, 30, 45, 60, 90, 120];
 export const LETRAS = ['A', 'B', 'C', 'D'];

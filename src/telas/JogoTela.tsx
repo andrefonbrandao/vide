@@ -6,6 +6,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
 import type { TelaJogo } from '../comum/canal';
 import { LETRAS } from '../jogo/tipos';
 import { dicasVisiveis, proximaDica } from '../jogo/conceito';
+import { DesenhoForca, PalavraForca } from './Forca';
 
 /**
  * Texto que se ajusta ao espaço: se não couber no quadro (o elemento "pai"),
@@ -191,6 +192,79 @@ function TelaConceito({ jogo }: { jogo: TelaJogo }) {
   );
 }
 
+/** Forca no projetor: o desenho, a palavra com tracinhos, as letras já jogadas e a votação. */
+function TelaForca({ jogo }: { jogo: TelaJogo }) {
+  const q = jogo.questao!;
+  const f = jogo.forca!;
+  const revelada = jogo.fase === 'resultado';
+  const dicas = q.dicas ?? [];
+  const visiveis = revelada ? dicas.length : jogo.dicasVisiveis;
+  return (
+    <div className="jogo-tela jogo-forca">
+      <div className="jogo-topo">
+        <span className="jogo-rotulo">
+          Forca · palavra {jogo.indice + 1} de {jogo.total}
+        </span>
+        <span className="espaco" />
+        <EntradaCanto jogo={jogo} />
+        {jogo.fase === 'pergunta' ? (
+          <Cronometro key={f.votoInicio} inicio={f.votoInicio} prazo={f.votoPrazo} />
+        ) : (
+          <span className="jogo-rotulo">Resultado</span>
+        )}
+      </div>
+      <div className="forca-centro">
+        <div className="forca-lado">
+          <DesenhoForca erros={f.erros} className={f.fim === 'perdeu' ? 'perdeu' : ''} />
+          <span className="forca-erros">
+            {f.erros} de {f.max} erros
+          </span>
+        </div>
+        <div className="forca-principal">
+          <Cabe chave={`${jogo.indice}:${f.letras.length}:${visiveis}:${jogo.fase}`} className="cabe-bloco forca-conteudo">
+          {revelada && (
+            <p className={`forca-veredito ${f.fim === 'venceu' ? 'venceu' : 'perdeu'}`}>
+              {f.fim === 'venceu' ? 'A turma descobriu!' : f.fim === 'perdeu' ? 'A forca venceu' : 'A palavra era'}
+            </p>
+          )}
+          <PalavraForca mascara={f.mascara} revelada={revelada ? q.enunciado : undefined} className="forca-grande" />
+          <div className="forca-letras">
+            <span className="jogo-rotulo">Letras erradas:</span>{' '}
+            {f.erradas.length ? f.erradas.map((l) => <b key={l}>{l}</b>) : <span className="jogo-rotulo">nenhuma</span>}
+          </div>
+          {dicas.length > 0 && (
+            <ol className="forca-dicas">
+              {dicas.slice(0, visiveis).map((d, i) => (
+                <li key={i}>
+                  <span className="conceito-num">Dica {i + 1}</span> {d}
+                </li>
+              ))}
+              {!revelada && visiveis < dicas.length && <li className="oculta">Mais uma dica a cada 2 erros…</li>}
+            </ol>
+          )}
+          </Cabe>
+        </div>
+      </div>
+      <div className="jogo-rodape">
+        {jogo.fase === 'pergunta' ? (
+          <>
+            <span>
+              Vote numa letra no celular · <strong>{f.votaram}</strong> de {jogo.aResponder} votaram
+            </span>
+            {f.ultima && (
+              <span className={`forca-ultima ${f.ultima.acertou ? 'certa' : 'errada'}`}>
+                Última: <b>{f.ultima.letra}</b> {f.ultima.acertou ? '✓ está na palavra' : '✗ não está'}
+              </span>
+            )}
+          </>
+        ) : (
+          q.explicacao && <span className="jogo-explicacao">{q.explicacao}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function JogoTela({ jogo }: { jogo: TelaJogo }) {
   return (
     <>
@@ -217,6 +291,7 @@ export function JogoTela({ jogo }: { jogo: TelaJogo }) {
 function TelaDoJogo({ jogo }: { jogo: TelaJogo }) {
   const q = jogo.questao;
   const revelada = jogo.fase === 'resultado';
+  if ((jogo.fase === 'pergunta' || jogo.fase === 'resultado') && q && jogo.forca) return <TelaForca jogo={jogo} />;
   if ((jogo.fase === 'pergunta' || jogo.fase === 'resultado') && q?.tipo === 'conceito') return <TelaConceito jogo={jogo} />;
 
   if (jogo.fase === 'sala') {
@@ -351,6 +426,18 @@ function TelaDoJogo({ jogo }: { jogo: TelaJogo }) {
           {degrau(p1, 1)}
           {degrau(p3, 3)}
         </div>
+      </div>
+    );
+  }
+  if (jogo.modo === 'forca') {
+    const descobertas = jogo.acertoPorPergunta.filter((p) => p === 100).length;
+    return (
+      <div className="jogo-tela jogo-fim">
+        <p className="jogo-rotulo">Fim da forca</p>
+        <p className="jogo-codigo">
+          {descobertas} de {jogo.total}
+        </p>
+        <p className="jogo-rotulo">{jogo.total === 1 ? 'palavra descoberta' : 'palavras descobertas'} pela turma</p>
       </div>
     );
   }

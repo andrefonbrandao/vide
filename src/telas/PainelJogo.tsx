@@ -3,7 +3,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { anfitriao, rankingPreferido } from '../jogo/anfitriao';
 import { assuntosDasQuestoes, listarQuestionarios, listarQuestoes, questoesDo, sortearQuestoes, type FiltroTipo } from '../jogo/banco';
 import { rotuloAvancar } from '../jogo/motor';
-import type { Questao, QuestaoJogo, Questionario } from '../jogo/tipos';
+import { OPCOES_VOTO_FORCA, VOTO_PADRAO_FORCA, type Questao, type QuestaoJogo, type Questionario } from '../jogo/tipos';
 import { JogoTela } from './JogoTela';
 import type { ControladorAula } from './controlador';
 
@@ -14,6 +14,27 @@ export function useJogo() {
 
 type Modo = 'assunto' | 'questionario';
 const CHAVE_MODO = 'vide.jogoModo';
+/** Que jogo: perguntas (alternativas e conceito) ou forca (a turma toda). */
+type Jogo = 'perguntas' | 'forca';
+const CHAVE_JOGO = 'vide.jogoTipo';
+const CHAVE_VOTO = 'vide.jogoVotoForca';
+
+function lerPref<T extends string | number>(chave: string, padrao: T): T {
+  try {
+    const v = localStorage.getItem(chave);
+    if (v === null) return padrao;
+    return (typeof padrao === 'number' ? Number(v) || padrao : v) as T;
+  } catch {
+    return padrao;
+  }
+}
+function gravarPref(chave: string, v: string | number) {
+  try {
+    localStorage.setItem(chave, String(v));
+  } catch {
+    /* ignore */
+  }
+}
 
 /** Tempo escolhido ao abrir a atividade: 0 = o tempo sugerido de cada questão. */
 interface Tempos {
@@ -54,7 +75,7 @@ function SeletorTempo({ id, valor, aoMudar }: { id: string; valor: number; aoMud
 
 /** Janela para abrir a sala: sorteio por assunto ou um questionário pronto. */
 export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
-  const [lista, setLista] = useState<(Questionario & { total: number })[] | null>(null);
+  const [lista, setLista] = useState<(Questionario & { total: number; conceitos: number })[] | null>(null);
   const [banco, setBanco] = useState<Questao[]>([]);
   const [escolhido, setEscolhido] = useState<string>('');
   const [ranking, setRanking] = useState(rankingPreferido());
@@ -67,7 +88,14 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
   });
   const [assunto, setAssunto] = useState<string>('');
   const [quantas, setQuantas] = useState(10);
-  const [tipos, setTipos] = useState<FiltroTipo>('todos');
+  const [tiposEscolhidos, setTipos] = useState<FiltroTipo>('todos');
+  const [jogo, setJogoEstado] = useState<Jogo>(() => (lerPref<string>(CHAVE_JOGO, 'perguntas') === 'forca' ? 'forca' : 'perguntas'));
+  const setJogo = (j: Jogo) => (setJogoEstado(j), gravarPref(CHAVE_JOGO, j));
+  const [votoS, setVotoEstado] = useState<number>(() => lerPref(CHAVE_VOTO, VOTO_PADRAO_FORCA));
+  const setVoto = (v: number) => (setVotoEstado(v), gravarPref(CHAVE_VOTO, v));
+  const forca = jogo === 'forca';
+  // A forca usa só "Adivinhe o conceito" (a palavra é o conceito).
+  const tipos: FiltroTipo = forca ? 'conceito' : tiposEscolhidos;
   const [buscaAssunto, setBuscaAssunto] = useState('');
   const [tempos, setTemposEstado] = useState<Tempos>(temposGuardados);
   const setTempos = (t: Tempos) => {
@@ -90,7 +118,12 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
   useEffect(() => {
     void (async () => {
       const [qs, todas] = await Promise.all([listarQuestionarios(), listarQuestoes()]);
-      const comTotal = await Promise.all(qs.map(async (q) => ({ ...q, total: (await questoesDo(q)).length })));
+      const comTotal = await Promise.all(
+        qs.map(async (q) => {
+          const lista = await questoesDo(q);
+          return { ...q, total: lista.length, conceitos: lista.filter((x) => x.tipo === 'conceito').length };
+        }),
+      );
       setLista(comTotal);
       setBanco(todas);
       setEscolhido(comTotal.find((q) => q.total > 0)?.id ?? '');
@@ -111,25 +144,36 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
     if (modo === 'assunto') {
       const sorteadas = sortearQuestoes(banco, assunto === '*' ? null : assunto, quantas, Math.random, tipos);
       if (!sorteadas.length) return;
-      const nome = `${sorteadas.length} ${sorteadas.length === 1 ? 'questão' : 'questões'} · ${assunto === '*' ? 'todos os assuntos' : assunto}`;
-      anfitriao().iniciar(nome, sorteadas.map((q) => paraJogo(q, tempos)), ranking);
+      const n = sorteadas.length;
+      const nome = `${forca ? `Forca · ${n} ${n === 1 ? 'palavra' : 'palavras'}` : `${n} ${n === 1 ? 'questão' : 'questões'}`} · ${assunto === '*' ? 'todos os assuntos' : assunto}`;
+      anfitriao().iniciar(nome, sorteadas.map((q) => paraJogo(q, tempos)), ranking, { modo: jogo, votoS });
     } else {
       const q = lista?.find((x) => x.id === escolhido);
       if (!q) return;
-      anfitriao().iniciar(q.nome, (await questoesDo(q)).map((x) => paraJogo(x, tempos)), ranking);
+      anfitriao().iniciar(forca ? `Forca · ${q.nome}` : q.nome, (await questoesDo(q)).map((x) => paraJogo(x, tempos)), ranking, { modo: jogo, votoS });
     }
     aoFechar();
   };
 
-  const podeAbrir = modo === 'assunto' ? vaiTer > 0 : !!escolhido;
+  const qzEscolhido = lista?.find((x) => x.id === escolhido);
+  const podeAbrir = modo === 'assunto' ? vaiTer > 0 : !!qzEscolhido && (forca ? qzEscolhido.conceitos > 0 : qzEscolhido.total > 0);
 
   return (
     <div className="modal-fundo" data-ui onMouseDown={(ev) => ev.target === ev.currentTarget && aoFechar()}>
       <div className="modal" role="dialog" aria-label="Atividades">
         <h2>Atividades</h2>
-        <p className="jogar-rotulo" style={{ margin: '-6px 0 6px', fontSize: 15 }}>Jogo de perguntas</p>
+        <div className="linha-opcoes" role="tablist" aria-label="Que jogo" style={{ marginBottom: 6 }}>
+          <button role="tab" aria-selected={!forca} className={`botao${!forca ? ' escuro' : ''}`} onClick={() => setJogo('perguntas')}>
+            Jogo de perguntas
+          </button>
+          <button role="tab" aria-selected={forca} className={`botao${forca ? ' escuro' : ''}`} onClick={() => setJogo('forca')}>
+            Forca (a turma toda)
+          </button>
+        </div>
         <p className="ajuda">
-          Os alunos entram pelo celular (QR code ou código no projetor), só com um apelido, e respondem às questões.
+          {forca
+            ? 'A palavra é o conceito das questões "Adivinhe o conceito". Os alunos entram pelo celular, só com um apelido, e votam numa letra; a mais votada entra. Quem souber a palavra pode digitá-la. Sem ranking: a turma joga junta, até 6 erros.'
+            : 'Os alunos entram pelo celular (QR code ou código no projetor), só com um apelido, e respondem às questões.'}
         </p>
         <div className="linha-opcoes" role="tablist" style={{ marginBottom: 10 }}>
           <button role="tab" aria-selected={modo === 'assunto'} className={`botao pequeno${modo === 'assunto' ? ' escuro' : ''}`} onClick={() => setModo('assunto')}>
@@ -194,6 +238,7 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
                   <span className="ajuda">As questões ainda não têm assunto: cadastre em Acervo › Questões (campo "Assuntos").</span>
                 )}
               </div>
+              {!forca && (
               <div className="campo">
                 <label htmlFor="tipos-jogo">Tipo de questão</label>
                 <select id="tipos-jogo" className="seletor" value={tipos} onChange={(e) => setTipos(e.target.value as FiltroTipo)}>
@@ -202,8 +247,9 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
                   <option value="conceito">Só "Adivinhe o conceito"</option>
                 </select>
               </div>
+              )}
               <div className="campo">
-                <label htmlFor="quantas-jogo">Quantas questões</label>
+                <label htmlFor="quantas-jogo">{forca ? 'Quantas palavras' : 'Quantas questões'}</label>
                 <div className="linha-opcoes">
                   {[5, 10, 15, 20].map((n) => (
                     <button key={n} type="button" className={`botao pequeno${quantas === n ? ' escuro' : ''}`} onClick={() => setQuantas(n)}>
@@ -221,9 +267,13 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
                   />
                 </div>
                 <span className="ajuda" style={{ margin: 0 }}>
-                  {disponiveis < quantas
-                    ? `Só há ${disponiveis} ${disponiveis === 1 ? 'questão' : 'questões'} deste assunto: o jogo terá ${vaiTer}.`
-                    : `Serão sorteadas ${vaiTer} questões, em ordem aleatória.`}
+                  {forca
+                    ? disponiveis < quantas
+                      ? `Só há ${disponiveis} ${disponiveis === 1 ? 'conceito' : 'conceitos'} deste assunto: a forca terá ${vaiTer} ${vaiTer === 1 ? 'palavra' : 'palavras'}.`
+                      : `Serão sorteadas ${vaiTer} palavras (conceitos), em ordem aleatória.`
+                    : disponiveis < quantas
+                      ? `Só há ${disponiveis} ${disponiveis === 1 ? 'questão' : 'questões'} deste assunto: o jogo terá ${vaiTer}.`
+                      : `Serão sorteadas ${vaiTer} questões, em ordem aleatória.`}
                 </span>
               </div>
             </div>
@@ -236,19 +286,32 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
           <div className="lista-questionarios" role="radiogroup">
             {lista.map((q) => (
               <label key={q.id} className={`opcao-questionario${q.id === escolhido ? ' atual' : ''}`}>
-                <input type="radio" name="questionario" checked={q.id === escolhido} disabled={!q.total} onChange={() => setEscolhido(q.id)} />
+                <input type="radio" name="questionario" checked={q.id === escolhido} disabled={forca ? !q.conceitos : !q.total} onChange={() => setEscolhido(q.id)} />
                 <span>
                   <strong>{q.nome}</strong>
                   <span className="ajuda" style={{ margin: 0 }}>
                     {' '}
-                    · {q.total} {q.total === 1 ? 'questão' : 'questões'}
+                    · {forca ? `${q.conceitos} ${q.conceitos === 1 ? 'conceito' : 'conceitos'} (as outras questões ficam de fora)` : `${q.total} ${q.total === 1 ? 'questão' : 'questões'}`}
                   </span>
                 </span>
               </label>
             ))}
           </div>
         )}
-        {lista !== null && (
+        {lista !== null && forca && (
+          <div className="campo tempos-jogo">
+            <label htmlFor="tempo-voto">Tempo de cada votação de letra</label>
+            <select id="tempo-voto" className="seletor" value={votoS} onChange={(e) => setVoto(Number(e.target.value))}>
+              {OPCOES_VOTO_FORCA.map((t) => (
+                <option key={t} value={t}>
+                  {t} segundos{t === VOTO_PADRAO_FORCA ? ' (sugerido)' : ''}
+                </option>
+              ))}
+            </select>
+            <span className="ajuda" style={{ margin: 0 }}>Se todos votarem antes, a letra sai na hora.</span>
+          </div>
+        )}
+        {lista !== null && !forca && (
           <div className="grade-2 tempos-jogo">
             {(modo !== 'assunto' || tipos !== 'conceito') && (
               <div className="campo">
@@ -264,10 +327,12 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
             )}
           </div>
         )}
-        <label className="caixa-marcar">
-          <input type="checkbox" checked={ranking} onChange={(ev) => setRanking(ev.target.checked)} />
-          Ranking com pontos e pódio
-        </label>
+        {!forca && (
+          <label className="caixa-marcar">
+            <input type="checkbox" checked={ranking} onChange={(ev) => setRanking(ev.target.checked)} />
+            Ranking com pontos e pódio
+          </label>
+        )}
         <div className="modal-botoes">
           <button className="botao" onClick={aoFechar}>
             Cancelar
@@ -326,10 +391,12 @@ export function PainelJogo({ ctl }: { ctl: ControladorAula }) {
             {tela.qrGrande ? 'Esconder QR grande' : 'Mostrar QR grande'}
           </button>
         )}
-        <label className="caixa-marcar">
-          <input type="checkbox" checked={tela.ranking} onChange={(ev) => anfitriao().definirRanking(ev.target.checked)} />
-          Ranking e pódio
-        </label>
+        {tela.modo !== 'forca' && (
+          <label className="caixa-marcar">
+            <input type="checkbox" checked={tela.ranking} onChange={(ev) => anfitriao().definirRanking(ev.target.checked)} />
+            Ranking e pódio
+          </label>
+        )}
         <span className="espaco" />
         <button
           className="botao"

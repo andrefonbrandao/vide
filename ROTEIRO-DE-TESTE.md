@@ -184,6 +184,15 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 
 **Cuidados:** cada aluno precisa de internet no celular. Não recarregue nem feche a página do Vide no computador durante o jogo: o jogo roda nela. Se um aluno recarregar a página, ele volta ao jogo com os mesmos pontos.
 
+## Forca (a turma toda, pelo celular)
+
+1. Em **Aula › Atividades**, clique em **Forca (a turma toda)**. A palavra é o conceito das questões "Adivinhe o conceito" (as outras ficam de fora).
+2. Escolha o assunto ou o questionário e o **tempo de cada votação** (sugerido: 10 segundos). Clique em **Abrir a sala**.
+3. Os alunos entram pelo QR code, como no jogo de perguntas. Em **Começar**, cada um vota numa letra no celular; a mais votada entra na palavra (se todos votarem antes, sai na hora).
+4. Quem souber a palavra toca em **Já sei a palavra** e digita. Palavra errada não custa à turma (a pessoa só espera 5 s).
+5. Com 6 erros, a forca vence. **Revelar a palavra** encerra a rodada a qualquer momento; **Próxima palavra** segue.
+6. No treino em casa: em **Acervo › Questões › Treinos em casa**, escolha o formato **Forca**. Ali cada aluno joga sozinho (palavra errada conta um erro).
+
 ## Guardar o acervo no Google Drive (vários computadores)
 
 1. No alto do Vide, clique em **Google Drive** › **Entrar com o Google** e entre com a sua conta. Na primeira vez, o Google pede para autorizar o Vide a usar o Drive: autorize.

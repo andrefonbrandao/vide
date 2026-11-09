@@ -770,8 +770,10 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
                     <li key={i}>
                       {p.enunciado}{' '}
                       <span className="ajuda">
-                        · {t ? Math.round((p.respostas[p.correta] / t) * 100) : 0}% de acerto ·{' '}
-                        {conceito
+                        · {p.forca ? '' : `${t ? Math.round((p.respostas[p.correta] / t) * 100) : 0}% de acerto · `}
+                        {p.forca
+                          ? `${p.forca.venceu ? 'a turma descobriu' : 'a turma não descobriu'} · ${p.forca.erros} ${p.forca.erros === 1 ? 'erro' : 'erros'}${p.forca.letras.length ? ` · letras: ${p.forca.letras.join(' ')}` : ''}`
+                          : conceito
                           ? `acertaram: ${p.respostas[0]} · não acertaram: ${p.semResposta}`
                           : `${p.respostas.map((n, k) => `${LETRAS[k]}: ${n}`).join(' · ')}${p.semResposta ? ` · sem resposta: ${p.semResposta}` : ''}`}
                       </span>

@@ -7,7 +7,9 @@ export type DoAluno =
   | { t: 'ola' }
   | { t: 'responder'; indice: number; alt: number }
   /** Adivinhe o conceito: a resposta digitada. */
-  | { t: 'responder-texto'; indice: number; texto: string };
+  | { t: 'responder-texto'; indice: number; texto: string }
+  /** Forca: voto numa letra. */
+  | { t: 'votar'; indice: number; letra: string };
 
 /** O que chega ao professor (o serviço acrescenta quem enviou). */
 export type ParaAnfitriao =

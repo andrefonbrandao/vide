@@ -35,16 +35,21 @@ export async function criarLinkTreino(opcoes: {
   quantas: number;
   mostrar: DadosTreino['mostrar'];
   origem: string;
+  jogo?: DadosTreino['jogo'];
 }): Promise<LinkTreino> {
+  // A forca usa só os conceitos.
+  const questoes = opcoes.jogo === 'forca' ? opcoes.questoes.filter((q) => q.tipo === 'conceito' && q.enunciado.trim()) : opcoes.questoes;
+  if (!questoes.length) throw new Error('Nenhuma questão "Adivinhe o conceito" para a forca.');
   const chave = gerarToken();
   const dados: DadosTreino = {
     formato: 'vide-treino@1',
     titulo: opcoes.titulo.trim() || 'Treino',
     criado_em: agoraISO(),
     modo: opcoes.modo,
-    quantas: opcoes.modo === 'sorteio' ? Math.max(1, Math.min(opcoes.quantas, opcoes.questoes.length)) : opcoes.questoes.length,
+    quantas: opcoes.modo === 'sorteio' ? Math.max(1, Math.min(opcoes.quantas, questoes.length)) : questoes.length,
     mostrar: opcoes.mostrar,
-    questoes: await prepararQuestoes(opcoes.questoes),
+    ...(opcoes.jogo ? { jogo: opcoes.jogo } : {}),
+    questoes: await prepararQuestoes(questoes),
   };
   const r = await fetch('/api/treino', {
     method: 'POST',
@@ -68,6 +73,7 @@ export async function criarLinkTreino(opcoes: {
     mostrar: dados.mostrar,
     total: dados.questoes.length,
     origem: opcoes.origem,
+    ...(dados.jogo ? { jogo: dados.jogo } : {}),
   };
   await db.treinos.put(link);
   window.dispatchEvent(new Event('vide-questoes-mudou'));

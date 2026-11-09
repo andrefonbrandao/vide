@@ -726,3 +726,45 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .aula.com-material.sem-lateral { grid-template-columns: minmax(300px, 1fr) minmax(0, 2.2fr); }
 .aula-esq-rodape .link-discreto { margin-left: auto; }
 .aula-esq-rodape .controle-fonte { margin-left: 0; }
+
+/* ---------- Forca ---------- */
+.forca-desenho { width: 100%; height: auto; display: block; }
+.forca-desenho line, .forca-desenho circle { stroke: var(--tinta); stroke-width: 4; stroke-linecap: round; fill: none; }
+.forca-boneco line, .forca-boneco circle { stroke: var(--destaque); stroke-width: 4.5; }
+.forca-boneco > * { animation: dica-entra 0.4s ease-out; }
+.forca-desenho.perdeu .forca-boneco line, .forca-desenho.perdeu .forca-boneco circle { stroke: var(--tinta); }
+.forca-palavra { display: flex; flex-wrap: wrap; gap: 0.45em 1em; font-weight: 800; line-height: 1; }
+.forca-grupo { display: inline-flex; gap: 0.16em; }
+.forca-casa { display: inline-flex; justify-content: center; align-items: flex-end; min-width: 0.85em; height: 1.2em; border-bottom: 0.09em solid var(--tinta); text-transform: uppercase; }
+.forca-casa.sinal { border-bottom-color: transparent; min-width: 0.4em; }
+.forca-casa.faltou { color: var(--tinta-3); border-bottom-color: var(--destaque); }
+.forca-erros { font-size: 2cqw; color: var(--tinta-2); }
+.jogo-forca .forca-centro { flex: 1; min-height: 0; display: flex; gap: 4cqw; align-items: center; }
+.jogo-forca .forca-lado { flex: 0 0 20cqw; display: flex; flex-direction: column; align-items: center; gap: 1cqw; }
+.jogo-forca .forca-principal { flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; justify-content: center; overflow: hidden; font-size: 2.2cqw; }
+.forca-conteudo { display: flex; flex-direction: column; gap: 0.9em; }
+.forca-palavra.forca-grande { font-size: 2.3em; }
+.forca-letras { font-size: 1em; display: flex; flex-wrap: wrap; gap: 0.4em 0.9em; align-items: baseline; }
+.forca-letras b { font-size: 1.3em; text-decoration: line-through; text-decoration-color: var(--destaque); text-decoration-thickness: 0.12em; }
+.forca-dicas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35em; line-height: 1.25; }
+.forca-dicas li { background: var(--tinta); color: var(--fundo); border-radius: 0.45em; padding: 0.35em 0.65em; }
+.forca-dicas li.oculta { background: none; color: var(--tinta-2); box-shadow: inset 0 0 0 0.1em var(--linha); }
+.forca-dicas .conceito-num { font-size: 0.7em; margin-right: 0.5em; }
+.forca-veredito { margin: 0; font-size: 1.5em; font-weight: 800; align-self: flex-start; }
+.forca-veredito.venceu { box-shadow: inset 0 -0.25em 0 var(--destaque); }
+.forca-ultima b { font-size: 1.2em; }
+
+/* Forca no celular e no treino */
+.jogar .forca-palavra { font-size: clamp(22px, 7.5vw, 36px); justify-content: center; }
+.jogar-forca-topo { display: flex; gap: 14px; align-items: center; }
+.jogar-forca-topo .forca-desenho { width: 96px; flex: none; }
+.jogar-forca-topo .forca-info { display: flex; flex-direction: column; gap: 4px; font-weight: 700; }
+.jogar-forca-topo .forca-erradas { font-size: 18px; letter-spacing: 0.08em; text-decoration: line-through; text-decoration-color: var(--destaque); }
+.forca-teclado { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.forca-tecla { min-height: 46px; padding: 0; border-radius: 10px; border: 2px solid var(--tinta); background: var(--papel); color: var(--tinta); font-size: 20px; font-weight: 800; cursor: pointer; }
+.forca-tecla.escolhida { background: var(--tinta); color: var(--fundo); box-shadow: 0 0 0 3px var(--destaque); }
+.forca-tecla:disabled { cursor: default; border-color: var(--linha); color: var(--tinta-3); background: transparent; }
+.forca-tecla.errada:disabled { text-decoration: line-through; text-decoration-color: var(--destaque); }
+.forca-tecla.certa:disabled { color: var(--tinta); }
+.forca-votacao { margin: 0; text-align: center; font-weight: 800; }
+.forca-chute summary { cursor: pointer; font-weight: 800; padding: 6px 0; }
