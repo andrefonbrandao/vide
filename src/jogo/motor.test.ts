@@ -117,3 +117,33 @@ describe('adivinhe o conceito', () => {
     expect(m.responderTexto('a', 0, 'a', 10)).toBe('invalido');
   });
 });
+
+describe('respostas digitadas do conceito', () => {
+  test('anota as tentativas sem nome, tolera erro de digitação e guarda o que cada um digitou', () => {
+    const c = (enunciado: string, id: string): QuestaoJogo => ({
+      id, tipo: 'conceito', enunciado, alternativas: [], correta: 0, tempo: 60, explicacao: '', fundamento: '', dicas: ['d1', 'd2'],
+    });
+    const m = new MotorJogo([c('preclusão', 'q1'), c('precluso', 'q2')]);
+    m.entrar('a', 'Ana');
+    m.entrar('b', 'Bia');
+    m.entrar('c', 'Caio');
+    m.avancar(0);
+    expect(m.responderTexto('a', 0, 'preclusao', 1_000)).toBe('certo');
+    expect(m.responderTexto('b', 0, 'precluzão', 2_000)).toBe('certo'); // 1 letra errada
+    expect(m.responderTexto('c', 0, 'decadência', 3_000)).toBe('errado');
+    expect(m.responderTexto('c', 0, 'Decadência', 9_000)).toBe('errado');
+    m.avancar(10_000);
+    expect(m.historico[0].questaoId).toBe('q1');
+    expect(m.historico[0].tentativas).toEqual([
+      { texto: 'decadência', vezes: 2, situacao: 'errada' },
+      { texto: 'precluzão', vezes: 1, situacao: 'parecida' },
+    ]);
+    expect(m.visaoPessoal('c')?.digitou).toBe('Decadência');
+    expect(m.visaoPessoal('b')?.digitou).toBeUndefined();
+    // 2ª rodada: "preclusão" é a resposta do outro conceito, não vale por semelhança
+    m.avancar(10_500); // placar
+    m.avancar(11_000); // 2ª questão
+    expect(m.responderTexto('a', 1, 'preclusão', 12_000)).toBe('errado');
+    expect(m.responderTexto('b', 1, 'precluso', 12_000)).toBe('certo');
+  });
+});

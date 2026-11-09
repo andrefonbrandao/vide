@@ -1,6 +1,6 @@
 // Regras do jogo de perguntas, sem rede nem tela (fácil de testar).
 // Quem roda o motor é o computador do professor; os celulares só recebem o retrato.
-import { dicasVisiveis, pontosConceito, proximaDica, respostaCerta } from './conceito';
+import { conferirResposta, dicasVisiveis, normalizarResposta, pontosConceito, proximaDica } from './conceito';
 import { ESPERA_NOVA_TENTATIVA_MS, type QuestaoJogo, type ResultadoPergunta } from './tipos';
 
 export type Fase = 'sala' | 'pergunta' | 'resultado' | 'ranking' | 'fim';
@@ -20,8 +20,8 @@ interface Jogador {
   pontos: number;
   conectado: boolean;
   acertos: number;
-  /** Resultado da última pergunta encerrada. */
-  ultimo: { resposta: number | null; acertou: boolean; ganho: number } | null;
+  /** Resultado da última pergunta encerrada (no conceito, o último texto errado que digitou). */
+  ultimo: { resposta: number | null; acertou: boolean; ganho: number; digitou?: string } | null;
 }
 
 export interface Classificado {
@@ -91,6 +91,8 @@ export interface VisaoPessoal {
   /** Conceito: errou a última tentativa e precisa esperar este tempo (ms) para tentar de novo. */
   aguardarMs?: number;
   errou?: boolean;
+  /** Conceito, depois da rodada: o último texto errado que ele digitou ("você digitou…"). */
+  digitou?: string;
 }
 
 export type ResultadoTentativa = 'certo' | 'errado' | 'aguarde' | 'invalido';
@@ -105,6 +107,9 @@ export class MotorJogo {
   private respostas = new Map<string, { alt: number; ms: number; dicas?: number }>();
   /** Conceito: última tentativa errada de cada um (para a espera de 5 s). */
   private erros = new Map<string, number>();
+  /** Conceito: último texto errado de cada um e o que foi digitado na rodada (sem nomes). */
+  private ultimoDigitado = new Map<string, string>();
+  private tentativas = new Map<string, { texto: string; vezes: number; situacao: 'parecida' | 'errada' }>();
   /** Números de cada pergunta já encerrada (sem nomes). */
   readonly historico: ResultadoPergunta[] = [];
 
@@ -174,14 +179,35 @@ export class MotorJogo {
     if (agora > this.prazo + 500) return 'invalido';
     const errou = this.erros.get(token);
     if (errou !== undefined && agora - errou < ESPERA_NOVA_TENTATIVA_MS) return 'aguarde';
-    if (!respostaCerta(texto.slice(0, 120), q.enunciado, q.aceitas ?? [])) {
+    const t = texto.slice(0, 120).trim();
+    const conf = conferirResposta(t, q.enunciado, q.aceitas ?? [], this.respostasDeOutrosConceitos());
+    if (conf !== 'exata') this.anotarTentativa(t, conf);
+    if (conf === 'errada') {
       this.erros.set(token, agora);
+      this.ultimoDigitado.set(token, t);
       return 'errado';
     }
+    this.ultimoDigitado.delete(token);
     const ms = Math.max(0, agora - this.inicio);
     this.respostas.set(token, { alt: 0, ms, dicas: dicasVisiveis(q.dicas?.length ?? 0, q.tempo * 1000, ms) });
     this.erros.delete(token);
     return 'certo';
+  }
+
+  /** Respostas certas dos outros conceitos do jogo (não valem por semelhança). */
+  private respostasDeOutrosConceitos(): string[] {
+    return this.questoes.flatMap((q, i) => (q.tipo === 'conceito' && i !== this.indice ? [q.enunciado, ...(q.aceitas ?? [])] : []));
+  }
+
+  /** Anota, sem nome, o que foi digitado (para o professor revisar depois). */
+  private anotarTentativa(texto: string, situacao: 'parecida' | 'errada') {
+    const chave = normalizarResposta(texto);
+    if (!chave) return;
+    const t = this.tentativas.get(chave);
+    if (t) {
+      t.vezes++;
+      if (situacao === 'parecida') t.situacao = 'parecida';
+    } else this.tentativas.set(chave, { texto: texto.toLowerCase(), vezes: 1, situacao });
   }
 
   get respondidas(): number {
@@ -206,6 +232,8 @@ export class MotorJogo {
     this.prazo = agora + q.tempo * 1000;
     this.respostas.clear();
     this.erros.clear();
+    this.ultimoDigitado.clear();
+    this.tentativas.clear();
   }
 
   /** Fim do tempo (ou todos responderam): calcula os pontos e guarda os números. */
@@ -220,7 +248,7 @@ export class MotorJogo {
     for (const j of this.jogadores.values()) {
       const r = this.respostas.get(j.token);
       if (!r) {
-        j.ultimo = { resposta: null, acertou: false, ganho: 0 };
+        j.ultimo = { resposta: null, acertou: false, ganho: 0, digitou: this.ultimoDigitado.get(j.token) };
         semResposta++;
         continue;
       }
@@ -237,6 +265,9 @@ export class MotorJogo {
       correta: conceito ? 0 : q.correta,
       respostas: contagem,
       semResposta,
+      ...(conceito
+        ? { questaoId: q.id, tentativas: [...this.tentativas.values()].sort((a, b) => b.vezes - a.vezes || a.texto.localeCompare(b.texto)) }
+        : {}),
     };
   }
 
@@ -382,6 +413,7 @@ export class MotorJogo {
       acertou: this.fase === 'pergunta' || this.fase === 'sala' ? null : (j.ultimo?.acertou ?? null),
       ganho: this.fase === 'pergunta' ? 0 : (j.ultimo?.ganho ?? 0),
       acertos: j.acertos,
+      ...(this.fase !== 'pergunta' && this.fase !== 'sala' && j.ultimo?.digitou ? { digitou: j.ultimo.digitou } : {}),
     };
   }
 }

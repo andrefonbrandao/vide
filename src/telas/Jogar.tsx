@@ -55,6 +55,8 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
   const [liberaEm, setLiberaEm] = useState(0);
   const [textoResposta, setTextoResposta] = useState('');
   const [enviandoTexto, setEnviandoTexto] = useState(false);
+  /** Conceito: o último texto enviado (para mostrar "'x' não é a resposta"). */
+  const [ultimoEnviado, setUltimoEnviado] = useState('');
   const indiceRef = useRef(-1);
   const [agora, setAgora] = useState(Date.now());
   const salaRef = useRef<ConexaoSala<ParaAluno, DoAluno> | null>(null);
@@ -327,6 +329,7 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
                     const t = textoResposta.trim();
                     if (!t || agora < liberaEm || enviandoTexto) return;
                     setEnviandoTexto(true);
+                    setUltimoEnviado(t);
                     salaRef.current?.enviar({ t: 'responder-texto', indice: retrato.indice, texto: t });
                   }}
                 >
@@ -346,7 +349,12 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
                   <button className="botao-grande primario" disabled={!textoResposta.trim() || agora < liberaEm || enviandoTexto}>
                     {agora < liberaEm ? `Aguarde ${Math.ceil((liberaEm - agora) / 1000)} s` : 'Responder'}
                   </button>
-                  {v.errou && <p className="jogar-errou">{agora < liberaEm ? 'Ainda não. Pense mais um pouco…' : 'Ainda não. Tente outra resposta.'}</p>}
+                  {v.errou && (
+                    <p className="jogar-errou">
+                      {ultimoEnviado ? <>“{ultimoEnviado}” não é a resposta. </> : 'Não é a resposta. '}
+                      {agora < liberaEm ? `Tente de novo em ${Math.ceil((liberaEm - agora) / 1000)} s.` : 'Tente outra resposta.'}
+                    </p>
+                  )}
                 </form>
               )}
             </>
@@ -382,9 +390,16 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
           </p>
           {retrato.ranking && v.acertou && <p className="jogar-grande">+{v.ganho} pontos</p>}
           {retrato.conceito ? (
-            <p className="jogar-posicao">
-              Resposta: <strong>{retrato.conceito}</strong>
-            </p>
+            <>
+              {!v.acertou && v.digitou && (
+                <p className="jogar-digitou">
+                  Você digitou: <strong>{v.digitou}</strong>
+                </p>
+              )}
+              <p className="jogar-posicao">
+                Resposta: <strong>{retrato.conceito}</strong>
+              </p>
+            </>
           ) : (
             retrato.correta != null && (
               <p className="ajuda">

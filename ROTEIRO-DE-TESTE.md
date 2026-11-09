@@ -165,7 +165,8 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
   Tempo: 60
   Assunto: sentença
   ```
-- Na aula, o projetor mostra "Quem sou eu?" e a 1ª dica; as outras aparecem em intervalos iguais (60 s e 3 dicas: 0 s, 20 s e 40 s). O aluno digita a resposta no celular; maiúsculas, acentos e "a/o" no início não importam. Se errar, espera 5 segundos para tentar de novo.
+- Na aula, o projetor mostra "Quem sou eu?" e a 1ª dica; as outras aparecem em intervalos iguais (60 s e 3 dicas: 0 s, 20 s e 40 s). O aluno digita a resposta no celular; maiúsculas, acentos, "a/o", "é a…" no início, plural, hífen e pequenos erros de digitação não importam (1 letra em palavras de 5 a 8 letras, 2 a partir de 9; palavras curtas precisam ser exatas). Se errar, vê "“x” não é a resposta" e espera 5 segundos para tentar de novo. No fim da rodada, quem errou vê no celular o que digitou.
+- Depois do jogo, em **Acervo › Questões › Resultados**, cada conceito mostra o que foi digitado (sem nomes). Use **Aceitar nas próximas** para incluir uma resposta nas aceitas daquele conceito (vale nos próximos jogos e treinos).
 - Quem acerta antes ganha mais pontos (de 1.000 no início a 300 no fim). O projetor mostra quantos já acertaram e com quantas dicas (ex.: "3 com 1 dica · 2 com 2 dicas"), sem nomes. No fim do tempo (ou quando todos acertam), aparece a resposta.
 - No sorteio por assunto, escolha em **Tipo de questão**: todos, só múltipla escolha e V/F, ou só "Adivinhe o conceito".
 

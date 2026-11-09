@@ -49,10 +49,16 @@ export interface ResultadoPergunta {
   respostas: number[];
   /** Quantos participantes não responderam a tempo. */
   semResposta: number;
+  /** Adivinhe o conceito: id da questão no banco (para aceitar respostas depois). */
+  questaoId?: string;
+  /** Adivinhe o conceito: o que foi digitado (sem nomes), com quantas vezes; "parecida" = aceita por semelhança. */
+  tentativas?: { texto: string; vezes: number; situacao: 'parecida' | 'errada'; incluida?: boolean }[];
 }
 
 /** A questão como entra no jogo (só o necessário). */
 export interface QuestaoJogo {
+  /** Id da questão no banco (quando veio de lá). */
+  id?: string;
   tipo: TipoQuestao;
   enunciado: string;
   alternativas: string[];

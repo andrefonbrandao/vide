@@ -112,6 +112,7 @@ export function Treino({ codigo }: { codigo: string }) {
   const [dicasVistas, setDicasVistas] = useState(1);
   const [texto, setTexto] = useState('');
   const [errou, setErrou] = useState(false);
+  const [textoErrado, setTextoErrado] = useState('');
   /** Resultado parcial (para salvar o PDF antes de terminar). */
   const [parcial, setParcial] = useState(false);
 
@@ -170,7 +171,9 @@ export function Treino({ codigo }: { codigo: string }) {
 
   const responderConceito = () => {
     if (!q || !texto.trim()) return;
-    const certo = respostaCerta(texto, q.enunciado, q.aceitas ?? []);
+    // Mesma tolerância do jogo em sala; a resposta exata de outro conceito do treino não vale.
+    const outras = dados!.questoes.filter((x) => x !== q && x.tipo === 'conceito').flatMap((x) => [x.enunciado, ...(x.aceitas ?? [])]);
+    const certo = respostaCerta(texto, q.enunciado, q.aceitas ?? [], outras);
     const tentativas = (respostaAtual?.tentativas ?? 0) + 1;
     if (certo || dados?.mostrar === 'fim') {
       registrar({ texto: texto.trim(), dicas: dicasVistas, tentativas, acertou: certo });
@@ -180,6 +183,7 @@ export function Treino({ codigo }: { codigo: string }) {
       respostas[sessao!.i] = null;
       setSessao({ ...sessao!, respostas });
       setErrou(true);
+      setTextoErrado(texto.trim());
     }
   };
 
@@ -400,7 +404,7 @@ export function Treino({ codigo }: { codigo: string }) {
                 <button className="botao-grande primario" disabled={!texto.trim()}>
                   Responder
                 </button>
-                {errou && <p className="jogar-errou">Ainda não. Tente de novo ou peça mais uma dica.</p>}
+                {errou && <p className="jogar-errou">“{textoErrado}” não é a resposta. Tente de novo ou peça mais uma dica.</p>}
               </form>
               <button
                 className="link-discreto"

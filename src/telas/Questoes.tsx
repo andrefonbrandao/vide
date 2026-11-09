@@ -12,6 +12,7 @@ import {
   listarQuestionarios,
   listarQuestoes,
   listarResultados,
+  aceitarRespostaDigitada,
   assuntosDasQuestoes,
   resultadoCsv,
   salvarQuestao,
@@ -726,7 +727,7 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
       {secao === 'resultados' && (
       <>
       <h2>Resultados dos jogos</h2>
-      <p className="ajuda">Só os números de cada questão (quantos marcaram cada alternativa). Nenhum apelido é guardado.</p>
+      <p className="ajuda">Os números de cada questão (quantos marcaram cada alternativa) e, no "Adivinhe o conceito", o que foi digitado. Nenhum apelido é guardado.</p>
       {!resultados.length && <p className="ajuda">Nenhum jogo encerrado ainda.</p>}
       {resultados.map((r) => {
         const total = r.perguntas.reduce((s, p) => s + p.respostas.reduce((a, n) => a + n, 0) + p.semResposta, 0);
@@ -738,6 +739,10 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
               <span className="ajuda" style={{ margin: 0 }}>
                 {new Date(r.em).toLocaleString('pt-BR')} · {r.participantes} participantes · {total ? Math.round((certas / total) * 100) : 0}% de acerto
               </span>
+              {(() => {
+                const pendentes = r.perguntas.reduce((n, p) => n + (p.tentativas ?? []).filter((t) => t.situacao === 'errada' && !t.incluida).length, 0);
+                return pendentes ? <span className="selo-tentativa">{pendentes} {pendentes === 1 ? 'resposta digitada para revisar' : 'respostas digitadas para revisar'}</span> : null;
+              })()}
               <span className="espaco" />
               <button className="botao pequeno" onClick={() => setAberto(aberto === r.id ? null : r.id)}>
                 {aberto === r.id ? 'Fechar' : 'Ver por questão'}
@@ -760,14 +765,45 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
               <ol className="lista-previa">
                 {r.perguntas.map((p, i) => {
                   const t = p.respostas.reduce((a, n) => a + n, 0) + p.semResposta;
+                  const conceito = !!p.tentativas;
                   return (
                     <li key={i}>
                       {p.enunciado}{' '}
                       <span className="ajuda">
                         · {t ? Math.round((p.respostas[p.correta] / t) * 100) : 0}% de acerto ·{' '}
-                        {p.respostas.map((n, k) => `${LETRAS[k]}: ${n}`).join(' · ')}
-                        {p.semResposta ? ` · sem resposta: ${p.semResposta}` : ''}
+                        {conceito
+                          ? `acertaram: ${p.respostas[0]} · não acertaram: ${p.semResposta}`
+                          : `${p.respostas.map((n, k) => `${LETRAS[k]}: ${n}`).join(' · ')}${p.semResposta ? ` · sem resposta: ${p.semResposta}` : ''}`}
                       </span>
+                      {conceito && (p.tentativas ?? []).length > 0 && (
+                        <div className="tentativas-conceito">
+                          <span className="ajuda" style={{ margin: 0 }}>
+                            O que foi digitado (sem nomes). "Aceitar nas próximas" inclui a resposta nas aceitas deste conceito:
+                          </span>
+                          <ul>
+                            {p.tentativas!.map((tt, k) => (
+                              <li key={k}>
+                                <strong>“{tt.texto}”</strong> <span className="ajuda">· {tt.vezes}×</span>{' '}
+                                {tt.situacao === 'parecida' ? (
+                                  <span className="selo-tentativa">aceita por semelhança</span>
+                                ) : tt.incluida ? (
+                                  <span className="selo-tentativa ok">aceita nas próximas ✓</span>
+                                ) : (
+                                  <button
+                                    className="botao pequeno"
+                                    onClick={async () => {
+                                      const erro = await aceitarRespostaDigitada(r, i, k);
+                                      if (erro) alert(erro);
+                                    }}
+                                  >
+                                    Aceitar nas próximas
+                                  </button>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </li>
                   );
                 })}

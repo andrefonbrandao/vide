@@ -34,9 +34,9 @@ function temposGuardados(): Tempos {
 }
 
 function paraJogo(q: Questao, tempos: Tempos = { alternativas: 0, conceito: 0 }): QuestaoJogo {
-  const { tipo, enunciado, alternativas, correta, explicacao, fundamento, dicas, aceitas } = q;
+  const { id, tipo, enunciado, alternativas, correta, explicacao, fundamento, dicas, aceitas } = q;
   const escolhido = tipo === 'conceito' ? tempos.conceito : tempos.alternativas;
-  return { tipo, enunciado, alternativas, correta, tempo: escolhido || q.tempo, explicacao, fundamento, dicas, aceitas };
+  return { id, tipo, enunciado, alternativas, correta, tempo: escolhido || q.tempo, explicacao, fundamento, dicas, aceitas };
 }
 
 function SeletorTempo({ id, valor, aoMudar }: { id: string; valor: number; aoMudar: (v: number) => void }) {

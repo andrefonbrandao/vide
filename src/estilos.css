@@ -714,3 +714,9 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .resumo-questoes button { border: 1px solid var(--linha); background: transparent; border-radius: 999px; padding: 6px 14px; cursor: pointer; color: var(--tinta-2); font-weight: 600; }
 .resumo-questoes button:hover { border-color: var(--tinta); color: var(--tinta); }
 .resumo-questoes strong { color: var(--tinta); }
+.jogar-digitou { margin: 0; font-size: 18px; }
+.tentativas-conceito { margin: 6px 0 10px; padding: 8px 12px; border-left: 3px solid var(--linha); }
+.tentativas-conceito ul { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.tentativas-conceito li { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.selo-tentativa { font-size: 12px; font-weight: 800; border: 2px solid var(--linha); border-radius: 999px; padding: 1px 8px; color: var(--tinta-2); }
+.selo-tentativa.ok { border-color: var(--tinta); color: var(--tinta); }

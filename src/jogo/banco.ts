@@ -154,3 +154,25 @@ export function sortearQuestoes<T extends Pick<Questao, 'etiquetas'> & { tipo?: 
   }
   return lista.slice(0, Math.max(0, quantas));
 }
+
+/**
+ * "Aceitar nas próximas": acrescenta um texto digitado pelos alunos às respostas aceitas
+ * do conceito (vale para os próximos jogos e treinos; os pontos já dados não mudam).
+ */
+export async function aceitarRespostaDigitada(resultado: ResultadoJogo, iPergunta: number, iTentativa: number): Promise<string | null> {
+  const p = resultado.perguntas[iPergunta];
+  const t = p?.tentativas?.[iTentativa];
+  if (!p || !t) return 'Resposta não encontrada.';
+  const q = p.questaoId ? await db.questoes.get(p.questaoId) : undefined;
+  if (!q || q.excluido_em) return 'A questão deste conceito não está mais no banco.';
+  const aceitas = q.aceitas ?? [];
+  if (!aceitas.some((a) => a.trim().toLowerCase() === t.texto.trim().toLowerCase())) {
+    await db.questoes.put({ ...q, aceitas: [...aceitas, t.texto], atualizado_em: agoraISO() });
+  }
+  const perguntas = resultado.perguntas.map((pp, i) =>
+    i !== iPergunta ? pp : { ...pp, tentativas: pp.tentativas!.map((tt, k) => (k === iTentativa ? { ...tt, incluida: true } : tt)) },
+  );
+  await db.jogos.put({ ...resultado, perguntas, atualizado_em: agoraISO() });
+  avisarMudanca();
+  return null;
+}
