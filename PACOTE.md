@@ -13,11 +13,12 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 6** aberto em 2026-11-09, a partir da versão 0.21.0 (já publicada).
+**Pacote 6** aberto em 2026-11-09, a partir da versão 0.21.0. **Fechado e publicado como versão 0.22.0.**
+O próximo pacote recomeça esta seção a partir da versão publicada.
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| 1 | Jogo de forca: em sala, a turma toda (cada aluno vota numa letra pelo celular; a mais votada entra; quem souber pode digitar a palavra; até 6 erros; sem ranking); no treino em casa, forca individual (formato "Forca" ao gerar o link). A palavra é o conceito das questões "Adivinhe o conceito" | Pronta |
+| 1 | Jogo de forca: em sala, a turma toda (cada aluno vota numa letra pelo celular; a mais votada entra; quem souber pode digitar a palavra; até 6 erros; sem ranking); no treino em casa, forca individual (formato "Forca" ao gerar o link). A palavra é o conceito das questões "Adivinhe o conceito" | Publicada (0.22.0) |
 
 ## Pacotes anteriores
 
