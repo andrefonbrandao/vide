@@ -13,11 +13,12 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 7** aberto em 2026-11-09, a partir da versão 0.22.0 (já publicada).
+**Pacote 7** aberto em 2026-11-09, a partir da versão 0.22.0. **Fechado e publicado como versão 0.23.0.**
+O próximo pacote recomeça esta seção a partir da versão publicada.
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| 1 | Novo jogo "Consulta": um personagem (elenco de 16 desenhado no estilo do Vide, com 4 expressões, sorteado pela linha "Pessoa") conta um caso em balões no projetor; a turma discute em grupo (cronômetro, pausar, +1 minuto; o professor vê a resposta só na sua tela); no fim do tempo o advogado ou o juiz responde, com o fundamento (que pode ser projetado). Sem celular. Nova seção **Acervo › Casos** (colar casos com prévia, pedido pronto para a IA, editar, apagar, sincroniza com o Drive) e treino em casa com casos (o aluno escreve a resposta, vê a do advogado/juiz e se autoavalia; PDF). Os casos discutidos entram no pacote da aula para o Claude | Pronta |
+| 1 | Novo jogo "Consulta": um personagem (elenco de 16 desenhado no estilo do Vide, com 4 expressões, sorteado pela linha "Pessoa") conta um caso em balões no projetor; a turma discute em grupo (cronômetro, pausar, +1 minuto; o professor vê a resposta só na sua tela); no fim do tempo o advogado ou o juiz responde, com o fundamento (que pode ser projetado). Sem celular. Nova seção **Acervo › Casos** (colar casos com prévia, pedido pronto para a IA, editar, apagar, sincroniza com o Drive) e treino em casa com casos (o aluno escreve a resposta, vê a do advogado/juiz e se autoavalia; PDF). Os casos discutidos entram no pacote da aula para o Claude | Publicada (0.23.0) |
 
 ## Pacotes anteriores
 
