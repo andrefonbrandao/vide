@@ -29,7 +29,8 @@ import { chaveItemArtigo, resolver } from '../comum/legislacao';
 import { Detector, chaveReferencia } from '../voz/detector';
 import { Folha } from './Projecao';
 import { AdicionarMaterial, ListaMateriais } from './Materiais';
-import { IcLei, IcMais, IcPasta, IcPerguntas, IcTeste } from '../comum/Icones';
+import { IcCasos, IcLei, IcMais, IcPasta, IcPerguntas, IcTeste } from '../comum/Icones';
+import { Casos } from './Casos';
 import { AdicionarQuestoes, ListaQuestoes } from './Questoes';
 
 interface Parte {
@@ -64,7 +65,7 @@ function montarItens(artigos: ArtigoFatiado[], def: DefDiploma, arquivo: string,
 
 const OUTRA = '__outra';
 
-type AbaAcervo = 'legislacao' | 'materiais' | 'questoes' | 'testes' | 'nova-norma' | 'novo-material' | 'novas-questoes';
+type AbaAcervo = 'legislacao' | 'materiais' | 'questoes' | 'casos' | 'testes' | 'nova-norma' | 'novo-material' | 'novas-questoes';
 
 export function Acervo() {
   const [aba, setAbaEstado] = useState<AbaAcervo>(() => {
@@ -84,6 +85,8 @@ export function Acervo() {
   };
   const [leis, setLeis] = useState<Diploma[]>([]);
   const [menuMais, setMenuMais] = useState(false);
+  /** Muda para abrir a seção Casos de novo (ex.: direto em "Adicionar casos"). */
+  const [chaveCasos, setChaveCasos] = useState(0);
   const maisRef = useRef<HTMLDivElement>(null);
   const recarregar = async () => setLeis(await listarDiplomas());
   useEffect(() => {
@@ -119,6 +122,7 @@ export function Acervo() {
         {botaoAba('legislacao', 'Legislação', <IcLei />)}
         {botaoAba('materiais', 'Materiais', <IcPasta />)}
         {botaoAba('questoes', 'Questões', <IcPerguntas />)}
+        {botaoAba('casos', 'Casos', <IcCasos />)}
         {botaoAba('testes', 'Testes', <IcTeste />)}
         <div className="mais-acervo" ref={maisRef}>
           <button
@@ -153,6 +157,27 @@ export function Acervo() {
                   <span className="opcao-menu-desc">Escrever ou colar questões para o jogo de perguntas.</span>
                 </span>
               </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="opcao-menu"
+                onClick={() => {
+                  try {
+                    sessionStorage.setItem('vide.secaoCasos', 'adicionar');
+                  } catch {
+                    /* ignore */
+                  }
+                  setAba('casos');
+                  setChaveCasos((n) => n + 1);
+                  setMenuMais(false);
+                }}
+              >
+                <IcCasos />
+                <span>
+                  <strong>Adicionar casos</strong>
+                  <span className="opcao-menu-desc">Colar casos para o jogo Consulta (com o pedido pronto para a IA).</span>
+                </span>
+              </button>
             </div>
           )}
         </div>
@@ -162,6 +187,7 @@ export function Acervo() {
       {aba === 'materiais' && <ListaMateriais aoAdicionar={() => setAba('novo-material')} />}
       {aba === 'questoes' && <ListaQuestoes aoAdicionar={() => setAba('novas-questoes')} />}
       {aba === 'novas-questoes' && <AdicionarQuestoes aoVer={() => setAba('questoes')} />}
+      {aba === 'casos' && <Casos key={chaveCasos} />}
       {aba === 'testes' && (
         <>
           <Conferir leis={leis} />

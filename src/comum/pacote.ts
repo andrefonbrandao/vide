@@ -59,7 +59,8 @@ export function montarPacote(eventos: EventoRegistro[], indice: Map<string, Item
   const falas = eventos.filter((e) => e.tipo === 'fala' && !ehFalaDeTeste(e) && e.texto.trim());
   const projecoes = eventos.filter((e) => e.tipo === 'projetado');
   const ehFala = new Set(falas);
-  const relevantes = eventos.filter((e) => ehFala.has(e) || e.tipo === 'projetado');
+  const casos = eventos.filter((e) => e.tipo === 'caso');
+  const relevantes = eventos.filter((e) => ehFala.has(e) || e.tipo === 'projetado' || e.tipo === 'caso');
 
   const saida: string[] = [];
   if (relevantes.length) {
@@ -86,6 +87,12 @@ export function montarPacote(eventos: EventoRegistro[], indice: Map<string, Item
   };
   for (const e of relevantes) {
     const t = new Date(e.em).getTime();
+    if (e.tipo === 'caso') {
+      fecharParagrafo();
+      saida.push(`[${hora(e.em)} — caso projetado para discussão em grupo: ${e.texto.replace(/^Caso: /, '')} (texto completo em CASOS DISCUTIDOS)]`);
+      saida.push('');
+      continue;
+    }
     if (e.tipo === 'projetado') {
       fecharParagrafo();
       saida.push(`[${hora(e.em)} — projetado: ${e.texto}]`);
@@ -132,6 +139,20 @@ export function montarPacote(eventos: EventoRegistro[], indice: Map<string, Item
     saida.push(`— ${titulo}`);
     saida.push('(texto não disponível)');
     saida.push('');
+  }
+  // ---------- Casos (jogo "Consulta") ----------
+  if (casos.length) {
+    saida.push('CASOS DISCUTIDOS NA AULA (consulta simulada, resolvida em grupo pela turma)');
+    saida.push('');
+    for (const e of casos) {
+      const d = e.dados ?? {};
+      const falas = Array.isArray(d.falas) ? (d.falas as unknown[]).map(String) : [];
+      saida.push(`— ${e.texto} (às ${hora(e.em)})`);
+      for (const f of falas) saida.push(`  "${f}"`);
+      if (typeof d.resposta === 'string' && d.resposta) saida.push(`Resposta (${d.quem_responde === 'juiz' ? 'juiz' : 'advogado'}): ${d.resposta}`);
+      if (typeof d.fundamento === 'string' && d.fundamento) saida.push(`Fundamento: ${d.fundamento}`);
+      saida.push('');
+    }
   }
   return saida.join('\n').trimEnd() + '\n';
 }

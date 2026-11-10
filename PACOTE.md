@@ -17,7 +17,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| 1 | Novo jogo "Consulta": um personagem (elenco desenhado no estilo do Vide, sorteado, com expressões) conta um caso em balões no projetor; a turma discute em grupo (tempo folgado, com pausar e +1 minuto); no fim, o advogado ou o juiz responde no balão, com o fundamento. Sem celular. Também no treino em casa | Em preparação |
+| 1 | Novo jogo "Consulta": um personagem (elenco de 16 desenhado no estilo do Vide, com 4 expressões, sorteado pela linha "Pessoa") conta um caso em balões no projetor; a turma discute em grupo (cronômetro, pausar, +1 minuto; o professor vê a resposta só na sua tela); no fim do tempo o advogado ou o juiz responde, com o fundamento (que pode ser projetado). Sem celular. Nova seção **Acervo › Casos** (colar casos com prévia, pedido pronto para a IA, editar, apagar, sincroniza com o Drive) e treino em casa com casos (o aluno escreve a resposta, vê a do advogado/juiz e se autoavalia; PDF). Os casos discutidos entram no pacote da aula para o Claude | Pronta |
 
 ## Pacotes anteriores
 

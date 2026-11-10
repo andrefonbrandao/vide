@@ -193,6 +193,15 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 5. Com 6 erros, a forca vence. **Revelar a palavra** encerra a rodada a qualquer momento; **Próxima palavra** segue.
 6. No treino em casa: em **Acervo › Questões › Treinos em casa**, escolha o formato **Forca**. Ali cada aluno joga sozinho (palavra errada conta um erro).
 
+## Consulta (casos com personagens, em grupo)
+
+1. Em **Acervo › Casos › Adicionar casos**, escreva o tema e clique em **Copiar pedido para a IA**. Cole no Claude, copie a resposta e cole no campo **Casos**. Confira a prévia (personagem, balões, resposta) e clique em **Guardar**.
+2. Revise a resposta e o fundamento de cada caso (**Ver** e **Editar** na lista).
+3. Na aula, em **Atividades › Consulta (em grupo)**, sorteie por assunto ou escolha os casos e clique em **Começar a consulta**.
+4. As falas aparecem uma a uma e o cronômetro corre. **Pausar** e **+1 minuto** ajustam o tempo; **Ver a resposta (só na sua tela)** mostra a resposta só para você.
+5. No fim do tempo (ou ao clicar em **Mostrar a resposta**), o advogado ou o juiz responde. **Projetar fundamento** põe o artigo ao lado.
+6. Treino em casa: **Acervo › Casos › Treino em casa › Compartilhar casos para treino**.
+
 ## Guardar o acervo no Google Drive (vários computadores)
 
 1. No alto do Vide, clique em **Google Drive** › **Entrar com o Google** e entre com a sua conta. Na primeira vez, o Google pede para autorizar o Vide a usar o Drive: autorize.

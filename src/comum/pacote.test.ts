@@ -69,3 +69,22 @@ describe('pacote da aula', () => {
     expect(vazio).toContain('(nenhum dispositivo foi projetado nesta sessão)');
   });
 });
+
+describe('pacote com casos da consulta', () => {
+  test('marca o caso na transcrição e traz o texto completo', () => {
+    const ev = (tipo: EventoRegistro['tipo'], em: string, texto: string, dados?: Record<string, unknown>): EventoRegistro => ({ sessao_id: 's', em, tipo, texto, dados });
+    const txt = montarPacote(
+      [
+        ev('fala', '2026-11-10T13:00:00Z', 'vamos ao caso'),
+        ev('caso', '2026-11-10T13:01:00Z', 'Caso: Rogéria', { falas: ['Sou ré.', 'Posso me esconder?'], resposta: 'Não adianta.', quem_responde: 'juiz', fundamento: '252' }),
+      ],
+      new Map(),
+      (s) => s,
+    );
+    expect(txt).toContain('caso projetado para discussão em grupo: Rogéria');
+    expect(txt).toContain('CASOS DISCUTIDOS NA AULA');
+    expect(txt).toContain('"Posso me esconder?"');
+    expect(txt).toContain('Resposta (juiz): Não adianta.');
+    expect(txt).toContain('Fundamento: 252');
+  });
+});

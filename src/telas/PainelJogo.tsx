@@ -5,6 +5,7 @@ import { assuntosDasQuestoes, listarQuestionarios, listarQuestoes, questoesDo, s
 import { rotuloAvancar } from '../jogo/motor';
 import { OPCOES_VOTO_FORCA, VOTO_PADRAO_FORCA, type Questao, type QuestaoJogo, type Questionario } from '../jogo/tipos';
 import { JogoTela } from './JogoTela';
+import { EscolherConsulta } from './PainelConsulta';
 import type { ControladorAula } from './controlador';
 
 export function useJogo() {
@@ -15,7 +16,7 @@ export function useJogo() {
 type Modo = 'assunto' | 'questionario';
 const CHAVE_MODO = 'vide.jogoModo';
 /** Que jogo: perguntas (alternativas e conceito) ou forca (a turma toda). */
-type Jogo = 'perguntas' | 'forca';
+type Jogo = 'perguntas' | 'forca' | 'consulta';
 const CHAVE_JOGO = 'vide.jogoTipo';
 const CHAVE_VOTO = 'vide.jogoVotoForca';
 
@@ -89,7 +90,10 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
   const [assunto, setAssunto] = useState<string>('');
   const [quantas, setQuantas] = useState(10);
   const [tiposEscolhidos, setTipos] = useState<FiltroTipo>('todos');
-  const [jogo, setJogoEstado] = useState<Jogo>(() => (lerPref<string>(CHAVE_JOGO, 'perguntas') === 'forca' ? 'forca' : 'perguntas'));
+  const [jogo, setJogoEstado] = useState<Jogo>(() => {
+    const j = lerPref<string>(CHAVE_JOGO, 'perguntas');
+    return j === 'forca' || j === 'consulta' ? j : 'perguntas';
+  });
   const setJogo = (j: Jogo) => (setJogoEstado(j), gravarPref(CHAVE_JOGO, j));
   const [votoS, setVotoEstado] = useState<number>(() => lerPref(CHAVE_VOTO, VOTO_PADRAO_FORCA));
   const setVoto = (v: number) => (setVotoEstado(v), gravarPref(CHAVE_VOTO, v));
@@ -146,11 +150,11 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
       if (!sorteadas.length) return;
       const n = sorteadas.length;
       const nome = `${forca ? `Forca · ${n} ${n === 1 ? 'palavra' : 'palavras'}` : `${n} ${n === 1 ? 'questão' : 'questões'}`} · ${assunto === '*' ? 'todos os assuntos' : assunto}`;
-      anfitriao().iniciar(nome, sorteadas.map((q) => paraJogo(q, tempos)), ranking, { modo: jogo, votoS });
+      anfitriao().iniciar(nome, sorteadas.map((q) => paraJogo(q, tempos)), ranking, { modo: forca ? 'forca' : 'perguntas', votoS });
     } else {
       const q = lista?.find((x) => x.id === escolhido);
       if (!q) return;
-      anfitriao().iniciar(forca ? `Forca · ${q.nome}` : q.nome, (await questoesDo(q)).map((x) => paraJogo(x, tempos)), ranking, { modo: jogo, votoS });
+      anfitriao().iniciar(forca ? `Forca · ${q.nome}` : q.nome, (await questoesDo(q)).map((x) => paraJogo(x, tempos)), ranking, { modo: forca ? 'forca' : 'perguntas', votoS });
     }
     aoFechar();
   };
@@ -163,13 +167,25 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
       <div className="modal" role="dialog" aria-label="Atividades">
         <h2>Atividades</h2>
         <div className="linha-opcoes" role="tablist" aria-label="Que jogo" style={{ marginBottom: 6 }}>
-          <button role="tab" aria-selected={!forca} className={`botao${!forca ? ' escuro' : ''}`} onClick={() => setJogo('perguntas')}>
+          <button role="tab" aria-selected={jogo === 'perguntas'} className={`botao${jogo === 'perguntas' ? ' escuro' : ''}`} onClick={() => setJogo('perguntas')}>
             Jogo de perguntas
           </button>
           <button role="tab" aria-selected={forca} className={`botao${forca ? ' escuro' : ''}`} onClick={() => setJogo('forca')}>
             Forca (a turma toda)
           </button>
+          <button role="tab" aria-selected={jogo === 'consulta'} className={`botao${jogo === 'consulta' ? ' escuro' : ''}`} onClick={() => setJogo('consulta')}>
+            Consulta (em grupo)
+          </button>
         </div>
+        {jogo === 'consulta' ? (
+          <>
+            <p className="ajuda">
+              Um personagem conta um caso em balões no projetor. A turma discute em grupo e, no fim do tempo, o advogado ou o juiz responde. Não usa celular.
+            </p>
+            <EscolherConsulta aoFechar={aoFechar} />
+          </>
+        ) : (
+        <>
         <p className="ajuda">
           {forca
             ? 'A palavra é o conceito das questões "Adivinhe o conceito". Os alunos entram pelo celular, só com um apelido, e votam numa letra; a mais votada entra. Quem souber a palavra pode digitá-la. Sem ranking: a turma joga junta, até 6 erros.'
@@ -341,6 +357,8 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
             Abrir a sala
           </button>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

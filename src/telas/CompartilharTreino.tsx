@@ -23,7 +23,7 @@ function semAcento(t: string): string {
   return t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
-function LinkPronto({ link }: { link: LinkTreino }) {
+export function LinkPronto({ link }: { link: LinkTreino }) {
   const url = urlDoTreino(link.codigo);
   const [copiado, setCopiado] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);

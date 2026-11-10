@@ -120,6 +120,8 @@ export interface EventoRegistro {
     | 'outro_diploma'
     | 'candidato'
     | 'projetado'
+    /** Jogo "Consulta": um caso foi mostrado (com o texto, para o pacote da aula). */
+    | 'caso'
     | 'recolhido'
     | 'comando_voz'
     | 'voz'

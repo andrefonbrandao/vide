@@ -12,6 +12,8 @@ import { IcPerguntas, IcCelular, IcMicrofone, IcNovaSessao, IcPausa, IcPin, IcPr
 import { PareamentoCelular } from './PareamentoCelular';
 import { IniciarJogo, PainelJogo, useJogo } from './PainelJogo';
 import { anfitriao } from '../jogo/anfitriao';
+import { apresentador } from '../consulta/apresentador';
+import { PainelConsulta, useConsulta } from './PainelConsulta';
 import type { StatusVoz } from '../voz/reconhecedor';
 import { obterConstrutor } from '../voz/reconhecedor';
 
@@ -178,7 +180,8 @@ export function Aula({ ativa }: { ativa: boolean }) {
         const card = ev.target instanceof Element ? ev.target.closest<HTMLElement>('[data-candidato]') : null;
         if (card?.dataset.candidato) return ctl.projetarCandidato(card.dataset.candidato);
         if (ehInterface(ev.target)) return;
-        if (anfitriao().ativo) anfitriao().avancar();
+        if (apresentador().ativo) apresentador().avancar();
+        else if (anfitriao().ativo) anfitriao().avancar();
         else ctl.cliqueProjetar();
       }
     };
@@ -190,10 +193,11 @@ export function Aula({ ativa }: { ativa: boolean }) {
       if (ehInterface(ev.target) && (ev.target as Element).matches('input, textarea')) return;
       const est = ctl.obter();
       const k = ev.key;
-      if (anfitriao().ativo && (k === 'PageDown' || k === 'Enter' || k === ' ' || k === 'ArrowRight')) {
-        // Jogo de perguntas: o passador e o Enter avançam o jogo.
+      if ((anfitriao().ativo || apresentador().ativo) && (k === 'PageDown' || k === 'Enter' || k === ' ' || k === 'ArrowRight')) {
+        // Jogo de perguntas ou consulta: o passador e o Enter avançam.
         ev.preventDefault();
-        anfitriao().avancar();
+        if (apresentador().ativo) apresentador().avancar();
+        else anfitriao().avancar();
       } else if (k === 'PageDown' || k === 'PageUp') {
         // Passador de slides: com material, sempre passa a página.
         ev.preventDefault();
@@ -249,6 +253,8 @@ export function Aula({ ativa }: { ativa: boolean }) {
   const [verCelular, setVerCelular] = useState(false);
   const [verJogo, setVerJogo] = useState(false);
   const jogo = useJogo();
+  const consulta = useConsulta();
+  const atividade = jogo.ativo || consulta.ativo;
   const [carregando, setCarregando] = useState(false);
 
   const carregarMaterial = async (arquivo: File | undefined) => {
@@ -274,7 +280,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
   };
 
   return (
-    <div className={`aula${e.material || jogo.ativo ? ' com-material' : ''}${verTranscricao ? '' : ' sem-lateral'}`}>
+    <div className={`aula${e.material || atividade ? ' com-material' : ''}${verTranscricao ? '' : ' sem-lateral'}`}>
       <div className="aula-topo" data-ui>
         {!e.escutando ? (
           <button className="botao primario com-icone" onClick={() => ctl.iniciar()} disabled={!suporte}>
@@ -297,11 +303,11 @@ export function Aula({ ativa }: { ativa: boolean }) {
           <IcTelaCheia /> Tela cheia
         </button>
         <button
-          className={`botao com-icone${jogo.ativo ? ' escuro' : ''}`}
-          onClick={() => !jogo.ativo && setVerJogo(true)}
-          title="Atividades: jogo de perguntas, com os alunos respondendo pelo celular"
+          className={`botao com-icone${atividade ? ' escuro' : ''}`}
+          onClick={() => !atividade && setVerJogo(true)}
+          title="Atividades: jogo de perguntas, forca ou consulta"
         >
-          <IcPerguntas /> {jogo.ativo ? `Jogo aberto · ${jogo.codigo}` : 'Atividades'}
+          <IcPerguntas /> {jogo.ativo ? `Jogo aberto · ${jogo.codigo}` : consulta.ativo ? 'Consulta aberta' : 'Atividades'}
         </button>
         <span className="espaco" />
         <button
@@ -467,7 +473,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
         </div>
       </div>
 
-      {jogo.ativo ? <PainelJogo ctl={ctl} /> : e.material && <PainelMaterial e={e} ctl={ctl} />}
+      {jogo.ativo ? <PainelJogo ctl={ctl} /> : consulta.ativo ? <PainelConsulta ctl={ctl} /> : e.material && <PainelMaterial e={e} ctl={ctl} />}
       {verJogo && <IniciarJogo aoFechar={() => setVerJogo(false)} />}
       {verCelular && <PareamentoCelular e={e} ctl={ctl} aoFechar={() => setVerCelular(false)} />}
 

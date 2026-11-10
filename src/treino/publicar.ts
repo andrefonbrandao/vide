@@ -8,29 +8,49 @@ import type { Questao } from '../jogo/tipos';
 import { gerarToken } from '../jogo/protocolo';
 import type { Referencia } from '../voz/detector';
 import { lerDigitado } from '../voz/digitado';
-import type { DadosTreino, LinkTreino, QuestaoTreino } from './tipos';
+import type { CasoTreino, DadosTreino, LinkTreino, QuestaoTreino } from './tipos';
+import type { Caso } from '../consulta/tipos';
+
+type Indice = Awaited<ReturnType<typeof carregarIndice>>;
+
+/** O texto do artigo do fundamento ("485 VI"), tirado do acervo deste computador. */
+function artigoDoFundamento(fundamento: string, indice: Indice): QuestaoTreino['artigo'] {
+  if (!fundamento.trim()) return null;
+  const lido = lerDigitado(fundamento, todosDiplomas(), diplomaPrincipal());
+  if (!lido.ok) return null;
+  const ref: Referencia = { ...lido.ref, explicito: true, contexto: false, inicio: 0, fim: 0, trecho: fundamento };
+  const res = resolver(ref, indice, 'treino');
+  return res ? { titulo: res.titulo, blocos: res.projetavel.blocos.map((b) => ({ rotulo: b.rotulo, texto: b.texto, nivel: b.nivel, destaque: b.destaque })) } : null;
+}
 
 /** Leva junto o texto do artigo do fundamento (tirado do acervo deste computador). */
 export async function prepararQuestoes(questoes: Questao[]): Promise<QuestaoTreino[]> {
   const indice = await carregarIndice();
   return questoes.map((q) => {
     const { tipo, enunciado, alternativas, correta, tempo, explicacao, fundamento, dicas, aceitas } = q;
-    let artigo: QuestaoTreino['artigo'] = null;
-    if (fundamento.trim()) {
-      const lido = lerDigitado(fundamento, todosDiplomas(), diplomaPrincipal());
-      if (lido.ok) {
-        const ref: Referencia = { ...lido.ref, explicito: true, contexto: false, inicio: 0, fim: 0, trecho: fundamento };
-        const res = resolver(ref, indice, 'treino');
-        if (res) artigo = { titulo: res.titulo, blocos: res.projetavel.blocos.map((b) => ({ rotulo: b.rotulo, texto: b.texto, nivel: b.nivel, destaque: b.destaque })) };
-      }
-    }
-    return { tipo, enunciado, alternativas, correta, tempo, explicacao, fundamento, dicas, aceitas, artigo };
+    return { tipo, enunciado, alternativas, correta, tempo, explicacao, fundamento, dicas, aceitas, artigo: artigoDoFundamento(fundamento, indice) };
   });
+}
+
+export async function prepararCasos(casos: Caso[]): Promise<CasoTreino[]> {
+  const indice = await carregarIndice();
+  return casos.map(({ nome, pessoa, falas, resposta, quemResponde, fundamento, tempo }) => ({
+    nome,
+    pessoa,
+    falas,
+    resposta,
+    quemResponde,
+    fundamento,
+    tempo,
+    artigo: artigoDoFundamento(fundamento, indice),
+  }));
 }
 
 export async function criarLinkTreino(opcoes: {
   titulo: string;
   questoes: Questao[];
+  /** Consulta: os casos (com jogo: 'consulta'). */
+  casos?: Caso[];
   modo: DadosTreino['modo'];
   quantas: number;
   mostrar: DadosTreino['mostrar'];
@@ -39,17 +59,21 @@ export async function criarLinkTreino(opcoes: {
 }): Promise<LinkTreino> {
   // A forca usa só os conceitos.
   const questoes = opcoes.jogo === 'forca' ? opcoes.questoes.filter((q) => q.tipo === 'conceito' && q.enunciado.trim()) : opcoes.questoes;
-  if (!questoes.length) throw new Error('Nenhuma questão "Adivinhe o conceito" para a forca.');
+  const casos = opcoes.jogo === 'consulta' ? (opcoes.casos ?? []) : [];
+  if (opcoes.jogo === 'consulta' ? !casos.length : !questoes.length)
+    throw new Error(opcoes.jogo === 'consulta' ? 'Nenhum caso escolhido.' : opcoes.jogo === 'forca' ? 'Nenhuma questão "Adivinhe o conceito" para a forca.' : 'Nenhuma questão escolhida.');
+  const total = opcoes.jogo === 'consulta' ? casos.length : questoes.length;
   const chave = gerarToken();
   const dados: DadosTreino = {
     formato: 'vide-treino@1',
     titulo: opcoes.titulo.trim() || 'Treino',
     criado_em: agoraISO(),
     modo: opcoes.modo,
-    quantas: opcoes.modo === 'sorteio' ? Math.max(1, Math.min(opcoes.quantas, questoes.length)) : questoes.length,
+    quantas: opcoes.modo === 'sorteio' ? Math.max(1, Math.min(opcoes.quantas, total)) : total,
     mostrar: opcoes.mostrar,
     ...(opcoes.jogo ? { jogo: opcoes.jogo } : {}),
-    questoes: await prepararQuestoes(questoes),
+    questoes: opcoes.jogo === 'consulta' ? [] : await prepararQuestoes(questoes),
+    ...(opcoes.jogo === 'consulta' ? { casos: await prepararCasos(casos) } : {}),
   };
   const r = await fetch('/api/treino', {
     method: 'POST',
@@ -71,7 +95,7 @@ export async function criarLinkTreino(opcoes: {
     modo: dados.modo,
     quantas: dados.quantas,
     mostrar: dados.mostrar,
-    total: dados.questoes.length,
+    total,
     origem: opcoes.origem,
     ...(dados.jogo ? { jogo: dados.jogo } : {}),
   };

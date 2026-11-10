@@ -19,6 +19,7 @@ export interface Personagem {
   corRoupa: string;
   oculos?: boolean;
   barba?: 'barba' | 'bigode';
+  brincos?: boolean;
 }
 
 const PELE = ['#f3d2b3', '#e3b08a', '#c98c64', '#9a6443', '#6b412b'];
@@ -29,8 +30,8 @@ export const ELENCO: Personagem[] = [
   { id: 'm1', pessoa: 'mulher', idade: 'jovem', papel: 'consulente', pele: PELE[1], cabelo: 'longo', corCabelo: CABELO.castanho, roupa: 'camiseta', corRoupa: ROUPA.coral },
   { id: 'm2', pessoa: 'mulher', idade: 'adulto', papel: 'consulente', pele: PELE[4], cabelo: 'cacheado', corCabelo: CABELO.preto, roupa: 'camisa', corRoupa: ROUPA.mostarda },
   { id: 'm3', pessoa: 'mulher', idade: 'idoso', papel: 'consulente', pele: PELE[0], cabelo: 'coque', corCabelo: CABELO.grisalho, roupa: 'cardiga', corRoupa: ROUPA.ameixa, oculos: true },
-  { id: 'm4', pessoa: 'mulher', idade: 'adulto', papel: 'consulente', pele: PELE[2], cabelo: 'chanel', corCabelo: CABELO.preto, roupa: 'camiseta', corRoupa: ROUPA.salvia },
-  { id: 'm5', pessoa: 'mulher', idade: 'idoso', papel: 'consulente', pele: PELE[3], cabelo: 'curtinho', corCabelo: CABELO.grisalho, roupa: 'camisa', corRoupa: ROUPA.azul },
+  { id: 'm4', pessoa: 'mulher', idade: 'adulto', papel: 'consulente', pele: PELE[2], cabelo: 'chanel', corCabelo: CABELO.preto, roupa: 'camiseta', corRoupa: ROUPA.salvia, brincos: true },
+  { id: 'm5', pessoa: 'mulher', idade: 'idoso', papel: 'consulente', pele: PELE[3], cabelo: 'curtinho', corCabelo: CABELO.grisalho, roupa: 'camisa', corRoupa: ROUPA.azul, brincos: true },
   { id: 'm6', pessoa: 'mulher', idade: 'jovem', papel: 'consulente', pele: PELE[0], cabelo: 'rabo', corCabelo: CABELO.ruivo, roupa: 'moletom', corRoupa: ROUPA.verde },
   { id: 'h1', pessoa: 'homem', idade: 'jovem', papel: 'consulente', pele: PELE[3], cabelo: 'curto', corCabelo: CABELO.preto, roupa: 'camiseta', corRoupa: ROUPA.azul },
   { id: 'h2', pessoa: 'homem', idade: 'adulto', papel: 'consulente', pele: PELE[0], cabelo: 'curto', corCabelo: CABELO.castanho, roupa: 'camisa', corRoupa: ROUPA.salvia, barba: 'barba' },
@@ -39,7 +40,7 @@ export const ELENCO: Personagem[] = [
   { id: 'h5', pessoa: 'homem', idade: 'jovem', papel: 'consulente', pele: PELE[1], cabelo: 'arrepiado', corCabelo: CABELO.loiro, roupa: 'moletom', corRoupa: ROUPA.verde },
   { id: 'h6', pessoa: 'homem', idade: 'idoso', papel: 'consulente', pele: PELE[4], cabelo: 'curto', corCabelo: CABELO.grisalho, roupa: 'cardiga', corRoupa: ROUPA.azul, barba: 'barba' },
   // Quem responde.
-  { id: 'adv-m', pessoa: 'mulher', idade: 'adulto', papel: 'advogado', pele: PELE[2], cabelo: 'rabo', corCabelo: CABELO.preto, roupa: 'tailleur', corRoupa: ROUPA.verde },
+  { id: 'adv-m', pessoa: 'mulher', idade: 'adulto', papel: 'advogado', pele: PELE[2], cabelo: 'rabo', corCabelo: CABELO.preto, roupa: 'tailleur', corRoupa: ROUPA.verde, brincos: true },
   { id: 'adv-h', pessoa: 'homem', idade: 'adulto', papel: 'advogado', pele: PELE[3], cabelo: 'curto', corCabelo: CABELO.preto, roupa: 'terno', corRoupa: ROUPA.verde },
   { id: 'juiz-m', pessoa: 'mulher', idade: 'adulto', papel: 'juiz', pele: PELE[0], cabelo: 'chanel', corCabelo: CABELO.castanho, roupa: 'toga', corRoupa: '#1d211f', oculos: true },
   { id: 'juiz-h', pessoa: 'homem', idade: 'idoso', papel: 'juiz', pele: PELE[1], cabelo: 'curto', corCabelo: CABELO.grisalho, roupa: 'toga', corRoupa: '#1d211f' },
@@ -200,7 +201,9 @@ function rosto(p: Personagem, e: Expressao): string {
 
 /** O personagem em SVG (texto), com a expressão pedida. */
 export function desenharPersonagem(p: Personagem, e: Expressao = 'neutro'): string {
-  const orelha = `<ellipse cx="60" cy="98" rx="7" ry="10" fill="${p.pele}"/><ellipse cx="140" cy="98" rx="7" ry="10" fill="${p.pele}"/>`;
+  const orelha =
+    `<ellipse cx="60" cy="98" rx="7" ry="10" fill="${p.pele}"/><ellipse cx="140" cy="98" rx="7" ry="10" fill="${p.pele}"/>` +
+    (p.brincos ? `<circle cx="59" cy="110" r="3.6" fill="#e8735a"/><circle cx="141" cy="110" r="3.6" fill="#e8735a"/>` : '');
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" class="personagem">` +
     cabeloAtras(p) +

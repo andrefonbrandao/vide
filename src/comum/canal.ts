@@ -4,6 +4,8 @@ import type { Projetavel } from './legislacao';
 import type { Regiao } from '../material/regiao';
 import type { VisaoTela } from '../jogo/motor';
 
+import type { TelaConsulta } from '../consulta/apresentador';
+
 /** O jogo de perguntas como a projeção o desenha. */
 export interface TelaJogo extends VisaoTela {
   codigo: string;
@@ -31,6 +33,8 @@ export type Mensagem =
   | { t: 'recarregar' }
   /** Jogo de perguntas na tela (null = sem jogo). */
   | { t: 'jogo'; jogo: TelaJogo | null }
+  /** Jogo "Consulta" (casos com personagens) na tela (null = sem consulta). */
+  | { t: 'consulta'; consulta: TelaConsulta | null }
   | { t: 'ping' }
   // projeção -> apresentador
   | { t: 'ola' }

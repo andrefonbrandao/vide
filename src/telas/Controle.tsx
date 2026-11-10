@@ -216,7 +216,7 @@ export function Controle({ codigo }: { codigo: string }) {
       {estado?.jogo && (
         <section className="controle-jogo">
           <span className="ajuda" style={{ margin: 0 }}>
-            Jogo de perguntas
+            {estado.jogo.fase === 'consulta' ? `Consulta · caso ${estado.jogo.indice + 1} de ${estado.jogo.total}` : 'Jogo de perguntas'}
             {estado.jogo.fase === 'pergunta'
               ? ` · questão ${estado.jogo.indice + 1} de ${estado.jogo.total} · ${estado.jogo.respondidas} de ${estado.jogo.aResponder} responderam`
               : estado.jogo.fase === 'sala'

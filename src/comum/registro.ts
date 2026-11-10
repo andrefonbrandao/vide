@@ -119,6 +119,7 @@ const ROTULOS: Record<EventoRegistro['tipo'], string> = {
   outro_diploma: 'outro diploma',
   candidato: 'candidato',
   projetado: '>>> PROJETADO',
+  caso: '>>> CASO (consulta)',
   recolhido: '<<< recolhido',
   comando_voz: 'COMANDO DE VOZ',
   voz: 'voz',

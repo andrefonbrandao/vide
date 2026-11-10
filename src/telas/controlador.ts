@@ -15,6 +15,8 @@ import { lerDigitado } from '../voz/digitado';
 import { Reconhecedor, nomeNavegador, type StatusVoz } from '../voz/reconhecedor';
 import { ConexaoSala, type StatusConexao } from '../remoto/conexao';
 import { anfitriao } from '../jogo/anfitriao';
+import { apresentador } from '../consulta/apresentador';
+import { rotuloAvancarConsulta } from '../consulta/rotulo';
 import { rotuloAvancar } from '../jogo/motor';
 import { gerarCodigo, type EnvioDoComputador, type MsgDoCelular, type MsgDoComputador } from '../remoto/protocolo';
 
@@ -197,6 +199,7 @@ export class ControladorAula {
     // A cada mudança, manda o retrato da aula para o celular (no máximo ~6 vezes por segundo).
     this.ouvintes.add(() => this.agendarEnvioRemoto());
     anfitriao().assinar(() => this.agendarEnvioRemoto());
+    apresentador().assinar(() => this.agendarEnvioRemoto());
   }
 
   // ---------- estado / React ----------
@@ -354,7 +357,8 @@ export class ControladorAula {
         else this.diminuirFonte('celular');
         break;
       case 'jogo-avancar':
-        anfitriao().avancar();
+        if (apresentador().ativo) apresentador().avancar();
+        else anfitriao().avancar();
         break;
       case 'marcar':
         this.marcar();
@@ -390,6 +394,8 @@ export class ControladorAula {
       projecaoConectada: e.projecao.conectada,
       ultimaFala: (e.parcial ? `${ultimas} ${e.parcial}` : ultimas).slice(-240),
       jogo: (() => {
+        const c = apresentador().obter().tela;
+        if (c) return { fase: 'consulta', indice: c.indice, total: c.total, respondidas: 0, aResponder: 0, avancar: rotuloAvancarConsulta(c) };
         const j = anfitriao().obter().tela;
         return j
           ? { fase: j.fase, indice: j.indice, total: j.total, respondidas: j.respondidas, aResponder: j.aResponder, avancar: rotuloAvancar(j) }
@@ -723,7 +729,7 @@ export class ControladorAula {
 
   private layoutAtual(): LayoutArtigo {
     // Com slide ou jogo de perguntas na tela, o artigo pode entrar ao lado.
-    return (this.estado.material && !this.estado.telaPreta) || anfitriao().ativo ? this.estado.layoutArtigo : 'cheia';
+    return (this.estado.material && !this.estado.telaPreta) || anfitriao().ativo || apresentador().ativo ? this.estado.layoutArtigo : 'cheia';
   }
 
   /**

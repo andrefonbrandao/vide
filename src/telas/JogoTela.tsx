@@ -13,7 +13,7 @@ import { DesenhoForca, PalavraForca } from './Forca';
  * a letra diminui aos poucos até caber inteiro (sem cortar), até um mínimo de 35%.
  * modo "pai": cabe na altura útil do elemento pai; "max": cabe na altura máxima (max-height) do pai.
  */
-function Cabe({ children, className, modo = 'pai', chave }: { children: ReactNode; className?: string; modo?: 'pai' | 'max'; chave: string }) {
+export function Cabe({ children, className, modo = 'pai', chave }: { children: ReactNode; className?: string; modo?: 'pai' | 'max'; chave: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
     const el = ref.current;

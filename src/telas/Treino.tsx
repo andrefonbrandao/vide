@@ -9,6 +9,7 @@ import { LETRAS } from '../jogo/tipos';
 import type { DadosTreino, QuestaoTreino } from '../treino/tipos';
 import { Forma } from './JogoTela';
 import { DesenhoForca, PalavraForca, TecladoForca } from './Forca';
+import { TreinoCasos } from './TreinoCasos';
 
 interface Resposta {
   /** Múltipla escolha / V-F: alternativa marcada. */
@@ -256,6 +257,8 @@ export function Treino({ codigo }: { codigo: string }) {
       </div>
     );
   }
+
+  if (dados.jogo === 'consulta') return <TreinoCasos dados={dados} codigo={codigo} topo={topo} />;
 
   // Início
   if (!sessao) {
