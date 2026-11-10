@@ -778,15 +778,25 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .consulta-palco { position: relative; flex: 1; min-height: 0; margin: 0 -4cqw -3cqw; }
 .consulta-pessoa { position: absolute; left: 3cqw; bottom: 0; width: 23cqw; transition: width 0.5s ease; }
 .na-resposta .consulta-pessoa { width: 15cqw; left: 2cqw; }
-.consulta-respondente { position: absolute; right: 3cqw; bottom: 0; width: 20cqw; animation: dica-entra 0.5s ease-out; }
+.consulta-respondente { position: absolute; right: 3cqw; bottom: 0; width: 20cqw; animation: respondente-entra 0.7s cubic-bezier(0.2, 0.8, 0.3, 1); }
+@keyframes respondente-entra { from { transform: translateX(110%); } to { transform: none; } }
 .consulta-nome { position: absolute; left: 50%; bottom: 1.2cqw; transform: translateX(-50%); background: var(--tinta); color: var(--fundo); border-radius: 99cqw; padding: 0.4cqw 1.6cqw; font-size: 1.8cqw; font-weight: 800; white-space: nowrap; }
 .consulta-baloes { position: absolute; left: 28cqw; right: 4cqw; top: 1cqw; bottom: 3cqw; display: flex; flex-direction: column; justify-content: flex-end; font-size: 2.6cqw; transition: left 0.5s ease, right 0.5s ease; }
 .na-resposta .consulta-baloes { left: 19cqw; right: 25cqw; }
-.consulta-pilha { display: flex !important; flex-direction: column; gap: 0.5em; align-items: flex-start; }
-.balao { position: relative; margin: 0; background: var(--papel); color: var(--tinta); border: 0.12em solid var(--tinta); border-radius: 0.8em; padding: 0.55em 0.9em; line-height: 1.3; font-weight: 700; max-width: 100%; animation: dica-entra 0.45s ease-out; }
-.balao.antigo { color: var(--tinta-2); border-color: var(--linha); font-size: 0.85em; }
-.balao.pergunta { font-weight: 800; box-shadow: inset 0 -0.22em 0 var(--destaque); }
-.balao.resposta { align-self: flex-end; background: var(--tinta); color: var(--fundo); border-color: var(--tinta); }
+.consulta-pilha { display: flex !important; flex-direction: column; gap: 0.5em; align-items: flex-start; padding: 0 0.8em; }
+.balao { position: relative; margin: 0; background: var(--papel); color: var(--tinta); border-radius: 0.8em; padding: 0.55em 0.9em; line-height: 1.3; font-weight: 700; max-width: 100%; box-shadow: 0 0.25em 0.7em rgba(30, 58, 52, 0.13), 0 0.04em 0 rgba(30, 58, 52, 0.08); animation: balao-entra 0.45s cubic-bezier(0.2, 0.8, 0.3, 1.2); }
+.balao.antigo { color: var(--tinta-2); font-size: 0.85em; box-shadow: 0 0.1em 0.3em rgba(30, 58, 52, 0.08); }
+.balao.pergunta { font-weight: 800; box-shadow: 0 0.25em 0.7em rgba(30, 58, 52, 0.13), inset 0 -0.22em 0 var(--destaque); }
+.balao.resposta { align-self: flex-end; background: var(--tinta); color: var(--fundo); }
+/* "Rabinho" do balão mais recente, apontando para quem fala. */
+.consulta-pilha .balao.ult::before { content: ''; position: absolute; left: -0.45em; bottom: 0.7em; width: 0.9em; height: 0.9em; background: inherit; transform: rotate(45deg); border-radius: 0.15em; z-index: -1; }
+.consulta-pilha .balao.resposta.ult::before { left: auto; right: -0.45em; }
+.balao.digitando { display: inline-flex; gap: 0.3em; padding: 0.75em 1em; }
+.balao.digitando span { width: 0.42em; height: 0.42em; border-radius: 50%; background: var(--tinta-3); animation: digitando 1s infinite; }
+.balao.digitando span:nth-child(2) { animation-delay: 0.15s; }
+.balao.digitando span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes digitando { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-0.25em); opacity: 1; } }
+@keyframes balao-entra { from { opacity: 0; transform: translateY(0.4em) scale(0.96); } to { opacity: 1; transform: none; } }
 .consulta-fundamento { align-self: flex-end; background: var(--destaque); color: var(--tinta); border-radius: 99em; padding: 0.2em 0.8em; font-size: 0.8em; font-weight: 800; }
 .consulta-cola { background: var(--papel); border: 2px dashed var(--linha); border-radius: 12px; padding: 8px 12px; }
 .consulta-cola summary { cursor: pointer; font-weight: 800; }
@@ -803,3 +813,16 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .previa-caso .balao small { opacity: 0.8; font-weight: 800; }
 .lista-casos .figura.mini { width: 40px; flex: none; }
 .previa-caso .balao, .treino-caso .balao { animation: none; }
+
+/* Personagens: piscar, respirar e troca suave de expressão. */
+.figura { position: relative; }
+.figura-saindo { position: absolute; inset: 0; animation: figura-sai 0.4s ease forwards; pointer-events: none; }
+@keyframes figura-sai { to { opacity: 0; } }
+.figura .vd-respira { animation: vd-respira 4s ease-in-out infinite; transform-origin: 100px 220px; }
+@keyframes vd-respira { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-1.5px) scale(1.008); } }
+.figura .vd-olhos { animation: vd-piscar 4.6s infinite; animation-delay: var(--atraso, 0s); transform-box: fill-box; transform-origin: center; }
+@keyframes vd-piscar { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.08); } }
+.figura.mini .vd-respira, .figura.mini .vd-olhos { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .figura .vd-respira, .figura .vd-olhos, .balao, .balao.digitando span, .consulta-respondente { animation: none; }
+}

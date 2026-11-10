@@ -1,8 +1,9 @@
 // O jogo "Consulta" no projetor (e na prévia da tela do professor): o personagem conta
 // o caso em balões, a turma discute e, no fim, o advogado ou o juiz responde.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { TelaConsulta } from '../consulta/apresentador';
-import { desenharPersonagem, ELENCO, type Expressao, type Personagem } from '../consulta/personagens';
+import { desenharRefinado } from '../consulta/desenho';
+import { ELENCO, type Expressao, type Personagem } from '../consulta/personagens';
 import type { Fala } from '../consulta/tipos';
 import { Cabe } from './JogoTela';
 
@@ -13,12 +14,34 @@ export function nomeDoPapel(p: Personagem | undefined): string {
   return '';
 }
 
-/** O desenho do personagem (SVG feito pelo próprio app, sem texto vindo de fora). */
+/**
+ * O desenho do personagem (SVG feito pelo próprio app, sem texto vindo de fora).
+ * Pisca e respira (CSS); ao trocar de expressão, a anterior some aos poucos por cima.
+ */
 export function Figura({ id, expressao, className }: { id: string; expressao: Expressao; className?: string }) {
   const p = ELENCO.find((x) => x.id === id) ?? ELENCO[0];
-  const svg = useMemo(() => desenharPersonagem(p, expressao), [p, expressao]);
-  return <div className={`figura${className ? ` ${className}` : ''}`} dangerouslySetInnerHTML={{ __html: svg }} />;
+  const svg = useMemo(() => desenharRefinado(p, expressao), [p, expressao]);
+  const [anterior, setAnterior] = useState<string | null>(null);
+  const ultimo = useRef(svg);
+  // Cada personagem pisca num ritmo um pouco diferente.
+  const atraso = useMemo(() => `${(id.length * 0.7 + id.charCodeAt(0) / 40) % 4}s`, [id]);
+  useEffect(() => {
+    if (ultimo.current === svg) return;
+    setAnterior(ultimo.current);
+    ultimo.current = svg;
+    const t = window.setTimeout(() => setAnterior(null), 400);
+    return () => window.clearTimeout(t);
+  }, [svg]);
+  return (
+    <div className={`figura${className ? ` ${className}` : ''}`} style={{ ['--atraso' as string]: atraso }}>
+      <div dangerouslySetInnerHTML={{ __html: svg }} />
+      {anterior && <div className="figura-saindo" dangerouslySetInnerHTML={{ __html: anterior }} />}
+    </div>
+  );
 }
+
+/** Três pontinhos de "digitando…" antes de cada fala nova. */
+const DIGITANDO_MS = 900;
 
 function Relogio({ prazo, pausadoResta }: { prazo: number; pausadoResta: number | null }) {
   const [agora, setAgora] = useState(Date.now());
@@ -51,19 +74,40 @@ export function Baloes({
   fundamento?: string;
   chave: string;
 }) {
-  const mostradas = falas.slice(0, visiveis);
+  // Fala nova durante o caso: primeiro os pontinhos, depois o balão.
+  const [digitando, setDigitando] = useState(!resposta);
+  const anterior = useRef(resposta ? visiveis : 0);
+  useEffect(() => {
+    if (resposta || visiveis <= anterior.current) {
+      anterior.current = visiveis;
+      setDigitando(false);
+      return;
+    }
+    anterior.current = visiveis;
+    setDigitando(true);
+    const t = window.setTimeout(() => setDigitando(false), DIGITANDO_MS);
+    return () => window.clearTimeout(t);
+  }, [visiveis, resposta]);
+  const mostradas = falas.slice(0, digitando ? Math.max(0, visiveis - 1) : visiveis);
   return (
-    <Cabe chave={chave} className="cabe-bloco consulta-pilha">
+    <Cabe chave={`${chave}:${digitando}`} className="cabe-bloco consulta-pilha">
       {mostradas.map((f, i) => {
-        const ultima = i === mostradas.length - 1;
+        const ultima = i === mostradas.length - 1 && !digitando;
         const pergunta = i === falas.length - 1;
         return (
-          <p key={i} className={`balao${!ultima || resposta ? ' antigo' : ''}${pergunta && !resposta ? ' pergunta' : ''}`}>
+          <p key={i} className={`balao${!ultima || resposta ? ' antigo' : ' ult'}${pergunta && !resposta ? ' pergunta' : ''}`}>
             {f.texto}
           </p>
         );
       })}
-      {resposta && <p className="balao resposta">{resposta}</p>}
+      {digitando && (
+        <p className="balao ult digitando" aria-label="digitando">
+          <span />
+          <span />
+          <span />
+        </p>
+      )}
+      {resposta && <p className="balao resposta ult">{resposta}</p>}
       {resposta && fundamento && <span className="consulta-fundamento">Fundamento: {fundamento}</span>}
     </Cabe>
   );

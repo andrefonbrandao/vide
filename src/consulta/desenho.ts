@@ -244,7 +244,7 @@ function rosto(p: Personagem, e: Expressao): string {
 
 /** O personagem em SVG (texto), com a expressão pedida, no estilo refinado. */
 export function desenharRefinado(p: Personagem, e: Expressao = 'neutro', opcoes: { fundo?: boolean } = {}): string {
-  const fundo = opcoes.fundo !== false ? `<circle cx="100" cy="112" r="92" fill="${mistura(p.corRoupa === '#1d211f' ? '#6f8f75' : p.corRoupa, '#eef0ea', 0.78)}"/>` : '';
+  const fundo = opcoes.fundo !== false ? `<circle cx="100" cy="126" r="100" fill="${mistura(p.corRoupa === '#1d211f' ? '#6f8f75' : p.corRoupa, '#eef0ea', 0.78)}"/>` : '';
   const orelha = (x: number, dx: number) =>
     `<ellipse cx="${x}" cy="98" rx="7" ry="10" fill="${p.pele}" stroke="${escuro(p.pele, 0.3)}" stroke-width="1.2"/><path d="M${x + dx} 93 q${-dx} 5 0 10" stroke="${escuro(p.pele, 0.3)}" stroke-width="1.4" fill="none"/>`;
   const brincos = p.brincos ? `<circle cx="59" cy="110" r="3.4" fill="#e8735a" stroke="${escuro('#e8735a', 0.3)}" stroke-width="1"/><circle cx="141" cy="110" r="3.4" fill="#e8735a" stroke="${escuro('#e8735a', 0.3)}" stroke-width="1"/>` : '';

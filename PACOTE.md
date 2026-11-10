@@ -18,6 +18,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | Pedido para a IA (Acervo › Casos): deixa claro que é preciso variar quem consulta (mulher ou homem; jovem, adulto ou idoso) e quem responde (juiz ou advogado), para os casos não saírem todos com o mesmo tipo de personagem; explica que o Vide sorteia se quem responde aparece como homem ou mulher | Pronta |
+| 2 | Personagens da Consulta com acabamento refinado: luz e sombra, contornos no tom da cor, rosto mais cuidado, círculo de fundo, selo de martelo (juiz) ou pasta (advogado); animações: piscar, respirar, troca suave de expressão, "digitando…" antes de cada fala, balões com sombra e "rabinho", quem responde entra deslizando | Pronta |
 
 ## Pacotes anteriores
 
