@@ -14,7 +14,7 @@ import type { Caso } from '../consulta/tipos';
 type Indice = Awaited<ReturnType<typeof carregarIndice>>;
 
 /** O texto do artigo do fundamento ("485 VI"), tirado do acervo deste computador. */
-function artigoDoFundamento(fundamento: string, indice: Indice): QuestaoTreino['artigo'] {
+export function artigoDoFundamento(fundamento: string, indice: Indice): QuestaoTreino['artigo'] {
   if (!fundamento.trim()) return null;
   const lido = lerDigitado(fundamento, todosDiplomas(), diplomaPrincipal());
   if (!lido.ok) return null;

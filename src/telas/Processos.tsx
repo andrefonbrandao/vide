@@ -2,11 +2,61 @@
 // (capa, partes, eventos com as peças e a liberação para a turma).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { criarProcesso, excluirProcesso, lerProcesso, listarProcessos, novaParte, novoDocumento, novoEvento, salvarProcesso } from '../processo/banco';
+
+function hojeISO(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Copiar um processo para um novo semestre (datas reprogramadas). */
+function CopiarProcesso({ p, aoCriar, aoCancelar }: { p: Processo; aoCriar: (id: string) => void; aoCancelar: () => void }) {
+  const [titulo, setTitulo] = useState(`${p.titulo} (cópia)`);
+  const [inicio, setInicio] = useState(hojeISO());
+  return (
+    <form
+      className="cartao"
+      style={{ flexBasis: '100%' }}
+      onSubmit={async (ev) => {
+        ev.preventDefault();
+        const novo = await salvarProcesso(copiarProcesso(p, titulo, inicio));
+        aoCriar(novo.id);
+      }}
+    >
+      <div className="grade-2">
+        <div className="campo">
+          <label htmlFor={`copia-titulo-${p.id}`}>Nome da cópia</label>
+          <input id={`copia-titulo-${p.id}`} type="text" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
+        </div>
+        <div className="campo">
+          <label htmlFor={`copia-inicio-${p.id}`}>Nova data de autuação (início)</label>
+          <input id={`copia-inicio-${p.id}`} type="date" value={inicio} onChange={(e) => setInicio(e.target.value)} required />
+        </div>
+      </div>
+      <p className="ajuda">
+        Todas as datas andam juntas: a autuação era em {new Date(`${p.capa.autuadoEm}T12:00`).toLocaleDateString('pt-BR')}; eventos e liberações são deslocados pelo
+        mesmo número de dias. Os eventos que estavam liberados passam a aparecer na data do evento; os segurados continuam segurados. A cópia
+        recebe um novo número e ainda não é publicada.
+      </p>
+      <div className="modal-botoes">
+        <button className="botao primario">Criar a cópia</button>
+        <button type="button" className="botao" onClick={aoCancelar}>
+          Cancelar
+        </button>
+      </div>
+    </form>
+  );
+}
+import { copiarProcesso } from '../processo/copiar';
 import { gerarNumero } from '../processo/numero';
-import { dadosParaPublicar, desativarProcesso, publicarProcesso } from '../processo/publicar';
-import { urlDoProcesso, type Documento, type Evento, type Parte, type Processo } from '../processo/tipos';
+import { db } from '../dados/db';
+import type { Material } from '../dados/modelo';
+import { importarMaterial, listarMateriais } from '../material/documento';
+import { comArtigos, dadosParaPublicar, desativarProcesso, MAX_PDF, publicarProcesso } from '../processo/publicar';
+import { urlDoProcesso, type DadosProcesso, type Documento, type Evento, type Parte, type Processo } from '../processo/tipos';
 import { LinkEQr } from './CompartilharTreino';
-import { TextoPeca, VisaoProcesso } from './ProcessoAluno';
+import { buscarNoAcervo, PdfDaPeca, TextoPeca, VisaoProcesso } from './ProcessoAluno';
+
+
 
 const DESCRICOES = [
   'PETIÇÃO INICIAL',
@@ -70,9 +120,47 @@ function rotuloLiberacao(e: Evento): string {
 // ---------------------------------------------------------------------------
 // Editor de texto da peça (marcações simples, com botões).
 
+function EditorPdf({ doc, aoMudar }: { doc: Documento; aoMudar: (d: Documento) => void }) {
+  const [ver, setVer] = useState(false);
+  const [nome, setNome] = useState('');
+  useEffect(() => {
+    if (doc.materialId) void db.materiais.get(doc.materialId).then((m) => setNome(m ? m.nome : '(PDF não encontrado neste computador)'));
+  }, [doc.materialId]);
+  return (
+    <div className="proc-editor-doc">
+      <div className="grade-2">
+        <div className="campo">
+          <label htmlFor={`sigla-${doc.id}`}>Sigla</label>
+          <input id={`sigla-${doc.id}`} type="text" value={doc.sigla} onChange={(e) => aoMudar({ ...doc, sigla: e.target.value.toUpperCase().replace(/\s+/g, '') })} />
+        </div>
+        <div className="campo">
+          <label htmlFor={`tit-${doc.id}`}>Título do documento</label>
+          <input id={`tit-${doc.id}`} type="text" value={doc.titulo} onChange={(e) => aoMudar({ ...doc, titulo: e.target.value })} />
+        </div>
+      </div>
+      <div className="linha-opcoes">
+        <span>
+          PDF: <strong>{nome}</strong>
+          {doc.paginas ? <span className="ajuda" style={{ margin: 0 }}> · {doc.paginas} {doc.paginas === 1 ? 'página' : 'páginas'}</span> : null}
+        </span>
+        <span className="espaco" />
+        <button type="button" className={`botao pequeno${ver ? ' escuro' : ''}`} onClick={() => setVer(!ver)}>
+          {ver ? 'Esconder' : 'Ver o PDF'}
+        </button>
+      </div>
+      {ver && doc.materialId && (
+        <div className="proc-folha" style={{ padding: 12 }}>
+          <PdfDaPeca arquivo={doc.materialId} buscar={buscarNoAcervo} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function EditorPeca({ doc, aoMudar }: { doc: Documento; aoMudar: (d: Documento) => void }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [ver, setVer] = useState(false);
+  if (doc.tipo === 'pdf') return <EditorPdf doc={doc} aoMudar={aoMudar} />;
   const inserir = (antes: string, depois = '', inicioDeLinha = false) => {
     const t = ref.current;
     if (!t) return;
@@ -149,6 +237,74 @@ function EditorPeca({ doc, aoMudar }: { doc: Documento; aoMudar: (d: Documento) 
 
 // ---------------------------------------------------------------------------
 
+/** Botões para juntar um documento ao evento: escrever, anexar PDF ou usar um material do acervo. */
+function NovoDocumento({ p, e, aoMudar }: { p: Processo; e: Evento; aoMudar: (e: Evento) => void }) {
+  const entrada = useRef<HTMLInputElement>(null);
+  const [escolher, setEscolher] = useState(false);
+  const [pdfs, setPdfs] = useState<Material[]>([]);
+  const [erro, setErro] = useState<string | null>(null);
+  const titulo = e.descricao ? e.descricao.charAt(0) + e.descricao.slice(1).toLowerCase() : '';
+  const juntarPdf = (m: Pick<Material, 'id' | 'nome' | 'paginas'>) => {
+    const d = novoDocumento(proximaSigla(p, e.descricao), titulo || m.nome);
+    aoMudar({ ...e, documentos: [...e.documentos, { ...d, tipo: 'pdf', materialId: m.id, paginas: m.paginas }] });
+    setEscolher(false);
+  };
+  return (
+    <div className="linha-opcoes">
+      <button type="button" className="botao pequeno" onClick={() => aoMudar({ ...e, documentos: [...e.documentos, novoDocumento(proximaSigla(p, e.descricao), titulo)] })}>
+        + Peça escrita
+      </button>
+      <button type="button" className="botao pequeno" onClick={() => entrada.current?.click()}>
+        + Anexar PDF
+      </button>
+      <button
+        type="button"
+        className={`botao pequeno${escolher ? ' escuro' : ''}`}
+        onClick={async () => {
+          setPdfs((await listarMateriais()).filter((m) => m.tipo === 'pdf'));
+          setEscolher(!escolher);
+        }}
+      >
+        + PDF dos materiais
+      </button>
+      <input
+        ref={entrada}
+        type="file"
+        accept="application/pdf,.pdf"
+        hidden
+        onChange={async (ev) => {
+          const f = ev.target.files?.[0];
+          ev.target.value = '';
+          if (!f) return;
+          setErro(null);
+          if (f.size > MAX_PDF) return setErro('O PDF passa de 10 MB. Reduza o arquivo (por exemplo, "Salvar como PDF reduzido") e tente de novo.');
+          try {
+            const m = await importarMaterial(f, { pasta: `Processos/${p.titulo.replace(/\//g, '-')}` });
+            juntarPdf(m);
+          } catch (err) {
+            setErro((err as Error).message);
+          }
+        }}
+      />
+      {escolher && (
+        <select className="seletor" aria-label="PDF dos materiais" defaultValue="" onChange={(ev) => { const m = pdfs.find((x) => x.id === ev.target.value); if (m) juntarPdf(m); }}>
+          <option value="" disabled>
+            {pdfs.length ? 'Escolha um PDF…' : 'Nenhum PDF nos materiais'}
+          </option>
+          {pdfs.map((m) => (
+            <option key={m.id} value={m.id} disabled={m.tamanho > MAX_PDF}>
+              {m.pasta ? `${m.pasta} / ` : ''}
+              {m.nome}
+              {m.tamanho > MAX_PDF ? ' (mais de 10 MB)' : ''}
+            </option>
+          ))}
+        </select>
+      )}
+      {erro && <p className="digitar-msg erro" style={{ flexBasis: '100%' }}>{erro}</p>}
+    </div>
+  );
+}
+
 function EditorEvento({
   p,
   e,
@@ -224,15 +380,7 @@ function EditorEvento({
             </button>
           </div>
         ))}
-        <div>
-          <button
-            type="button"
-            className="botao pequeno"
-            onClick={() => aoMudar({ ...e, documentos: [...e.documentos, novoDocumento(proximaSigla(p, e.descricao), e.descricao ? e.descricao.charAt(0) + e.descricao.slice(1).toLowerCase() : '')] })}
-          >
-            + Documento
-          </button>
-        </div>
+        <NovoDocumento p={p} e={e} aoMudar={aoMudar} />
       </div>
       <div className="linha-opcoes">
         <button type="button" className="botao pequeno" disabled={numero === 1} onClick={() => aoMover(-1)}>
@@ -387,6 +535,16 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
   );
 
   const dados = useMemo(() => (p ? dadosParaPublicar(p) : null), [p]);
+  // Prévia com os artigos citados clicáveis (lê o acervo deste computador).
+  const [previa, setPrevia] = useState<DadosProcesso | null>(null);
+  useEffect(() => {
+    if (aba !== 'previa' || !dados) return;
+    let vivo = true;
+    void comArtigos(dados).then((d) => vivo && setPrevia(d));
+    return () => {
+      vivo = false;
+    };
+  }, [aba, dados]);
   if (!p || !dados) return <p className="ajuda">Carregando…</p>;
   const c = p.capa;
   const campoCapa = (k: keyof typeof c, rotulo: string, extra: Record<string, unknown> = {}) => (
@@ -601,7 +759,7 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
       {aba === 'previa' && (
         <div className="proc-previa">
           <p className="ajuda">É assim que a turma vê. Os eventos em itálico ainda não aparecem para os alunos (segurados ou agendados).</p>
-          <VisaoProcesso dados={dados} previa />
+          <VisaoProcesso dados={previa ?? dados} previa buscar={buscarNoAcervo} />
         </div>
       )}
     </>
@@ -618,6 +776,7 @@ export function Processos() {
     }
   });
   const [novoTitulo, setNovoTitulo] = useState('');
+  const [copiando, setCopiando] = useState<string | null>(null);
   const abrir = (id: string | null) => {
     setAberto(id);
     try {
@@ -670,6 +829,9 @@ export function Processos() {
               <button className="botao pequeno escuro" onClick={() => abrir(p.id)}>
                 Abrir
               </button>
+              <button className={`botao pequeno${copiando === p.id ? ' escuro' : ''}`} onClick={() => setCopiando(copiando === p.id ? null : p.id)} title="Copiar para um novo semestre, com as datas reprogramadas">
+                Copiar
+              </button>
               <button
                 className="botao pequeno"
                 onClick={async () => {
@@ -680,6 +842,7 @@ export function Processos() {
               >
                 Apagar
               </button>
+              {copiando === p.id && <CopiarProcesso p={p} aoCriar={(id) => (setCopiando(null), abrir(id))} aoCancelar={() => setCopiando(null)} />}
             </li>
           ))}
         </ul>

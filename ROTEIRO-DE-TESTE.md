@@ -202,6 +202,17 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 5. No fim do tempo (ou ao clicar em **Mostrar a resposta**), o advogado ou o juiz responde. **Projetar fundamento** põe o artigo ao lado.
 6. Treino em casa: **Acervo › Casos › Treino em casa › Compartilhar casos para treino**.
 
+## Processo fictício da turma
+
+1. Em **Acervo › Processos**, dê um nome e clique em **Novo processo em branco**.
+2. **Capa**: confira o número (fictício, "tribunal 99"), a classe, o juízo, o juiz, o valor da causa. **Partes**: autor, réu e advogados.
+3. **Eventos**: **+ Evento**, descrição e usuário; junte documentos com **+ Peça escrita** (botões de título, citação, negrito…), **+ Anexar PDF** ou **+ PDF dos materiais**. Escreva "art. 319 do CPC" numa peça: o aluno poderá clicar e ler o artigo.
+4. Em **Para a turma**, cada evento fica segurado (só você vê), agendado numa data ou liberado. Evento novo começa segurado.
+5. **Ver como a turma vê** mostra a prévia; **Publicar para a turma** gera o link e o QR. Depois disso, as mudanças vão para o link sozinhas.
+6. Abra o link no celular: capa, partes, eventos e peças; os eventos novos aparecem como "novidades".
+7. Na aula: **Atividades › Processo da turma** projeta o processo; clique numa sigla (INIC1…) para projetar a peça e use **Liberar o evento…** para soltar o próximo ato.
+8. No semestre seguinte: **Copiar** o processo, com a nova data de início; as datas andam juntas.
+
 ## Guardar o acervo no Google Drive (vários computadores)
 
 1. No alto do Vide, clique em **Google Drive** › **Entrar com o Google** e entre com a sua conta. Na primeira vez, o Google pede para autorizar o Vide a usar o Drive: autorize.

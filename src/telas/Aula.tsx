@@ -14,6 +14,7 @@ import { IniciarJogo, PainelJogo, useJogo } from './PainelJogo';
 import { anfitriao } from '../jogo/anfitriao';
 import { apresentador } from '../consulta/apresentador';
 import { PainelConsulta, useConsulta } from './PainelConsulta';
+import { PainelProcesso, useAulaProcesso } from './PainelProcesso';
 import type { StatusVoz } from '../voz/reconhecedor';
 import { obterConstrutor } from '../voz/reconhecedor';
 
@@ -254,7 +255,8 @@ export function Aula({ ativa }: { ativa: boolean }) {
   const [verJogo, setVerJogo] = useState(false);
   const jogo = useJogo();
   const consulta = useConsulta();
-  const atividade = jogo.ativo || consulta.ativo;
+  const processoAula = useAulaProcesso();
+  const atividade = jogo.ativo || consulta.ativo || processoAula.ativo;
   const [carregando, setCarregando] = useState(false);
 
   const carregarMaterial = async (arquivo: File | undefined) => {
@@ -307,7 +309,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
           onClick={() => !atividade && setVerJogo(true)}
           title="Atividades: jogo de perguntas, forca ou consulta"
         >
-          <IcPerguntas /> {jogo.ativo ? `Jogo aberto · ${jogo.codigo}` : consulta.ativo ? 'Consulta aberta' : 'Atividades'}
+          <IcPerguntas /> {jogo.ativo ? `Jogo aberto · ${jogo.codigo}` : consulta.ativo ? 'Consulta aberta' : processoAula.ativo ? 'Processo aberto' : 'Atividades'}
         </button>
         <span className="espaco" />
         <button
@@ -473,7 +475,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
         </div>
       </div>
 
-      {jogo.ativo ? <PainelJogo ctl={ctl} /> : consulta.ativo ? <PainelConsulta ctl={ctl} /> : e.material && <PainelMaterial e={e} ctl={ctl} />}
+      {jogo.ativo ? <PainelJogo ctl={ctl} /> : consulta.ativo ? <PainelConsulta ctl={ctl} /> : processoAula.ativo ? <PainelProcesso /> : e.material && <PainelMaterial e={e} ctl={ctl} />}
       {verJogo && <IniciarJogo aoFechar={() => setVerJogo(false)} />}
       {verCelular && <PareamentoCelular e={e} ctl={ctl} aoFechar={() => setVerCelular(false)} />}
 

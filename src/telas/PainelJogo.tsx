@@ -6,6 +6,7 @@ import { rotuloAvancar } from '../jogo/motor';
 import { OPCOES_VOTO_FORCA, VOTO_PADRAO_FORCA, type Questao, type QuestaoJogo, type Questionario } from '../jogo/tipos';
 import { JogoTela } from './JogoTela';
 import { EscolherConsulta } from './PainelConsulta';
+import { EscolherProcesso } from './PainelProcesso';
 import type { ControladorAula } from './controlador';
 
 export function useJogo() {
@@ -16,7 +17,7 @@ export function useJogo() {
 type Modo = 'assunto' | 'questionario';
 const CHAVE_MODO = 'vide.jogoModo';
 /** Que jogo: perguntas (alternativas e conceito) ou forca (a turma toda). */
-type Jogo = 'perguntas' | 'forca' | 'consulta';
+type Jogo = 'perguntas' | 'forca' | 'consulta' | 'processo';
 const CHAVE_JOGO = 'vide.jogoTipo';
 const CHAVE_VOTO = 'vide.jogoVotoForca';
 
@@ -92,7 +93,7 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
   const [tiposEscolhidos, setTipos] = useState<FiltroTipo>('todos');
   const [jogo, setJogoEstado] = useState<Jogo>(() => {
     const j = lerPref<string>(CHAVE_JOGO, 'perguntas');
-    return j === 'forca' || j === 'consulta' ? j : 'perguntas';
+    return j === 'forca' || j === 'consulta' || j === 'processo' ? j : 'perguntas';
   });
   const setJogo = (j: Jogo) => (setJogoEstado(j), gravarPref(CHAVE_JOGO, j));
   const [votoS, setVotoEstado] = useState<number>(() => lerPref(CHAVE_VOTO, VOTO_PADRAO_FORCA));
@@ -176,8 +177,16 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
           <button role="tab" aria-selected={jogo === 'consulta'} className={`botao${jogo === 'consulta' ? ' escuro' : ''}`} onClick={() => setJogo('consulta')}>
             Consulta (em grupo)
           </button>
+          <button role="tab" aria-selected={jogo === 'processo'} className={`botao${jogo === 'processo' ? ' escuro' : ''}`} onClick={() => setJogo('processo')}>
+            Processo da turma
+          </button>
         </div>
-        {jogo === 'consulta' ? (
+        {jogo === 'processo' ? (
+          <>
+            <p className="ajuda">Projeta o processo fictício como a turma vê. Você abre as peças e libera eventos durante a aula.</p>
+            <EscolherProcesso aoFechar={aoFechar} />
+          </>
+        ) : jogo === 'consulta' ? (
           <>
             <p className="ajuda">
               Um personagem conta um caso em balões no projetor. A turma discute em grupo e, no fim do tempo, o advogado ou o juiz responde. Não usa celular.

@@ -1,8 +1,14 @@
 // Publica o processo num link (Cloudflare). O serviço guarda todos os eventos,
 // mas só entrega aos alunos os já liberados.
-import { gerarToken } from '../jogo/protocolo';
-import type { DadosProcesso, Evento, Processo, Publicacao } from './tipos';
+import { carregarIndice, db } from '../dados/db';
 import { agoraISO } from '../dados/modelo';
+import { gerarToken } from '../jogo/protocolo';
+import { artigoDoFundamento } from '../treino/publicar';
+import { acharCitacoes, chaveCitacao, citacaoParaDigitado } from './citacoes';
+import type { ArtigoCitado, DadosProcesso, Evento, Processo, Publicacao } from './tipos';
+
+/** Maior PDF aceito numa peça. */
+export const MAX_PDF = 10 * 1024 * 1024;
 
 /** Liberação em milissegundos (0 = já; null = segurado). */
 export function liberaEm(e: Evento): number | null {
@@ -23,10 +29,54 @@ export function dadosParaPublicar(p: Processo): DadosProcesso {
       ...e,
       numero: i + 1,
       libera: liberaEm(p.eventos[i]),
-      documentos: e.documentos.filter((d) => d.texto.trim() || d.titulo.trim()),
+      documentos: e.documentos
+        .filter((d) => (d.tipo === 'pdf' ? !!d.materialId : d.texto.trim() || d.titulo.trim()))
+        .map(({ materialId, ...d }) => (d.tipo === 'pdf' ? { ...d, texto: '', arquivo: materialId } : d)),
     })),
     publicadoEm: agoraISO(),
   };
+}
+
+/** Junta, em cada peça escrita, o texto dos artigos que ela cita (do acervo deste computador). */
+export async function comArtigos(dados: DadosProcesso): Promise<DadosProcesso> {
+  const indice = await carregarIndice();
+  const cache = new Map<string, ArtigoCitado | null>();
+  return {
+    ...dados,
+    eventos: dados.eventos.map((e) => ({
+      ...e,
+      documentos: e.documentos.map((d) => {
+        if (d.tipo !== 'texto') return d;
+        const artigos: Record<string, ArtigoCitado> = {};
+        for (const c of acharCitacoes(d.texto)) {
+          const k = chaveCitacao(c);
+          if (!cache.has(k)) cache.set(k, artigoDoFundamento(citacaoParaDigitado(c), indice) ?? null);
+          const a = cache.get(k);
+          if (a) artigos[k] = a;
+        }
+        return Object.keys(artigos).length ? { ...d, artigos } : d;
+      }),
+    })),
+  };
+}
+
+async function enviarArquivos(p: Processo, pub: Publicacao): Promise<string[]> {
+  const enviados = new Set(pub.arquivos ?? []);
+  const ids = [...new Set(p.eventos.flatMap((e) => e.documentos.filter((d) => d.tipo === 'pdf' && d.materialId).map((d) => d.materialId!)))];
+  for (const id of ids) {
+    if (enviados.has(id)) continue;
+    const m = await db.materiais.get(id);
+    if (!m || m.excluido_em || !m.arquivo.size) continue;
+    if (m.arquivo.size > MAX_PDF) throw new Error(`O PDF "${m.nome}" passa de 10 MB.`);
+    const r = await fetch(`/api/processo/${pub.codigo}/arquivo/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/pdf', 'X-Vide-Chave': pub.chave },
+      body: m.arquivo,
+    });
+    if (!r.ok) throw new Error(`Não foi possível enviar o PDF "${m.nome}" (${r.status}).`);
+    enviados.add(id);
+  }
+  return [...enviados].filter((id) => ids.includes(id));
 }
 
 async function enviar(url: string, metodo: string, chave: string, corpo?: string): Promise<Response> {
@@ -42,15 +92,20 @@ async function enviar(url: string, metodo: string, chave: string, corpo?: string
 
 /** Cria o link (primeira vez) ou atualiza o que os alunos veem. */
 export async function publicarProcesso(p: Processo): Promise<Publicacao> {
-  const corpo = JSON.stringify(dadosParaPublicar(p));
+  const corpo = JSON.stringify(await comArtigos(dadosParaPublicar(p)));
+  let pub: Publicacao;
   if (p.publicacao) {
-    await enviar(`/api/processo/${p.publicacao.codigo}`, 'PUT', p.publicacao.chave, corpo);
-    return { ...p.publicacao, publicadoEm: agoraISO() };
+    pub = p.publicacao;
+  } else {
+    // Primeira vez: cria o link; os PDFs vão logo em seguida.
+    const chave = gerarToken();
+    const r = await enviar('/api/processo', 'POST', chave, corpo);
+    const { id } = (await r.json()) as { id: string };
+    pub = { codigo: id, chave, publicadoEm: agoraISO(), arquivos: [] };
   }
-  const chave = gerarToken();
-  const r = await enviar('/api/processo', 'POST', chave, corpo);
-  const { id } = (await r.json()) as { id: string };
-  return { codigo: id, chave, publicadoEm: agoraISO() };
+  const arquivos = await enviarArquivos(p, pub);
+  if (p.publicacao) await enviar(`/api/processo/${pub.codigo}`, 'PUT', pub.chave, corpo);
+  return { ...pub, arquivos, publicadoEm: agoraISO() };
 }
 
 export async function desativarProcesso(pub: Publicacao): Promise<void> {

@@ -17,6 +17,7 @@ import { ConexaoSala, type StatusConexao } from '../remoto/conexao';
 import { anfitriao } from '../jogo/anfitriao';
 import { apresentador } from '../consulta/apresentador';
 import { rotuloAvancarConsulta } from '../consulta/rotulo';
+import { aulaProcesso } from '../processo/aula';
 import { rotuloAvancar } from '../jogo/motor';
 import { gerarCodigo, type EnvioDoComputador, type MsgDoCelular, type MsgDoComputador } from '../remoto/protocolo';
 
@@ -729,7 +730,7 @@ export class ControladorAula {
 
   private layoutAtual(): LayoutArtigo {
     // Com slide ou jogo de perguntas na tela, o artigo pode entrar ao lado.
-    return (this.estado.material && !this.estado.telaPreta) || anfitriao().ativo || apresentador().ativo ? this.estado.layoutArtigo : 'cheia';
+    return (this.estado.material && !this.estado.telaPreta) || anfitriao().ativo || apresentador().ativo || aulaProcesso().ativo ? this.estado.layoutArtigo : 'cheia';
   }
 
   /**

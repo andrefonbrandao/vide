@@ -22,6 +22,7 @@ const RE_SALA = /^\/api\/sala\/([A-Z0-9]{6,16})$/;
 const RE_JOGO = /^\/api\/jogo\/(\d{6})$/;
 const RE_TREINO = /^\/api\/treino(?:\/([A-Za-z0-9]{10,24}))?$/;
 const RE_PROCESSO = /^\/api\/processo(?:\/([A-Za-z0-9]{10,24}))?$/;
+const RE_ARQUIVO_PROCESSO = /^\/api\/processo\/([A-Za-z0-9]{10,24})\/arquivo\/([A-Za-z0-9-]{8,48})$/;
 /** Mensagens maiores que isso são descartadas (as do Vide têm poucos KB). */
 const TAMANHO_MAXIMO = 256 * 1024;
 
@@ -48,6 +49,14 @@ export default {
     if (t) return tratarTreino(req, env, url, t[1]);
     const pr = RE_PROCESSO.exec(url.pathname);
     if (pr) return tratarProcesso(req, env, url, pr[1]);
+    const pa = RE_ARQUIVO_PROCESSO.exec(url.pathname);
+    if (pa) {
+      if (req.method !== 'GET') {
+        const origem = req.headers.get('Origin');
+        if (!origem || new URL(origem).host !== url.host) return new Response('Origem não permitida', { status: 403 });
+      }
+      return env.PROCESSOS.get(env.PROCESSOS.idFromName(pa[1])).fetch(new Request(`https://processo/${pa[1]}/arquivo/${pa[2]}`, { method: req.method, headers: req.headers, body: req.body }));
+    }
     if (url.pathname.startsWith('/api/')) return new Response('Não encontrado', { status: 404 });
     return env.ASSETS.fetch(req);
   },
@@ -340,9 +349,56 @@ async function tratarProcesso(req: Request, env: Env, url: URL, id: string | und
   return env.PROCESSOS.get(env.PROCESSOS.idFromName(id)).fetch(new Request(`https://processo/${id}`, { method: req.method, headers: req.headers, body: req.body }));
 }
 
+/** PDF anexado a uma peça: até 10 MB, guardado em pedaços de 1 MB. */
+const MAX_ARQUIVO = 10 * 1024 * 1024;
+const PEDACO = 1024 * 1024;
+
+/** O arquivo aparece em algum documento de evento já liberado? */
+function arquivoLiberado(dados: string, arquivo: string): boolean {
+  const d = JSON.parse(dados) as { eventos: (ComLibera & { documentos?: { arquivo?: string }[] })[] };
+  const visiveis = paraAluno(d, Date.now()).eventos as { documentos?: { arquivo?: string }[] }[];
+  return visiveis.some((e) => (e.documentos ?? []).some((doc) => doc.arquivo === arquivo));
+}
+
 export class Processo extends DurableObject<Env> {
+  private async arquivo(req: Request, arq: string): Promise<Response> {
+    const chave = req.headers.get('X-Vide-Chave') ?? '';
+    const guardada = await this.ctx.storage.get<string>('chave');
+    if (req.method === 'GET') {
+      const dados = await this.ctx.storage.get<string>('dados');
+      const meta = await this.ctx.storage.get<{ partes: number; tamanho: number }>(`meta:${arq}`);
+      if (!dados || !meta || !arquivoLiberado(dados, arq)) return jsonResp({ erro: 'não encontrado' }, 404);
+      const chaves = Array.from({ length: meta.partes }, (_, i) => `arq:${arq}:${i}`);
+      const partes = await this.ctx.storage.get<ArrayBuffer>(chaves);
+      const tudo = new Uint8Array(meta.tamanho);
+      let pos = 0;
+      for (const k of chaves) {
+        const b = new Uint8Array(partes.get(k) ?? new ArrayBuffer(0));
+        tudo.set(b, pos);
+        pos += b.byteLength;
+      }
+      return new Response(tudo, { headers: { 'Content-Type': 'application/pdf', 'Cache-Control': 'private, max-age=300' } });
+    }
+    if (!RE_TOKEN.test(chave)) return jsonResp({ erro: 'chave inválida' }, 400);
+    if (!guardada || guardada !== chave) return jsonResp({ erro: 'sem permissão' }, 403);
+    if (req.method === 'PUT') {
+      const corpo = await req.arrayBuffer();
+      if (corpo.byteLength > MAX_ARQUIVO) return jsonResp({ erro: 'grande demais' }, 413);
+      const antigo = await this.ctx.storage.get<{ partes: number }>(`meta:${arq}`);
+      if (antigo) await this.ctx.storage.delete(Array.from({ length: antigo.partes }, (_, i) => `arq:${arq}:${i}`));
+      const partes = Math.max(1, Math.ceil(corpo.byteLength / PEDACO));
+      for (let i = 0; i < partes; i++) await this.ctx.storage.put(`arq:${arq}:${i}`, corpo.slice(i * PEDACO, (i + 1) * PEDACO));
+      await this.ctx.storage.put(`meta:${arq}`, { partes, tamanho: corpo.byteLength });
+      return jsonResp({ ok: true });
+    }
+    return new Response('Método não permitido', { status: 405 });
+  }
+
   async fetch(req: Request): Promise<Response> {
-    const id = new URL(req.url).pathname.slice(1);
+    const caminho = new URL(req.url).pathname.slice(1);
+    const a = /^[^/]+\/arquivo\/(.+)$/.exec(caminho);
+    if (a) return this.arquivo(req, a[1]);
+    const id = caminho;
     const chave = req.headers.get('X-Vide-Chave') ?? '';
     const guardada = await this.ctx.storage.get<string>('chave');
     if (req.method === 'GET') {

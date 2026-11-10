@@ -906,3 +906,16 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
   .peca-texto blockquote { margin-left: 1.5em; }
   .peca-texto ul { margin-left: 1.2em; }
 }
+.peca-artigo { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: #e8735a; text-decoration-thickness: 2px; text-underline-offset: 3px; text-indent: 0; }
+.peca-artigo:hover { background: rgba(232, 115, 90, 0.12); }
+.peca-janela-artigo { max-width: 720px; max-height: 85vh; overflow: auto; }
+.peca-pdf { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.peca-pdf-pagina { position: relative; box-shadow: 0 1px 6px rgba(30, 58, 52, 0.18); max-width: 100%; }
+.peca-pdf-pagina canvas { display: block; max-width: 100%; height: auto !important; }
+.marca-dagua-sobre::after { content: ''; position: absolute; inset: 0; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='260'%3E%3Ctext x='20' y='150' transform='rotate(-25 210 130)' font-family='Arial' font-size='22' font-weight='700' fill='%23c0392b' fill-opacity='0.10'%3EPROCESSO FICT%C3%8DCIO %E2%80%94 USO DID%C3%81TICO%3C/text%3E%3C/svg%3E"); }
+/* Processo na aula: prévia rolável na tela do professor e projeção ampliada. */
+.previa-processo { flex: 1 1 auto; min-height: 260px; overflow: auto; border: 2px solid var(--linha); border-radius: 10px; background: var(--fundo); }
+.previa-processo .proc, .previa-processo .proc-leitura { padding-top: 8px; }
+.proj-processo { position: absolute; inset: 0; overflow: hidden; background: var(--fundo); zoom: 1.35; }
+.proj-processo .proc-doc { pointer-events: none; }
+.proj-processo .proc-leitura-topo button { display: none; }

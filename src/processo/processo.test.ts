@@ -51,3 +51,48 @@ Texto com snake_case_nome intacto.`);
     expect(lerTrechos('snake_case_nome')).toEqual([{ t: 'snake_case_nome' }]);
   });
 });
+
+import { acharCitacoes } from './citacoes';
+describe('citações nas peças', () => {
+  test('artigos com e sem lei, incisos e parágrafos', () => {
+    const t = 'Nos termos do art. 319 do CPC e do artigo 5º, LXXIV, da Constituição Federal; ver arts. 1.015, § 1º, e o art. 1-A da Lei 9.099/95. Também art. 300.';
+    expect(acharCitacoes(t).map((c) => [c.artigo, c.lei, t.slice(c.inicio, c.fim)])).toEqual([
+      ['319', 'CPC', 'art. 319 do CPC'],
+      ['5', 'Constituição Federal', 'artigo 5º, LXXIV, da Constituição Federal'],
+      ['1015', '', 'arts. 1.015, § 1º'],
+      ['1-A', 'Lei 9.099/95', 'art. 1-A da Lei 9.099/95'],
+      ['300', '', 'art. 300'],
+    ]);
+  });
+});
+
+import { copiarProcesso, deslocar, diasEntre } from './copiar';
+import type { Processo } from './tipos';
+describe('copiar para outro semestre', () => {
+  test('datas andam juntas; liberado vira agendado na data do evento', () => {
+    expect(diasEntre('2026-03-02', '2026-08-03')).toBe(154);
+    expect(deslocar('2026-03-10T14:30', 154)).toBe('2026-08-11T14:30');
+    const p = {
+      id: 'x', usuario_id: null, criado_em: '', atualizado_em: '', excluido_em: null, titulo: 'T',
+      capa: { numero: '1', classe: '', assuntos: '', valorCausa: '', juizo: '', juiz: '', autuadoEm: '2026-03-02', situacao: '' },
+      partes: [],
+      eventos: [
+        { id: 'a', data: '2026-03-02T10:00', descricao: '', usuario: '', documentos: [], liberacao: { modo: 'agora' } },
+        { id: 'b', data: '2026-03-20T10:00', descricao: '', usuario: '', documentos: [], liberacao: { modo: 'data', em: '2026-03-21T08:00' } },
+        { id: 'c', data: '2026-04-01T10:00', descricao: '', usuario: '', documentos: [], liberacao: { modo: 'segurar' } },
+      ],
+      publicacao: { codigo: 'abc', chave: 'k', publicadoEm: '' },
+    } as Processo;
+    const c = copiarProcesso(p, 'Novo', '2026-08-03');
+    expect(c.capa.autuadoEm).toBe('2026-08-03');
+    expect(c.capa.numero).toMatch(/\.2026\.8\.99\.0001$/);
+    expect(c.publicacao).toBeNull();
+    expect(c.eventos.map((e) => e.liberacao)).toEqual([
+      { modo: 'data', em: '2026-08-03T10:00' },
+      { modo: 'data', em: '2026-08-22T08:00' },
+      { modo: 'segurar' },
+    ]);
+    expect(c.eventos[1].data).toBe('2026-08-21T10:00');
+    expect(c.eventos[0].id).not.toBe('a');
+  });
+});

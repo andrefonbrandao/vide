@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import { abrirCanal, type LayoutArtigo, type Mensagem, type TelaJogo } from '../comum/canal';
 import { JogoTela } from './JogoTela';
 import { ConsultaTela } from './ConsultaTela';
+import { buscarNoAcervo, VisaoProcesso } from './ProcessoAluno';
+import type { TelaProcesso } from '../processo/aula';
 import type { TelaConsulta } from '../consulta/apresentador';
 import type { Projetavel } from '../comum/legislacao';
 import { CanvasMaterial } from '../material/CanvasMaterial';
@@ -73,6 +75,14 @@ export function Projecao() {
   const [tela, setTela] = useState({ w: window.innerWidth, h: window.innerHeight });
   const [jogo, setJogo] = useState<TelaJogo | null>(null);
   const [consulta, setConsulta] = useState<TelaConsulta | null>(null);
+  const [processo, setProcesso] = useState<TelaProcesso | null>(null);
+  const processoRef = useRef<HTMLDivElement>(null);
+  /** Rolagem do processo projetado, acompanhando a tela do professor (fração de 0 a 1). */
+  const rolarProcesso = (f: number) =>
+    requestAnimationFrame(() => {
+      const el = processoRef.current;
+      if (el) el.scrollTop = f * Math.max(0, el.scrollHeight - el.clientHeight);
+    });
   const folhaRef = useRef<HTMLDivElement>(null);
   const enviarRef = useRef<(m: Mensagem) => void>(() => {});
   const itemRef = useRef<Projetavel | null>(null);
@@ -115,6 +125,11 @@ export function Projecao() {
         setJogo(m.jogo);
       } else if (m.t === 'consulta') {
         setConsulta(m.consulta);
+      } else if (m.t === 'processo') {
+        setProcesso(m.processo);
+        if (m.processo) rolarProcesso(m.processo.fracao);
+      } else if (m.t === 'processo-rolar') {
+        rolarProcesso(m.fracao);
       } else if (m.t === 'recarregar') {
         location.reload();
       } else if (m.t === 'ping') {
@@ -229,7 +244,7 @@ export function Projecao() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // O jogo de perguntas (ou a consulta) fica por cima do material enquanto estiver aberto.
-  const atividade = !!jogo || !!consulta;
+  const atividade = !!jogo || !!consulta || !!processo;
   const comMaterial = !atividade && !!material.id && !material.preta && !!documento;
   const lateral = !!item && (comMaterial || atividade) && layout === 'lateral';
   const painelDentro = !!item && !saindo && !entrando;
@@ -264,6 +279,13 @@ export function Projecao() {
         <div className={`proj-jogo${lateral && painelDentro ? ' encolhido' : ''}${item && !lateral && painelDentro ? ' oculto' : ''}`}>
           <div className="jogo-quadro">
             <JogoTela jogo={jogo} />
+          </div>
+        </div>
+      )}
+      {processo && !jogo && !consulta && (
+        <div className={`proj-jogo${lateral && painelDentro ? ' encolhido' : ''}${item && !lateral && painelDentro ? ' oculto' : ''}`}>
+          <div className="proj-processo" ref={processoRef}>
+            <VisaoProcesso dados={processo.dados} buscar={buscarNoAcervo} lendoControlado={processo.lendo} />
           </div>
         </div>
       )}

@@ -1,11 +1,25 @@
 // Processo fictício como a turma vê (inspirado num processo eletrônico, sem copiar nenhum):
 // capa, partes e representantes, tabela de eventos e a leitura das peças.
 // Também serve de prévia na tela do professor (com os eventos ainda não liberados marcados).
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Logo } from '../comum/Logo';
+import { db } from '../dados/db';
+import { abrirDocumento } from '../material/documento';
+import { PAGINA_INTEIRA } from '../material/regiao';
+import { acharCitacoes, chaveCitacao } from '../processo/citacoes';
 import { liberado } from '../processo/liberacao';
 import { lerTexto, type Trecho } from '../processo/texto';
-import type { DadosProcesso, Documento, EventoPublicado, Parte } from '../processo/tipos';
+import type { ArtigoCitado, DadosProcesso, Documento, EventoPublicado, Parte } from '../processo/tipos';
+
+/** Como buscar o PDF de uma peça (no link: pelo serviço; na prévia do professor: no acervo local). */
+export type BuscarArquivo = (arquivo: string) => Promise<Blob>;
+
+/** PDFs anexados ficam nos materiais do acervo deste computador (e vão para o Google Drive com eles). */
+export const buscarNoAcervo: BuscarArquivo = async (id) => {
+  const m = await db.materiais.get(id);
+  if (!m || !m.arquivo.size) throw new Error('PDF não encontrado neste computador.');
+  return m.arquivo;
+};
 
 const MARCA = 'PROCESSO FICTÍCIO — USO DIDÁTICO';
 
@@ -17,41 +31,137 @@ function dataBR(iso: string, comHora = true): string {
   return comHora ? `${dia} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : dia;
 }
 
-function Trechos({ trechos }: { trechos: Trecho[] }) {
+/** Texto com as citações de artigos viradas em links (quando o texto do artigo veio junto). */
+function ComLinks({ texto, artigos, aoAbrir }: { texto: string; artigos?: Record<string, ArtigoCitado>; aoAbrir: (a: ArtigoCitado) => void }) {
+  if (!artigos) return <>{texto}</>;
+  const partes: React.ReactNode[] = [];
+  let pos = 0;
+  for (const c of acharCitacoes(texto)) {
+    const a = artigos[chaveCitacao(c)];
+    if (!a) continue;
+    if (c.inicio > pos) partes.push(texto.slice(pos, c.inicio));
+    partes.push(
+      <button key={c.inicio} type="button" className="peca-artigo" onClick={() => aoAbrir(a)} title={`Ver o texto: ${a.titulo}`}>
+        {texto.slice(c.inicio, c.fim)}
+      </button>,
+    );
+    pos = c.fim;
+  }
+  if (pos < texto.length) partes.push(texto.slice(pos));
+  return <>{partes}</>;
+}
+
+function Trechos({ trechos, artigos, aoAbrir }: { trechos: Trecho[]; artigos?: Record<string, ArtigoCitado>; aoAbrir: (a: ArtigoCitado) => void }) {
   return (
     <>
-      {trechos.map((t, i) =>
-        t.negrito ? <strong key={i}>{t.t}</strong> : t.italico ? <em key={i}>{t.t}</em> : <Fragment key={i}>{t.t}</Fragment>,
-      )}
+      {trechos.map((t, i) => {
+        const conteudo = <ComLinks texto={t.t} artigos={artigos} aoAbrir={aoAbrir} />;
+        return t.negrito ? <strong key={i}>{conteudo}</strong> : t.italico ? <em key={i}>{conteudo}</em> : <Fragment key={i}>{conteudo}</Fragment>;
+      })}
     </>
   );
 }
 
-/** O texto da peça, com títulos, citações e listas. */
-export function TextoPeca({ texto }: { texto: string }) {
+/** O texto de um artigo citado, por cima da peça. */
+function JanelaArtigo({ artigo, aoFechar }: { artigo: ArtigoCitado; aoFechar: () => void }) {
+  return (
+    <div className="modal-fundo" onMouseDown={(e) => e.target === e.currentTarget && aoFechar()}>
+      <div className="modal peca-janela-artigo" role="dialog" aria-label={artigo.titulo}>
+        <h2 style={{ marginTop: 0 }}>{artigo.titulo}</h2>
+        <div className="treino-artigo">
+          {artigo.blocos.map((b, i) => (
+            <p key={i} className={b.destaque ? 'destaque' : ''} style={{ marginLeft: `${b.nivel * 1.2}em` }}>
+              {b.rotulo && <b>{b.rotulo} </b>}
+              {b.texto}
+            </p>
+          ))}
+        </div>
+        <div className="modal-botoes">
+          <button className="botao primario" onClick={aoFechar}>
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** As páginas de um PDF anexado, desenhadas na largura da tela. */
+export function PdfDaPeca({ arquivo, buscar }: { arquivo: string; buscar: BuscarArquivo }) {
+  const caixa = useRef<HTMLDivElement>(null);
+  const [paginas, setPaginas] = useState(0);
+  const [erro, setErro] = useState<string | null>(null);
+  const docRef = useRef<Awaited<ReturnType<typeof abrirDocumento>> | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    void (async () => {
+      try {
+        const blob = await buscar(arquivo);
+        const doc = await abrirDocumento({
+          id: `processo:${arquivo}`,
+          tipo: 'pdf',
+          arquivo: blob,
+        });
+        if (!vivo) return;
+        docRef.current = doc;
+        setPaginas(doc.paginas);
+      } catch {
+        if (vivo) setErro('Não foi possível abrir o PDF. Confira a internet e tente de novo.');
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, [arquivo, buscar]);
+  useEffect(() => {
+    const doc = docRef.current;
+    const el = caixa.current;
+    if (!doc || !el || !paginas) return;
+    const largura = Math.min(900, el.clientWidth);
+    el.querySelectorAll('canvas').forEach((c, i) => void doc.desenhar(c, i + 1, PAGINA_INTEIRA, largura, 100000));
+  }, [paginas]);
+  if (erro) return <p className="digitar-msg erro">{erro}</p>;
+  if (!paginas) return <p className="ajuda">Abrindo o PDF…</p>;
+  return (
+    <div ref={caixa} className="peca-pdf">
+      {Array.from({ length: paginas }, (_, i) => (
+        <div key={i} className="peca-pdf-pagina marca-dagua-sobre">
+          <canvas aria-label={`Página ${i + 1} de ${paginas}`} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** O texto da peça, com títulos, citações e listas (e os artigos citados clicáveis). */
+export function TextoPeca({ texto, artigos }: { texto: string; artigos?: Record<string, ArtigoCitado> }) {
   const blocos = useMemo(() => lerTexto(texto), [texto]);
+  const [aberto, setAberto] = useState<ArtigoCitado | null>(null);
   if (!blocos.length) return <p className="ajuda">(documento sem texto)</p>;
   return (
-    <div className="peca-texto">
-      {blocos.map((b, i) => {
-        if (b.tipo === 'lista')
+    <>
+      {aberto && <JanelaArtigo artigo={aberto} aoFechar={() => setAberto(null)} />}
+      <div className="peca-texto">
+        {blocos.map((b, i) => {
+          if (b.tipo === 'lista')
+            return (
+              <ul key={i}>
+                {b.itens.map((it, k) => (
+                  <li key={k}>
+                    <Trechos trechos={it} artigos={artigos} aoAbrir={setAberto} />
+                  </li>
+                ))}
+              </ul>
+            );
+          const Tag = b.tipo === 'titulo' ? 'h2' : b.tipo === 'subtitulo' ? 'h3' : b.tipo === 'citacao' ? 'blockquote' : 'p';
           return (
-            <ul key={i}>
-              {b.itens.map((it, k) => (
-                <li key={k}>
-                  <Trechos trechos={it} />
-                </li>
-              ))}
-            </ul>
+            <Tag key={i}>
+              <Trechos trechos={b.trechos} artigos={artigos} aoAbrir={setAberto} />
+            </Tag>
           );
-        const Tag = b.tipo === 'titulo' ? 'h2' : b.tipo === 'subtitulo' ? 'h3' : b.tipo === 'citacao' ? 'blockquote' : 'p';
-        return (
-          <Tag key={i}>
-            <Trechos trechos={b.trechos} />
-          </Tag>
-        );
-      })}
-    </div>
+        })}
+      </div>
+    </>
   );
 }
 
@@ -79,7 +189,19 @@ function PartesDoPolo({ titulo, partes }: { titulo: string; partes: Parte[] }) {
   );
 }
 
-function Peca({ dados, evento, doc, aoFechar }: { dados: DadosProcesso; evento: EventoPublicado; doc: Documento; aoFechar: () => void }) {
+function Peca({
+  dados,
+  evento,
+  doc,
+  aoFechar,
+  buscar,
+}: {
+  dados: DadosProcesso;
+  evento: EventoPublicado;
+  doc: Documento;
+  aoFechar: () => void;
+  buscar?: BuscarArquivo;
+}) {
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && aoFechar();
     window.addEventListener('keydown', esc);
@@ -100,7 +222,11 @@ function Peca({ dados, evento, doc, aoFechar }: { dados: DadosProcesso; evento: 
         <p className="proc-folha-cab">
           {doc.titulo || evento.descricao} <span className="mono">({doc.sigla})</span>
         </p>
-        <TextoPeca texto={doc.texto} />
+        {doc.tipo === 'pdf' && doc.arquivo && buscar ? (
+          <PdfDaPeca arquivo={doc.arquivo} buscar={buscar} />
+        ) : (
+          <TextoPeca texto={doc.texto} artigos={doc.artigos} />
+        )}
         <p className="proc-folha-rodape">
           {MARCA} · Evento {evento.numero} · {dataBR(evento.data)}
         </p>
@@ -113,12 +239,42 @@ function Peca({ dados, evento, doc, aoFechar }: { dados: DadosProcesso; evento: 
  * A tela do processo. `previa` = vista do professor: mostra também os eventos ainda não
  * liberados, marcados. `novos` = ids dos eventos que o aluno ainda não tinha visto.
  */
-export function VisaoProcesso({ dados, previa = false, novos }: { dados: DadosProcesso; previa?: boolean; novos?: Set<string> }) {
-  const [lendo, setLendo] = useState<{ e: EventoPublicado; d: Documento } | null>(null);
+export function VisaoProcesso({
+  dados,
+  previa = false,
+  novos,
+  buscar,
+  lendoControlado,
+  aoLer,
+}: {
+  dados: DadosProcesso;
+  previa?: boolean;
+  novos?: Set<string>;
+  buscar?: BuscarArquivo;
+  /** Projeção: a peça aberta vem de fora (o professor escolhe). */
+  lendoControlado?: { eventoId: string; docId: string } | null;
+  aoLer?: (l: { eventoId: string; docId: string } | null) => void;
+}) {
+  const [lendoLocal, setLendoLocal] = useState<{
+    e: EventoPublicado;
+    d: Documento;
+  } | null>(null);
+  const controlado = lendoControlado !== undefined;
+  const lendo = controlado
+    ? (() => {
+        const e = dados.eventos.find((x) => x.id === lendoControlado?.eventoId);
+        const d = e?.documentos.find((x) => x.id === lendoControlado?.docId);
+        return e && d ? { e, d } : null;
+      })()
+    : lendoLocal;
+  const setLendo = (l: { e: EventoPublicado; d: Documento } | null) => {
+    if (!controlado) setLendoLocal(l);
+    aoLer?.(l ? { eventoId: l.e.id, docId: l.d.id } : null);
+  };
   const [agora] = useState(Date.now());
   const { capa } = dados;
   const eventos = [...dados.eventos].sort((a, b) => b.numero - a.numero);
-  if (lendo) return <Peca dados={dados} evento={lendo.e} doc={lendo.d} aoFechar={() => setLendo(null)} />;
+  if (lendo) return <Peca dados={dados} evento={lendo.e} doc={lendo.d} aoFechar={() => setLendo(null)} buscar={buscar} />;
   const qtdNovos = novos ? dados.eventos.filter((e) => novos.has(e.id)).length : 0;
   const campos: [string, string][] = [
     ['Nº do processo', capa.numero],
@@ -226,6 +382,14 @@ const chaveVistos = (codigo: string) => `vide.processo.${codigo}.vistos`;
 
 /** Página pública do processo: /p/<código>. Sem cadastro; as "novidades" ficam só neste aparelho. */
 export function PaginaProcesso({ codigo }: { codigo: string }) {
+  const buscar = useMemo<BuscarArquivo>(
+    () => async (arquivo) => {
+      const r = await fetch(`/api/processo/${codigo}/arquivo/${arquivo}`);
+      if (!r.ok) throw new Error(String(r.status));
+      return r.blob();
+    },
+    [codigo],
+  );
   const [dados, setDados] = useState<DadosProcesso | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [novos, setNovos] = useState<Set<string>>(new Set());
@@ -260,7 +424,17 @@ export function PaginaProcesso({ codigo }: { codigo: string }) {
         <Logo altura={22} />
         <span>Consulta processual</span>
       </header>
-      {erro ? <p className="jogar-grande" style={{ padding: 20 }}>{erro}</p> : !dados ? <p className="ajuda" style={{ padding: 20 }}>Abrindo o processo…</p> : <VisaoProcesso dados={dados} novos={novos} />}
+      {erro ? (
+        <p className="jogar-grande" style={{ padding: 20 }}>
+          {erro}
+        </p>
+      ) : !dados ? (
+        <p className="ajuda" style={{ padding: 20 }}>
+          Abrindo o processo…
+        </p>
+      ) : (
+        <VisaoProcesso dados={dados} novos={novos} buscar={buscar} />
+      )}
     </div>
   );
 }

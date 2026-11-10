@@ -1,5 +1,6 @@
 // Processo fictício: o professor monta, a turma acompanha pelo link ao longo do semestre.
 import type { Sincronizavel } from '../dados/modelo';
+import type { BlocoArtigo } from '../treino/tipos';
 
 export type Polo = 'ativo' | 'passivo' | 'outro';
 
@@ -17,14 +18,27 @@ export interface Parte {
   advogados: Advogado[];
 }
 
+/** Texto de um artigo citado numa peça (levado junto no link). */
+export interface ArtigoCitado {
+  titulo: string;
+  blocos: BlocoArtigo[];
+}
+
 export interface Documento {
   id: string;
   /** Nome curto, como no eproc: INIC1, PROC2, CONT1. */
   sigla: string;
   titulo: string;
-  tipo: 'texto';
+  /** texto: escrito no Vide; pdf: um PDF anexado (guardado nos materiais do acervo). */
+  tipo: 'texto' | 'pdf';
   /** Texto da peça, com marcações simples (# título, > citação, **negrito**, _itálico_). */
   texto: string;
+  /** PDF: o material do acervo (na tela do professor) e o arquivo publicado (no link). */
+  materialId?: string;
+  arquivo?: string;
+  paginas?: number;
+  /** No link: o texto dos artigos citados na peça, pela chave da citação. */
+  artigos?: Record<string, ArtigoCitado>;
 }
 
 /** Quando o evento aparece para os alunos. */
@@ -58,6 +72,8 @@ export interface Publicacao {
   /** Senha que só o navegador do professor tem: permite atualizar e apagar o link. */
   chave: string;
   publicadoEm: string;
+  /** PDFs já enviados ao link (ids dos materiais). */
+  arquivos?: string[];
 }
 
 /** Um processo da biblioteca do professor. */
