@@ -24,7 +24,12 @@ function semAcento(t: string): string {
 }
 
 export function LinkPronto({ link }: { link: LinkTreino }) {
-  const url = urlDoTreino(link.codigo);
+  return <LinkEQr url={urlDoTreino(link.codigo)} titulo={link.titulo} ajuda="Mande o link (ou o QR code) para a turma. Quem abrir treina sozinho, sem cadastro." />;
+}
+
+/** Link e QR code (copiar, baixar a imagem, copiar a imagem para o Moodle). */
+export function LinkEQr({ url, titulo, ajuda }: { url: string; titulo: string; ajuda: string }) {
+  const link = { titulo };
   const [copiado, setCopiado] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const baixarQr = async () => {
@@ -72,7 +77,7 @@ export function LinkPronto({ link }: { link: LinkTreino }) {
           Copiar imagem do QR
         </button>
         {aviso && <p className="digitar-msg" style={{ padding: 0 }}>{aviso}</p>}
-        <p className="ajuda">Mande o link (ou o QR code) para a turma. Quem abrir treina sozinho, sem cadastro.</p>
+        <p className="ajuda">{ajuda}</p>
       </div>
     </div>
   );

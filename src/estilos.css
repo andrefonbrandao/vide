@@ -826,3 +826,83 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 @media (prefers-reduced-motion: reduce) {
   .figura .vd-respira, .figura .vd-olhos, .balao, .balao.digitando span, .consulta-respondente { animation: none; }
 }
+
+/* ---------- Processo fictício (inspirado num processo eletrônico, com a marca de fictício) ---------- */
+.proc-pagina { min-height: 100dvh; background: var(--fundo); color: var(--tinta); }
+.proc-topo { display: flex; align-items: center; gap: 12px; padding: 10px max(16px, env(safe-area-inset-left, 0px)); background: var(--papel); border-bottom: 2px solid var(--tinta); color: var(--tinta); font-weight: 800; }
+.proc { max-width: 1100px; margin: 0 auto; padding: 14px max(16px, env(safe-area-inset-left, 0px)) 40px; display: flex; flex-direction: column; gap: 14px; }
+.proc-faixa { background: repeating-linear-gradient(-45deg, #f6dcd4, #f6dcd4 10px, #fbece7 10px, #fbece7 20px); color: #7a2e20; border: 1px solid #e8b7a9; border-radius: 8px; padding: 6px 12px; font-weight: 800; letter-spacing: 0.08em; font-size: 13px; text-align: center; }
+.proc-novidades { margin: 0; background: var(--tinta); color: var(--fundo); border-radius: 10px; padding: 10px 14px; font-weight: 700; }
+.proc-caixa { background: var(--papel); border: 1px solid var(--linha); border-radius: 10px; overflow: hidden; }
+.proc-caixa-titulo { margin: 0; font-size: 15px; font-weight: 800; padding: 8px 14px; background: color-mix(in srgb, var(--tinta) 10%, var(--papel)); border-bottom: 1px solid var(--linha); letter-spacing: 0.02em; }
+.proc-capa { margin: 0; padding: 12px 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px 24px; }
+.proc-capa div { min-width: 0; }
+.proc-capa dt { font-size: 12px; font-weight: 700; color: var(--tinta-2); text-transform: uppercase; letter-spacing: 0.05em; }
+.proc-capa dd { margin: 2px 0 0; font-weight: 700; overflow-wrap: anywhere; }
+.proc-numero { grid-column: 1 / -1; }
+.proc-numero dd { font-size: 20px; }
+.proc-partes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.proc-polo { padding: 10px 14px; min-width: 0; }
+.proc-polo + .proc-polo { border-left: 1px solid var(--linha); }
+.proc-polo h3 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tinta-2); }
+.proc-parte { padding: 4px 0 8px; }
+.proc-qualif { color: var(--tinta-2); font-size: 14px; }
+.proc-adv { font-size: 14px; color: var(--tinta-2); margin-top: 2px; }
+.proc-eventos { width: 100%; border-collapse: collapse; font-size: 15px; }
+.proc-eventos th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--tinta-2); padding: 8px 10px; border-bottom: 2px solid var(--linha); }
+.proc-eventos td { padding: 8px 10px; border-bottom: 1px solid var(--linha); vertical-align: top; }
+.proc-eventos tbody tr:nth-child(even) { background: color-mix(in srgb, var(--tinta) 3%, transparent); }
+.proc-eventos tr.novo td { background: color-mix(in srgb, var(--destaque) 14%, transparent); }
+.proc-eventos tr.futuro td { opacity: 0.6; font-style: italic; }
+.proc-selo { display: inline-block; margin-left: 6px; font-size: 11px; font-style: normal; font-weight: 800; background: var(--destaque); color: #1e3a34; border-radius: 99px; padding: 1px 8px; vertical-align: middle; }
+.proc-selo.futuro { background: var(--linha); color: var(--tinta); }
+.proc-docs { display: flex; flex-wrap: wrap; gap: 6px; }
+.proc-doc { font: inherit; font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; font-size: 13px; font-weight: 700; color: var(--tinta); background: var(--fundo); border: 1px solid var(--tinta); border-radius: 6px; padding: 2px 8px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.proc-doc:hover { background: var(--tinta); color: var(--fundo); }
+@media (max-width: 720px) {
+  .proc-eventos thead { display: none; }
+  .proc-eventos, .proc-eventos tbody, .proc-eventos tr, .proc-eventos td { display: block; width: 100%; }
+  .proc-eventos tr { border-bottom: 2px solid var(--linha); padding: 6px 0; }
+  .proc-eventos td { border: 0; padding: 3px 12px; display: grid; grid-template-columns: 96px 1fr; gap: 8px; }
+  .proc-eventos td::before { content: attr(data-rotulo); font-size: 12px; font-weight: 700; color: var(--tinta-2); text-transform: uppercase; }
+  .proc-polo + .proc-polo { border-left: 0; border-top: 1px solid var(--linha); }
+}
+/* Leitura da peça: folha com marca d'água. */
+.proc-leitura { max-width: 900px; margin: 0 auto; padding: 14px max(16px, env(safe-area-inset-left, 0px)) 40px; display: flex; flex-direction: column; gap: 12px; }
+.proc-leitura-topo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.proc-leitura-ref { color: var(--tinta-2); font-size: 13px; }
+.proc-folha { background: #fdfdfb; color: #1b1f1d; border: 1px solid var(--linha); border-radius: 4px; padding: clamp(18px, 6vw, 64px); box-shadow: 0 6px 24px rgba(30, 58, 52, 0.12); font-family: Georgia, 'Times New Roman', serif; font-size: 17px; line-height: 1.6; }
+.marca-dagua { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='260'%3E%3Ctext x='20' y='150' transform='rotate(-25 210 130)' font-family='Arial' font-size='22' font-weight='700' fill='%23c0392b' fill-opacity='0.07'%3EPROCESSO FICT%C3%8DCIO %E2%80%94 USO DID%C3%81TICO%3C/text%3E%3C/svg%3E"); }
+.proc-folha-cab { margin: 0 0 18px; font-family: var(--fonte, 'Manrope', sans-serif); font-weight: 800; font-size: 14px; color: #44574f; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #c9cfc5; padding-bottom: 8px; }
+.proc-folha-rodape { margin: 24px 0 0; font-family: 'Manrope', sans-serif; font-size: 12px; color: #7a2e20; font-weight: 700; letter-spacing: 0.05em; border-top: 1px solid #c9cfc5; padding-top: 8px; }
+.peca-texto h2 { text-align: center; font-size: 1.15em; text-transform: uppercase; margin: 1em 0 0.8em; }
+.peca-texto h3 { font-size: 1.02em; margin: 1.2em 0 0.4em; text-transform: uppercase; }
+.peca-texto p { margin: 0 0 0.8em; text-align: justify; text-indent: 2.5em; }
+.peca-texto blockquote { margin: 0.6em 0 1em 4em; font-size: 0.92em; line-height: 1.4; }
+.peca-texto ul { margin: 0 0 0.8em 2.5em; }
+/* Editor de processo (tela do professor) */
+.grade-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.proc-titulo-interno { flex: 1; min-width: 220px; font-weight: 800; font-size: 18px; }
+.proc-publicacao { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
+.proc-lista-eventos { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.proc-lista-eventos > li { background: var(--papel); border: 2px solid var(--linha); border-radius: 12px; overflow: hidden; }
+.proc-lista-eventos > li.aberto { border-color: var(--tinta); }
+.proc-resumo-evento { width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.proc-num { display: inline-grid; place-items: center; min-width: 28px; height: 28px; border-radius: 50%; background: var(--tinta); color: var(--fundo); font-weight: 800; font-size: 13px; }
+.proc-lib { font-size: 12px; font-weight: 800; border-radius: 99px; padding: 2px 10px; background: var(--linha); color: var(--tinta); }
+.proc-lib.agora { background: var(--tinta); color: var(--fundo); }
+.proc-lib.data { background: var(--destaque); color: #1e3a34; }
+.proc-editor-evento { border-top: 1px solid var(--linha); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.proc-doc-bloco { border: 1px dashed var(--linha); border-radius: 10px; padding: 10px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 6px; }
+.proc-editor-doc { display: flex; flex-direction: column; gap: 8px; }
+.proc-barra-texto { gap: 6px; }
+.proc-texto-peca { width: 100%; font-family: Georgia, 'Times New Roman', serif; font-size: 15px; line-height: 1.5; resize: vertical; }
+.proc-editor-partes { display: flex; flex-direction: column; gap: 10px; }
+.proc-editor-parte { border-bottom: 1px solid var(--linha); padding-bottom: 8px; margin-bottom: 8px; }
+.proc-previa { background: var(--fundo); border-radius: 12px; }
+.proc-previa .proc { padding-left: 0; padding-right: 0; }
+@media (max-width: 600px) {
+  .peca-texto p { text-align: left; text-indent: 1.5em; }
+  .peca-texto blockquote { margin-left: 1.5em; }
+  .peca-texto ul { margin-left: 1.2em; }
+}

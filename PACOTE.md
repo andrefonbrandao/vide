@@ -13,15 +13,20 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 8** aberto em 2026-11-10, a partir da versão 0.23.0. **Fechado e publicado como versão 0.24.0.**
-O próximo pacote recomeça esta seção a partir da versão publicada.
+**Pacote 9** aberto em 2026-11-10, a partir da versão 0.24.0 (já publicada). Plano completo do recurso na página "Plano do Processo Fictício" (claude.ai).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | Processo fictício, etapa 1a: nova seção **Acervo › Processos** (biblioteca; novo processo em branco); capa (número no formato do CNJ com "tribunal 99", que não existe), partes e advogados, eventos com peças escritas no Vide (títulos, citações, listas, negrito, itálico); cada evento segurado, agendado ou liberado; publicar para a turma (link e QR) com atualização automática; página da turma `/p/<código>` inspirada no eproc, com a marca "PROCESSO FICTÍCIO — USO DIDÁTICO", novidades desde a última visita e leitura das peças; o serviço só entrega aos alunos os eventos já liberados | Pronta |
+
+## Pacotes anteriores
+
+### Pacote 8 (publicado como 0.24.0 em 2026-11-10)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | Pedido para a IA (Acervo › Casos): deixa claro que é preciso variar quem consulta (mulher ou homem; jovem, adulto ou idoso) e quem responde (juiz ou advogado), para os casos não saírem todos com o mesmo tipo de personagem; explica que o Vide sorteia se quem responde aparece como homem ou mulher | Publicada (0.24.0) |
 | 2 | Personagens da Consulta com acabamento refinado: luz e sombra, contornos no tom da cor, rosto mais cuidado, círculo de fundo, selo de martelo (juiz) ou pasta (advogado); animações: piscar, respirar, troca suave de expressão, "digitando…" antes de cada fala, balões com sombra e "rabinho", quem responde entra deslizando | Publicada (0.24.0) |
-
-## Pacotes anteriores
 
 ### Pacote 7 (publicado como 0.23.0 em 2026-11-10)
 

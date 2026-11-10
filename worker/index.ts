@@ -6,11 +6,13 @@
 //
 // Tudo que não começa com /api/ é o próprio app (arquivos da pasta dist).
 import { DurableObject } from 'cloudflare:workers';
+import { paraAluno, type ComLibera } from '../src/processo/liberacao';
 
 export interface Env {
   SALAS: DurableObjectNamespace<Sala>;
   JOGOS: DurableObjectNamespace<Jogo>;
   TREINOS: DurableObjectNamespace<Treino>;
+  PROCESSOS: DurableObjectNamespace<Processo>;
   ASSETS: Fetcher;
 }
 
@@ -19,6 +21,7 @@ type Papel = 'computador' | 'celular';
 const RE_SALA = /^\/api\/sala\/([A-Z0-9]{6,16})$/;
 const RE_JOGO = /^\/api\/jogo\/(\d{6})$/;
 const RE_TREINO = /^\/api\/treino(?:\/([A-Za-z0-9]{10,24}))?$/;
+const RE_PROCESSO = /^\/api\/processo(?:\/([A-Za-z0-9]{10,24}))?$/;
 /** Mensagens maiores que isso são descartadas (as do Vide têm poucos KB). */
 const TAMANHO_MAXIMO = 256 * 1024;
 
@@ -43,6 +46,8 @@ export default {
     }
     const t = RE_TREINO.exec(url.pathname);
     if (t) return tratarTreino(req, env, url, t[1]);
+    const pr = RE_PROCESSO.exec(url.pathname);
+    if (pr) return tratarProcesso(req, env, url, pr[1]);
     if (url.pathname.startsWith('/api/')) return new Response('Não encontrado', { status: 404 });
     return env.ASSETS.fetch(req);
   },
@@ -303,6 +308,57 @@ export class Treino extends DurableObject<Env> {
       if (texto.length > MAX_TREINO) return jsonResp({ erro: 'grande demais' }, 413);
       try {
         JSON.parse(texto);
+      } catch {
+        return jsonResp({ erro: 'JSON inválido' }, 400);
+      }
+      await this.ctx.storage.put({ chave, dados: texto });
+      return jsonResp({ id });
+    }
+    if (req.method === 'DELETE') {
+      await this.ctx.storage.deleteAll();
+      return jsonResp({ ok: true });
+    }
+    return new Response('Método não permitido', { status: 405 });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Processo fictício: o professor publica o processo inteiro (com os eventos
+// futuros), mas a leitura pública só devolve os eventos já liberados. Com a
+// chave (o navegador do professor) dá para atualizar, apagar e ler tudo.
+
+async function tratarProcesso(req: Request, env: Env, url: URL, id: string | undefined): Promise<Response> {
+  if (req.method !== 'GET') {
+    const origem = req.headers.get('Origin');
+    if (!origem || new URL(origem).host !== url.host) return new Response('Origem não permitida', { status: 403 });
+  }
+  if (!id) {
+    if (req.method !== 'POST') return new Response('Método não permitido', { status: 405 });
+    const novo = novoIdTreino();
+    return env.PROCESSOS.get(env.PROCESSOS.idFromName(novo)).fetch(new Request(`https://processo/${novo}`, { method: 'PUT', headers: req.headers, body: req.body }));
+  }
+  return env.PROCESSOS.get(env.PROCESSOS.idFromName(id)).fetch(new Request(`https://processo/${id}`, { method: req.method, headers: req.headers, body: req.body }));
+}
+
+export class Processo extends DurableObject<Env> {
+  async fetch(req: Request): Promise<Response> {
+    const id = new URL(req.url).pathname.slice(1);
+    const chave = req.headers.get('X-Vide-Chave') ?? '';
+    const guardada = await this.ctx.storage.get<string>('chave');
+    if (req.method === 'GET') {
+      const dados = await this.ctx.storage.get<string>('dados');
+      if (!dados) return jsonResp({ erro: 'não encontrado' }, 404);
+      const tudo = JSON.parse(dados) as { eventos: ComLibera[] };
+      return jsonResp(paraAluno(tudo, Date.now()));
+    }
+    if (!RE_TOKEN.test(chave)) return jsonResp({ erro: 'chave inválida' }, 400);
+    if (guardada && guardada !== chave) return jsonResp({ erro: 'sem permissão' }, 403);
+    if (req.method === 'PUT') {
+      const texto = await req.text();
+      if (texto.length > MAX_TREINO) return jsonResp({ erro: 'grande demais' }, 413);
+      try {
+        const d = JSON.parse(texto) as { eventos?: unknown };
+        if (!Array.isArray(d.eventos)) return jsonResp({ erro: 'formato inválido' }, 400);
       } catch {
         return jsonResp({ erro: 'JSON inválido' }, 400);
       }

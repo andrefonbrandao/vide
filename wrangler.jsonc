@@ -16,7 +16,8 @@
     "bindings": [
       { "name": "SALAS", "class_name": "Sala" },
       { "name": "JOGOS", "class_name": "Jogo" },
-      { "name": "TREINOS", "class_name": "Treino" }
+      { "name": "TREINOS", "class_name": "Treino" },
+      { "name": "PROCESSOS", "class_name": "Processo" }
     ]
   },
   "migrations": [
@@ -24,7 +25,9 @@
     // Salas do jogo de perguntas (alunos respondendo pelo celular).
     { "tag": "v2", "new_sqlite_classes": ["Jogo"] },
     // Treinos em casa (cópias de grupos de questões compartilhadas por link).
-    { "tag": "v3", "new_sqlite_classes": ["Treino"] }
+    { "tag": "v3", "new_sqlite_classes": ["Treino"] },
+    // Processos fictícios que a turma acompanha (só os eventos já liberados são lidos pelos alunos).
+    { "tag": "v4", "new_sqlite_classes": ["Processo"] }
   ],
   "workers_dev": true,
   "preview_urls": false

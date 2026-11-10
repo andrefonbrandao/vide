@@ -14,6 +14,7 @@ import { Registro } from './telas/Registro';
 import { Controle } from './telas/Controle';
 import { Jogar } from './telas/Jogar';
 import { Treino } from './telas/Treino';
+import { PaginaProcesso } from './telas/ProcessoAluno';
 import { BotaoDrive } from './telas/PainelDrive';
 
 type Aba = 'aula' | 'acervo' | 'registro';
@@ -55,10 +56,14 @@ const sala = (parametros.get('sala') ?? '').toUpperCase().replace(/[^A-Z0-9]/g, 
 const rotaJogo = /^\/j(?:\/(\d{6}))?\/?$/.exec(location.pathname);
 // Treino em casa: /t/<código>.
 const rotaTreino = /^\/t\/([A-Za-z0-9]{10,24})\/?$/.exec(location.pathname);
+// Processo fictício (visão da turma): /p/<código>.
+const rotaProcesso = /^\/p\/([A-Za-z0-9]{10,24})\/?$/.exec(location.pathname);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {rotaTreino ? (
+    {rotaProcesso ? (
+      <PaginaProcesso codigo={rotaProcesso[1]} />
+    ) : rotaTreino ? (
       <Treino codigo={rotaTreino[1]} />
     ) : rotaJogo ? (
       <Jogar codigoInicial={rotaJogo[1] ?? ''} />

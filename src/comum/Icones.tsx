@@ -203,6 +203,15 @@ export const IcProxima = (p: P) => (
 );
 
 /** Perguntas (balão com interrogação). */
+/** Pasta de autos com balança (processos fictícios). */
+export const IcProcesso = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 4h10l4 4v12H4z" />
+    <path d="M14 4v4h4" />
+    <path d="M11 11v6M8 12h6M8 12l-1.5 3h3zM14 12l-1.5 3h3z" />
+  </Svg>
+);
+
 /** Pessoa com balão de fala (casos do jogo "Consulta"). */
 export const IcCasos = (p: P) => (
   <Svg {...p}>

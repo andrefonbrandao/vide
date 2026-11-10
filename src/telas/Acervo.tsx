@@ -29,7 +29,8 @@ import { chaveItemArtigo, resolver } from '../comum/legislacao';
 import { Detector, chaveReferencia } from '../voz/detector';
 import { Folha } from './Projecao';
 import { AdicionarMaterial, ListaMateriais } from './Materiais';
-import { IcCasos, IcLei, IcMais, IcPasta, IcPerguntas, IcTeste } from '../comum/Icones';
+import { IcCasos, IcLei, IcMais, IcPasta, IcPerguntas, IcProcesso, IcTeste } from '../comum/Icones';
+import { Processos } from './Processos';
 import { Casos } from './Casos';
 import { AdicionarQuestoes, ListaQuestoes } from './Questoes';
 
@@ -65,7 +66,7 @@ function montarItens(artigos: ArtigoFatiado[], def: DefDiploma, arquivo: string,
 
 const OUTRA = '__outra';
 
-type AbaAcervo = 'legislacao' | 'materiais' | 'questoes' | 'casos' | 'testes' | 'nova-norma' | 'novo-material' | 'novas-questoes';
+type AbaAcervo = 'legislacao' | 'materiais' | 'questoes' | 'casos' | 'processos' | 'testes' | 'nova-norma' | 'novo-material' | 'novas-questoes';
 
 export function Acervo() {
   const [aba, setAbaEstado] = useState<AbaAcervo>(() => {
@@ -123,6 +124,7 @@ export function Acervo() {
         {botaoAba('materiais', 'Materiais', <IcPasta />)}
         {botaoAba('questoes', 'Questões', <IcPerguntas />)}
         {botaoAba('casos', 'Casos', <IcCasos />)}
+        {botaoAba('processos', 'Processos', <IcProcesso />)}
         {botaoAba('testes', 'Testes', <IcTeste />)}
         <div className="mais-acervo" ref={maisRef}>
           <button
@@ -188,6 +190,7 @@ export function Acervo() {
       {aba === 'questoes' && <ListaQuestoes aoAdicionar={() => setAba('novas-questoes')} />}
       {aba === 'novas-questoes' && <AdicionarQuestoes aoVer={() => setAba('questoes')} />}
       {aba === 'casos' && <Casos key={chaveCasos} />}
+      {aba === 'processos' && <Processos />}
       {aba === 'testes' && (
         <>
           <Conferir leis={leis} />
