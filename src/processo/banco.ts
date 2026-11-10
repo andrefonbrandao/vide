@@ -40,9 +40,10 @@ export function novoEvento(anterior?: Evento): Evento {
   return { id: novoId(), data, descricao: '', usuario: '', documentos: [], liberacao: { modo: 'segurar' } };
 }
 
-export async function criarProcesso(titulo: string): Promise<Processo> {
+/** Um processo novo (ainda não guardado), com os padrões. */
+export function processoEmBranco(titulo: string): Processo {
   const agora = agoraISO();
-  const p: Processo = {
+  return {
     id: novoId(),
     usuario_id: null,
     criado_em: agora,
@@ -63,6 +64,10 @@ export async function criarProcesso(titulo: string): Promise<Processo> {
     eventos: [],
     publicacao: null,
   };
+}
+
+export async function criarProcesso(titulo: string): Promise<Processo> {
+  const p = processoEmBranco(titulo);
   await db.processos.put(p);
   avisarMudancaProcessos();
   return p;

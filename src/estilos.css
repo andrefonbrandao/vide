@@ -919,3 +919,8 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .proj-processo { position: absolute; inset: 0; overflow: hidden; background: var(--fundo); zoom: 1.35; }
 .proj-processo .proc-doc { pointer-events: none; }
 .proj-processo .proc-leitura-topo button { display: none; }
+.proc-colar { display: flex; flex-direction: column; gap: 12px; }
+.proc-colar textarea { width: 100%; font-size: 13px; }
+.proc-avisos { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
+.proc-previa-colar summary { cursor: pointer; font-weight: 800; margin: 6px 0; }
+.proc-falta { color: #a2361f; }

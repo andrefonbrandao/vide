@@ -212,6 +212,8 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 6. Abra o link no celular: capa, partes, eventos e peças; os eventos novos aparecem como "novidades".
 7. Na aula: **Atividades › Processo da turma** projeta o processo; clique numa sigla (INIC1…) para projetar a peça e use **Liberar o evento…** para soltar o próximo ato.
 8. No semestre seguinte: **Copiar** o processo, com a nova data de início; as datas andam juntas.
+9. Para cadastrar mais rápido: **Colar processo** (em Acervo › Processos). Preencha o tema e clique em **Copiar pedido para a IA**; cole no Claude, copie a resposta e cole em **Processo em texto**. Confira a prévia e clique em **Criar o processo**.
+10. Dentro do processo: **Colar eventos** (em Eventos) acrescenta atos escritos fora do Vide; **Copiar como texto** copia o processo inteiro (para revisar no Word ou pedir à IA que continue).
 
 ## Guardar o acervo no Google Drive (vários computadores)
 

@@ -13,15 +13,20 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 9** aberto em 2026-11-10, a partir da versão 0.24.0. **Fechado e publicado como versão 0.25.0.**
-O próximo pacote recomeça esta seção a partir da versão publicada. Plano completo do recurso na página "Plano do Processo Fictício" (claude.ai).
+**Pacote 10** aberto em 2026-11-10, a partir da versão 0.25.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | Processo em texto: **Colar processo** (capa, partes, eventos e peças num formato de texto, com prévia e avisos; documentos "(PDF)" ficam com "falta anexar o PDF"); **Colar eventos** num processo existente (siglas repetidas renumeradas); **Copiar como texto** (o processo inteiro no mesmo formato, para revisar ou pedir à IA que continue); **pedido pronto para a IA** (tema, até que fase, quantos eventos, data de início e defeitos para plantar) | Pronta |
+
+## Pacotes anteriores
+
+### Pacote 9 (publicado como 0.25.0 em 2026-11-10)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | Processo fictício, etapa 1a: nova seção **Acervo › Processos** (biblioteca; novo processo em branco); capa (número no formato do CNJ com "tribunal 99", que não existe), partes e advogados, eventos com peças escritas no Vide (títulos, citações, listas, negrito, itálico); cada evento segurado, agendado ou liberado; publicar para a turma (link e QR) com atualização automática; página da turma `/p/<código>` inspirada no eproc, com a marca "PROCESSO FICTÍCIO — USO DIDÁTICO", novidades desde a última visita e leitura das peças; o serviço só entrega aos alunos os eventos já liberados | Publicada (0.25.0) |
 | 2 | Processo fictício, etapa 1b: PDFs anexados às peças (ficam nos materiais do acervo e vão para o Google Drive; até 10 MB; o serviço só entrega o PDF de evento já liberado); artigos citados nas peças ("art. 319 do CPC") viram links com o texto da lei; **Atividades › Processo da turma** projeta o processo como a turma vê, com as peças que o professor abrir e a rolagem acompanhando, e libera eventos durante a aula (atualiza o link); **Copiar** um processo para outro semestre, com as datas reprogramadas; processos sincronizados com o Google Drive | Publicada (0.25.0) |
-
-## Pacotes anteriores
 
 ### Pacote 8 (publicado como 0.24.0 em 2026-11-10)
 

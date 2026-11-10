@@ -47,6 +47,7 @@ function CopiarProcesso({ p, aoCriar, aoCancelar }: { p: Processo; aoCriar: (id:
   );
 }
 import { copiarProcesso } from '../processo/copiar';
+import { prefixoSigla, semSiglasRepetidas } from '../processo/siglas';
 import { gerarNumero } from '../processo/numero';
 import { db } from '../dados/db';
 import type { Material } from '../dados/modelo';
@@ -55,6 +56,7 @@ import { comArtigos, dadosParaPublicar, desativarProcesso, MAX_PDF, publicarProc
 import { urlDoProcesso, type DadosProcesso, type Documento, type Evento, type Parte, type Processo } from '../processo/tipos';
 import { LinkEQr } from './CompartilharTreino';
 import { buscarNoAcervo, PdfDaPeca, TextoPeca, VisaoProcesso } from './ProcessoAluno';
+import { ColarEventos, ColarProcesso, CopiarComoTexto } from './ProcessoTexto';
 
 
 
@@ -80,25 +82,6 @@ const DESCRICOES = [
 ];
 const USUARIOS = ['ADVOGADO DO AUTOR', 'ADVOGADO DO RÉU', 'JUIZ', 'SECRETARIA', 'OFICIAL DE JUSTIÇA', 'SISTEMA'];
 
-/** Sigla do documento, como no eproc (INIC1, CONT1…), pela descrição do evento. */
-function prefixoSigla(descricao: string): string {
-  const d = descricao.toUpperCase();
-  const tabela: [RegExp, string][] = [
-    [/INICIAL/, 'INIC'],
-    [/CONTESTA/, 'CONT'],
-    [/R[ÉE]PLICA/, 'REPLICA'],
-    [/SENTEN/, 'SENT'],
-    [/DESPACHO|DECIS/, 'DESPADEC'],
-    [/MANDADO/, 'MAND'],
-    [/CERTID|CITA/, 'CERT'],
-    [/AUDI[ÊE]NCIA/, 'TERMOAUD'],
-    [/APELA/, 'APELACAO'],
-    [/CONTRARRAZ/, 'CONTRAZ'],
-    [/PROCURA/, 'PROC'],
-  ];
-  return tabela.find(([re]) => re.test(d))?.[1] ?? 'OUT';
-}
-
 function proximaSigla(p: Processo, descricao: string): string {
   const pre = prefixoSigla(descricao);
   const usadas = p.eventos.flatMap((e) => e.documentos.map((d) => d.sigla)).filter((s) => s.replace(/\d+$/, '') === pre).length;
@@ -120,9 +103,11 @@ function rotuloLiberacao(e: Evento): string {
 // ---------------------------------------------------------------------------
 // Editor de texto da peça (marcações simples, com botões).
 
-function EditorPdf({ doc, aoMudar }: { doc: Documento; aoMudar: (d: Documento) => void }) {
+function EditorPdf({ doc, aoMudar, pasta }: { doc: Documento; aoMudar: (d: Documento) => void; pasta: string }) {
   const [ver, setVer] = useState(false);
   const [nome, setNome] = useState('');
+  const [erro, setErro] = useState<string | null>(null);
+  const entrada = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (doc.materialId) void db.materiais.get(doc.materialId).then((m) => setNome(m ? m.nome : '(PDF não encontrado neste computador)'));
   }, [doc.materialId]);
@@ -140,14 +125,39 @@ function EditorPdf({ doc, aoMudar }: { doc: Documento; aoMudar: (d: Documento) =
       </div>
       <div className="linha-opcoes">
         <span>
-          PDF: <strong>{nome}</strong>
+          PDF: <strong>{doc.materialId ? nome : <span className="proc-falta">falta anexar o PDF</span>}</strong>
           {doc.paginas ? <span className="ajuda" style={{ margin: 0 }}> · {doc.paginas} {doc.paginas === 1 ? 'página' : 'páginas'}</span> : null}
         </span>
         <span className="espaco" />
-        <button type="button" className={`botao pequeno${ver ? ' escuro' : ''}`} onClick={() => setVer(!ver)}>
-          {ver ? 'Esconder' : 'Ver o PDF'}
+        <button type="button" className="botao pequeno" onClick={() => entrada.current?.click()}>
+          {doc.materialId ? 'Trocar o PDF' : 'Anexar o PDF'}
         </button>
+        {doc.materialId && (
+          <button type="button" className={`botao pequeno${ver ? ' escuro' : ''}`} onClick={() => setVer(!ver)}>
+            {ver ? 'Esconder' : 'Ver o PDF'}
+          </button>
+        )}
+        <input
+          ref={entrada}
+          type="file"
+          accept="application/pdf,.pdf"
+          hidden
+          onChange={async (ev) => {
+            const f = ev.target.files?.[0];
+            ev.target.value = '';
+            if (!f) return;
+            setErro(null);
+            if (f.size > MAX_PDF) return setErro('O PDF passa de 10 MB. Reduza o arquivo e tente de novo.');
+            try {
+              const m = await importarMaterial(f, { pasta });
+              aoMudar({ ...doc, materialId: m.id, paginas: m.paginas });
+            } catch (err) {
+              setErro((err as Error).message);
+            }
+          }}
+        />
       </div>
+      {erro && <p className="digitar-msg erro">{erro}</p>}
       {ver && doc.materialId && (
         <div className="proc-folha" style={{ padding: 12 }}>
           <PdfDaPeca arquivo={doc.materialId} buscar={buscarNoAcervo} />
@@ -157,10 +167,10 @@ function EditorPdf({ doc, aoMudar }: { doc: Documento; aoMudar: (d: Documento) =
   );
 }
 
-function EditorPeca({ doc, aoMudar }: { doc: Documento; aoMudar: (d: Documento) => void }) {
+function EditorPeca({ doc, aoMudar, pasta }: { doc: Documento; aoMudar: (d: Documento) => void; pasta: string }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [ver, setVer] = useState(false);
-  if (doc.tipo === 'pdf') return <EditorPdf doc={doc} aoMudar={aoMudar} />;
+  if (doc.tipo === 'pdf') return <EditorPdf doc={doc} aoMudar={aoMudar} pasta={pasta} />;
   const inserir = (antes: string, depois = '', inicioDeLinha = false) => {
     const t = ref.current;
     if (!t) return;
@@ -374,7 +384,7 @@ function EditorEvento({
         <label>Documentos</label>
         {e.documentos.map((d) => (
           <div key={d.id} className="proc-doc-bloco">
-            <EditorPeca doc={d} aoMudar={mudarDoc} />
+            <EditorPeca doc={d} aoMudar={mudarDoc} pasta={`Processos/${p.titulo.replace(/\//g, '-')}`} />
             <button type="button" className="link-discreto" style={{ marginLeft: 0 }} onClick={() => confirm(`Apagar o documento ${d.sigla}?`) && aoMudar({ ...e, documentos: e.documentos.filter((x) => x.id !== d.id) })}>
               apagar este documento
             </button>
@@ -476,6 +486,7 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
   const [estado, setEstado] = useState<string>('');
   const [erro, setErro] = useState<string | null>(null);
   const [verLink, setVerLink] = useState(false);
+  const [colandoEventos, setColandoEventos] = useState(false);
   const salvar = useRef<number>(0);
   const publicar = useRef<number>(0);
   const ultimo = useRef<Processo | null>(null);
@@ -565,6 +576,9 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
         <span className="ajuda" style={{ margin: 0 }}>
           {estado}
         </span>
+      </div>
+      <div className="linha-opcoes" style={{ marginBottom: 8 }}>
+        <CopiarComoTexto p={p} />
       </div>
 
       <div className="cartao proc-publicacao">
@@ -711,6 +725,16 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
           <p className="ajuda">
             Evento novo começa <strong>segurado</strong> (só você vê). Escolha quando a turma passa a vê-lo: numa data, ou libere na hora.
           </p>
+          {colandoEventos && (
+            <ColarEventos
+              aoAcrescentar={(evs) => {
+                const existentes = p.eventos.flatMap((x) => x.documentos.map((d) => d.sigla));
+                mudar({ ...p, eventos: [...p.eventos, ...semSiglasRepetidas(existentes, evs)] });
+                setColandoEventos(false);
+              }}
+              aoCancelar={() => setColandoEventos(false)}
+            />
+          )}
           <ol className="proc-lista-eventos">
             {p.eventos.map((e, i) => (
               <li key={e.id} className={aberto === e.id ? 'aberto' : ''}>
@@ -752,7 +776,12 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
             }}
           >
             + Evento
-          </button>
+          </button>{' '}
+          {!colandoEventos && (
+            <button className="botao" onClick={() => setColandoEventos(true)}>
+              Colar eventos
+            </button>
+          )}
         </>
       )}
 
@@ -777,6 +806,7 @@ export function Processos() {
   });
   const [novoTitulo, setNovoTitulo] = useState('');
   const [copiando, setCopiando] = useState<string | null>(null);
+  const [colando, setColando] = useState(false);
   const abrir = (id: string | null) => {
     setAberto(id);
     try {
@@ -793,6 +823,7 @@ export function Processos() {
     return () => window.removeEventListener('vide-processos-mudou', carregar);
   }, []);
   if (aberto) return <EditorProcesso key={aberto} id={aberto} aoVoltar={() => abrir(null)} />;
+  if (colando) return <ColarProcesso aoCriar={(id) => (setColando(false), abrir(id))} aoCancelar={() => setColando(false)} />;
   return (
     <>
       <p className="ajuda">
@@ -810,6 +841,9 @@ export function Processos() {
       >
         <input type="text" placeholder="Nome do novo processo (só você vê), ex.: Turma 2027/1 — ação de cobrança" value={novoTitulo} onChange={(e) => setNovoTitulo(e.target.value)} style={{ flex: 1, minWidth: 240 }} aria-label="Nome do novo processo" />
         <button className="botao primario">Novo processo em branco</button>
+        <button type="button" className="botao" onClick={() => setColando(true)} title="Colar um processo inteiro em texto (por exemplo, criado com a ajuda de uma IA)">
+          Colar processo
+        </button>
       </form>
       {lista === null ? (
         <p className="ajuda">Carregando…</p>
