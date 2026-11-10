@@ -215,8 +215,8 @@ function AdicionarCasos({ aoVer }: { aoVer: () => void }) {
         <h3 style={{ marginTop: 0 }}>Colar casos</h3>
         <p className="ajuda">
           Cada caso começa em <strong>Caso:</strong> (o nome fictício). <strong>Pessoa</strong> escolhe o personagem (mulher ou homem; jovem,
-          adulto ou idoso). Cada <strong>Fala</strong> vira um balão, com a expressão entre parênteses (neutro, dúvida, medo, feliz). A{' '}
-          <strong>Resposta</strong> diz quem responde (advogado ou juiz). <strong>Tempo</strong> é em minutos.
+          adulto ou idoso; o Vide sorteia um desenho compatível). Cada <strong>Fala</strong> vira um balão, com a expressão entre parênteses (neutro, dúvida, medo, feliz). A{' '}
+          <strong>Resposta</strong> diz quem responde (advogado ou juiz; o Vide sorteia se aparece homem ou mulher). <strong>Tempo</strong> é em minutos.
         </p>
         <pre className="mono modelo-questoes">{MODELO_CASO}</pre>
         <button className="botao pequeno" onClick={() => void copiar(MODELO_CASO, 'modelo')}>

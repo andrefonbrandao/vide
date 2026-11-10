@@ -33,10 +33,11 @@ ${MODELO_CASO}
 
 Regras:
 - "Caso": só o primeiro nome fictício da pessoa. Varie os nomes e evite nomes de pessoas famosas.
-- "Pessoa": mulher ou homem; se fizer diferença para a história, acrescente jovem, adulto ou idoso.
+- "Pessoa": quem conta o caso. Escreva mulher ou homem e a idade: jovem, adulto ou idoso (ex.: "homem, jovem", "mulher, idosa", "mulher, adulta"). O Vide escolhe o desenho do personagem por esta linha.
+- VARIE os personagens entre os casos: alterne mulheres e homens e use as três idades (jovens, adultos e idosos). Não faça todos os casos com o mesmo tipo de pessoa.
 - Use 2 a 4 falas. Cada fala é curta (no máximo 2 frases), em primeira pessoa e sem termos técnicos, como falaria alguém leigo. A última fala é sempre a pergunta.
 - A expressão entre parênteses deve ser uma destas: neutro, dúvida, medo, feliz. Escolha a que combina com o que a pessoa está dizendo.
-- "Resposta": diga se quem responde é advogado ou juiz. Responda a pergunta de forma direta e correta, em até 4 frases, em linguagem clara, explicando o que acontece e por quê.
+- "Resposta": entre parênteses, quem responde: juiz ou advogado (o Vide sorteia se aparece um homem ou uma mulher). VARIE entre os casos: use juiz quando a pergunta for sobre o que o juízo vai decidir ou fazer, e advogado quando for uma orientação sobre o que a pessoa deve fazer; não ponha sempre o mesmo. Responda a pergunta de forma direta e correta, em até 4 frases, em linguagem clara, explicando o que acontece e por quê.
 - "Fundamento": só o número do artigo do CPC, com inciso ou parágrafo se houver (ex.: 252, 485 VI, 1009 §1). Para outra lei, acrescente a sigla (ex.: 5 CF). Se não tiver certeza do artigo, deixe em branco.
 - "Tempo": minutos para a turma discutir (normalmente 5).
 - O problema deve ter uma resposta clara no CPC, sem depender de jurisprudência divergente.
