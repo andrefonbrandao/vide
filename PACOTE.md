@@ -14,7 +14,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 15** aberto em 2026-11-11, a partir da versão 0.30.0. **Fechado e publicado como versão 0.31.0.** Teste de peso no fechamento: leve (ver `PESO.md`).
+**Pacote 15** aberto em 2026-11-11, a partir da versão 0.30.0. **Fechado e publicado como versão 0.31.0.** Teste de peso no fechamento: leve (ver `PESO.md`). O Cloudflare não montou o envio de 11/11 (falha do lado dele; a montagem pedida pelo painel refez a 0.30.0); a publicação foi refeita com um novo envio.
 O próximo pacote recomeça esta seção a partir da versão publicada.
 
 | # | Ideia | Situação |
