@@ -23,6 +23,9 @@ export interface Questao extends Sincronizavel {
   aceitas?: string[];
   pasta: string;
   etiquetas: string[];
+  /** Pergunta sobre um processo fictício: qual processo e depois de qual evento ela aparece (vazio = desde o início). */
+  processoId?: string;
+  eventoId?: string | null;
 }
 
 /** Uma sequência de questões para usar numa aula. */

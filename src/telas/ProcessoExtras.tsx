@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { FASES, faseAtual, faseDoEvento, indiceFase } from '../processo/fases';
 import { glossarioCompleto, marcarTermos, type Termo } from '../processo/glossario';
 import { diasUteisAte, rotuloPrazo, vencimento } from '../processo/prazos';
-import type { ClientePublicado, DadosProcesso, EventoPublicado } from '../processo/tipos';
+import { conferirResposta } from '../jogo/conceito';
+import type { ClientePublicado, DadosProcesso, EventoPublicado, PerguntaPublicada } from '../processo/tipos';
 import { Figura } from './ConsultaTela';
 
 function dataBR(iso: string): string {
@@ -234,5 +235,126 @@ export function BaixarAutos({ dados, buscar }: { dados: DadosProcesso; buscar?: 
       </button>
       {estado === 'erro' && <span className="digitar-msg erro">Não foi possível montar o PDF. Tente de novo.</span>}
     </div>
+  );
+}
+
+// ---------- Perguntas sobre o processo ----------
+
+type Resposta = { escolha?: number; texto?: string; acertou: boolean };
+
+function UmaPergunta({ q, numero, resposta, aoResponder }: { q: PerguntaPublicada; numero: number; resposta?: Resposta; aoResponder: (r: Resposta) => void }) {
+  const [texto, setTexto] = useState('');
+  const [errou, setErrou] = useState<string | null>(null);
+  const LETRAS = 'ABCDEF';
+  const feito = !!resposta;
+  return (
+    <li className={`proc-pergunta${feito ? (resposta!.acertou ? ' certa' : ' errada') : ''}`}>
+      <p className="proc-pergunta-enunciado">
+        <span className="mono">{numero}.</span> {q.tipo === 'conceito' ? 'Quem sou eu?' : q.enunciado}
+      </p>
+      {q.tipo === 'conceito' ? (
+        <>
+          <ol className="proc-pergunta-dicas">
+            {(q.dicas ?? []).map((d, i) => (
+              <li key={i}>{d}</li>
+            ))}
+          </ol>
+          {!feito ? (
+            <form
+              className="linha-opcoes"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const r = conferirResposta(texto, q.enunciado, q.aceitas ?? [], []);
+                if (r === 'errada') setErrou(texto);
+                else aoResponder({ texto, acertou: true });
+              }}
+            >
+              <input type="text" aria-label="Sua resposta" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Sua resposta" style={{ flex: 1, minWidth: 160 }} />
+              <button className="botao pequeno escuro" disabled={!texto.trim()}>
+                Conferir
+              </button>
+              <button type="button" className="link-discreto" onClick={() => aoResponder({ texto: '', acertou: false })}>
+                desistir e ver a resposta
+              </button>
+              {errou && <span className="proc-prazo-dica">“{errou}” não é. Tente de novo.</span>}
+            </form>
+          ) : null}
+        </>
+      ) : (
+        <div className="proc-pergunta-alts">
+          {q.alternativas.map((a, i) => (
+            <button
+              key={i}
+              type="button"
+              disabled={feito}
+              className={`proc-pergunta-alt${feito && i === q.correta ? ' correta' : ''}${feito && resposta!.escolha === i && i !== q.correta ? ' marcada-errada' : ''}`}
+              onClick={() => aoResponder({ escolha: i, acertou: i === q.correta })}
+            >
+              <b>{q.tipo === 'vf' ? '' : `${LETRAS[i]}) `}</b>
+              {a}
+            </button>
+          ))}
+        </div>
+      )}
+      {feito && (
+        <p className="proc-pergunta-retorno">
+          <strong>{resposta!.acertou ? 'Acertou!' : q.tipo === 'conceito' ? `Resposta: ${q.enunciado}.` : 'Não foi dessa vez.'}</strong> {q.explicacao}
+          {q.fundamento && <span className="mono"> (art. {q.fundamento})</span>}
+        </p>
+      )}
+    </li>
+  );
+}
+
+export function PerguntasDoProcesso({ eventos, numero }: { eventos: EventoPublicado[]; numero: string }) {
+  const lista = eventos.flatMap((e) => e.perguntas ?? []);
+  const chave = `vide.perguntas.${numero}`;
+  const [respostas, setRespostas] = useState<Record<string, Resposta>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(chave) ?? '{}') as Record<string, Resposta>;
+    } catch {
+      return {};
+    }
+  });
+  if (!lista.length) return null;
+  const responder = (id: string, r: Resposta) => {
+    const novo = { ...respostas, [id]: r };
+    setRespostas(novo);
+    try {
+      localStorage.setItem(chave, JSON.stringify(novo));
+    } catch {
+      /* ignore */
+    }
+  };
+  const feitas = lista.filter((q) => respostas[q.id]);
+  const certas = feitas.filter((q) => respostas[q.id].acertou).length;
+  return (
+    <section className="proc-caixa">
+      <h2 className="proc-caixa-titulo">Teste o que você sabe sobre o processo</h2>
+      <p className="proc-perguntas-placar">
+        {feitas.length ? `Você acertou ${certas} de ${feitas.length} (${lista.length} ${lista.length === 1 ? 'pergunta' : 'perguntas'} até aqui).` : `${lista.length} ${lista.length === 1 ? 'pergunta' : 'perguntas'} sobre o que já aconteceu no processo. Ninguém vê as suas respostas.`}
+        {feitas.length > 0 && (
+          <button
+            type="button"
+            className="link-discreto"
+            onClick={() => {
+              setRespostas({});
+              try {
+                localStorage.removeItem(chave);
+              } catch {
+                /* ignore */
+              }
+            }}
+          >
+            recomeçar
+          </button>
+        )}
+      </p>
+      <ol className="proc-perguntas">
+        {lista.map((q, i) => (
+          <UmaPergunta key={q.id} q={q} numero={i + 1} resposta={respostas[q.id]} aoResponder={(r) => responder(q.id, r)} />
+        ))}
+      </ol>
+    </section>
   );
 }

@@ -159,6 +159,21 @@ export interface EventoPublicado extends Omit<Evento, 'liberacao'> {
   libera: number | null;
   /** Colaborativo: os pontos que a turma deliberou antes deste ato. */
   deliberacao?: string[];
+  /** Perguntas sobre o processo que a turma pode responder a partir deste evento. */
+  perguntas?: PerguntaPublicada[];
+}
+
+/** Pergunta sobre o processo, como vai para o link (para o aluno conferir sozinho). */
+export interface PerguntaPublicada {
+  id: string;
+  tipo: 'multipla' | 'vf' | 'conceito';
+  enunciado: string;
+  alternativas: string[];
+  correta: number;
+  explicacao: string;
+  fundamento: string;
+  dicas?: string[];
+  aceitas?: string[];
 }
 
 /** O que fica publicado no Cloudflare. O serviço só entrega os eventos já liberados. */

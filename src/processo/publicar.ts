@@ -5,6 +5,7 @@ import { agoraISO } from '../dados/modelo';
 import { gerarToken } from '../jogo/protocolo';
 import { artigoDoFundamento } from '../treino/publicar';
 import { acharCitacoes, chaveCitacao, citacaoParaDigitado } from './citacoes';
+import { comPerguntas } from './perguntas';
 import type { ArtigoCitado, DadosProcesso, Evento, Processo, Publicacao } from './tipos';
 
 /** Maior PDF aceito numa peça. */
@@ -112,7 +113,7 @@ async function enviar(url: string, metodo: string, chave: string, corpo?: string
 
 /** Cria o link (primeira vez) ou atualiza o que os alunos veem. */
 export async function publicarProcesso(p: Processo): Promise<Publicacao> {
-  const corpo = JSON.stringify(await comCliente(await comArtigos(dadosParaPublicar(p)), p));
+  const corpo = JSON.stringify(await comPerguntas(await comCliente(await comArtigos(dadosParaPublicar(p)), p), p));
   let pub: Publicacao;
   if (p.publicacao) {
     pub = p.publicacao;

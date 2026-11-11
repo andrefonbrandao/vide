@@ -1334,3 +1334,22 @@ button.pilula:hover { border-color: var(--tinta); }
 .proc-deliberacao { margin-top: 6px; font-size: 14px; }
 .proc-deliberacao summary { cursor: pointer; color: #2f6b4f; font-weight: 700; }
 .proc-deliberacao ul { margin: 6px 0 0; padding-left: 18px; color: var(--tinta-2); }
+
+/* ---------- Perguntas sobre o processo ---------- */
+.perguntas-processo h3 { margin: 18px 0 8px; font-size: 16px; }
+.perguntas-lista { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; }
+.perguntas-lista li > div:first-child { margin-bottom: 4px; }
+.proc-perguntas-placar { margin: 0; padding: 10px 14px 0; color: var(--tinta-2); font-size: 14px; display: flex; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+.proc-perguntas { list-style: none; margin: 0; padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 12px; }
+.proc-pergunta { background: #fff; border: 1px solid var(--linha); border-radius: 12px; padding: 12px 14px; }
+.proc-pergunta.certa { border-color: #b9d6c4; }
+.proc-pergunta.errada { border-color: #e8b7a9; }
+.proc-pergunta-enunciado { margin: 0 0 10px; font-weight: 700; }
+.proc-pergunta-alts { display: flex; flex-direction: column; gap: 6px; }
+.proc-pergunta-alt { text-align: left; font: inherit; background: var(--papel); border: 1px solid var(--linha); border-radius: 10px; padding: 8px 12px; cursor: pointer; color: var(--tinta); }
+.proc-pergunta-alt:hover:not(:disabled) { border-color: var(--tinta); }
+.proc-pergunta-alt:disabled { cursor: default; opacity: 0.75; }
+.proc-pergunta-alt.correta { background: #dcebe2; border-color: #2f6b4f; opacity: 1; }
+.proc-pergunta-alt.marcada-errada { background: #fbe3dc; border-color: #c4553e; opacity: 1; }
+.proc-pergunta-dicas { margin: 0 0 10px; padding-left: 20px; }
+.proc-pergunta-retorno { margin: 10px 0 0; font-size: 14px; }

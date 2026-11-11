@@ -64,6 +64,8 @@ import { ColarEventos, ColarProcesso, CopiarComoTexto } from './ProcessoTexto';
 import { Figura } from './ConsultaTela';
 import { ClienteEmCena } from './ProcessoExtras';
 import { PainelDeliberacao } from './Deliberacao';
+import { EditorPerguntas } from './PerguntasProcesso';
+import { comPerguntas } from '../processo/perguntas';
 import { deliberacaoAberta, modoDe } from '../processo/deliberacao';
 import { irPara } from '../comum/navegacao';
 import { listarCasos } from '../consulta/banco';
@@ -763,7 +765,7 @@ function EditorPartes({ partes, aoMudar }: { partes: Parte[]; aoMudar: (p: Parte
   );
 }
 
-type Aba = 'capa' | 'partes' | 'cliente' | 'eventos' | 'deliberacao' | 'glossario' | 'previa';
+type Aba = 'capa' | 'partes' | 'cliente' | 'eventos' | 'deliberacao' | 'perguntas' | 'glossario' | 'previa';
 
 function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) {
   const [p, setP] = useState<Processo | null>(null);
@@ -839,6 +841,7 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
     let vivo = true;
     void comArtigos(dados)
       .then((d) => comCliente(d, p ?? {}))
+      .then((d) => (p ? comPerguntas(d, p) : d))
       .then((d) => vivo && setPrevia(d));
     return () => {
       vivo = false;
@@ -941,6 +944,7 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
             ['cliente', p.cliente ? 'Cliente em cena ✓' : 'Cliente em cena'],
             ['eventos', `Eventos (${p.eventos.length})`],
             ...(modoDe(p) === 'colaborativo' ? ([['deliberacao', `Deliberação da turma${deliberacaoAberta(p)?.pontos.length ? ` (${deliberacaoAberta(p)!.pontos.length})` : ''}`]] as [Aba, string][]) : []),
+            ['perguntas', 'Perguntas'],
             ['glossario', p.glossario?.length ? `Glossário (${p.glossario.length})` : 'Glossário'],
             ['previa', 'Ver como a turma vê'],
           ] as [Aba, string][]
@@ -1038,6 +1042,7 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
           <PainelDeliberacao p={p} aoMudar={mudar} />
         </div>
       )}
+      {aba === 'perguntas' && <EditorPerguntas p={p} aoMudou={() => mudar({ ...p })} />}
       {aba === 'glossario' && <EditorGlossario termos={p.glossario ?? []} aoMudar={(glossario) => mudar({ ...p, glossario })} />}
 
       {aba === 'eventos' && (
