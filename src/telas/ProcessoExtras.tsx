@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { FASES, faseAtual, faseDoEvento, indiceFase } from '../processo/fases';
 import { glossarioCompleto, marcarTermos, type Termo } from '../processo/glossario';
 import { diasUteisAte, rotuloPrazo, vencimento } from '../processo/prazos';
-import type { ClientePublicado, EventoPublicado } from '../processo/tipos';
+import type { ClientePublicado, DadosProcesso, EventoPublicado } from '../processo/tipos';
 import { Figura } from './ConsultaTela';
 
 function dataBR(iso: string): string {
@@ -203,5 +203,36 @@ export function Prazos({ eventos, previa = false }: { eventos: EventoPublicado[]
         ))}
       </ul>
     </section>
+  );
+}
+
+// ---------- PDF dos autos ----------
+
+export function BaixarAutos({ dados, buscar }: { dados: DadosProcesso; buscar?: (arquivo: string) => Promise<Blob> }) {
+  const [estado, setEstado] = useState<'pronto' | 'gerando' | 'erro'>('pronto');
+  const baixar = async () => {
+    setEstado('gerando');
+    try {
+      const { gerarAutosPdf, nomeArquivoAutos } = await import('../processo/autosPdf');
+      const blob = await gerarAutosPdf(dados, buscar);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = nomeArquivoAutos(dados.capa.numero);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      setEstado('pronto');
+    } catch {
+      setEstado('erro');
+    }
+  };
+  return (
+    <div className="proc-baixar">
+      <button type="button" className="botao pequeno" onClick={() => void baixar()} disabled={estado === 'gerando'}>
+        {estado === 'gerando' ? 'Montando o PDF…' : 'Baixar os autos (PDF)'}
+      </button>
+      {estado === 'erro' && <span className="digitar-msg erro">Não foi possível montar o PDF. Tente de novo.</span>}
+    </div>
   );
 }

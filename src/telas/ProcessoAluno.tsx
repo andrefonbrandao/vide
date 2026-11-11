@@ -12,7 +12,7 @@ import { lerTexto, type Trecho } from '../processo/texto';
 import { achados, mapaVicios } from '../processo/vicios';
 import type { ArtigoCitado, DadosProcesso, Documento, EventoPublicado, Parte } from '../processo/tipos';
 import { glossarioCompleto } from '../processo/glossario';
-import { ClienteEmCena, ComTermos, Glossario, MapaProcedimento, Prazos } from './ProcessoExtras';
+import { BaixarAutos, ClienteEmCena, ComTermos, Glossario, MapaProcedimento, Prazos } from './ProcessoExtras';
 
 /** Como buscar o PDF de uma peça (no link: pelo serviço; na prévia do professor: no acervo local). */
 export type BuscarArquivo = (arquivo: string) => Promise<Blob>;
@@ -424,6 +424,7 @@ export function VisaoProcesso({
           <strong>{qtdNovos}</strong> {qtdNovos === 1 ? 'novidade' : 'novidades'} desde a sua última visita
         </p>
       )}
+      {!controlado && dados.eventos.length > 0 && <BaixarAutos dados={previa ? { ...dados, eventos: vistos } : dados} buscar={buscar} />}
       {dados.cliente && dados.cliente.falas.length > 0 && <ClienteEmCena cliente={dados.cliente} />}
       {vistos.length > 0 && <MapaProcedimento eventos={vistos} />}
       <Prazos eventos={previa ? emOrdem : vistos} previa={previa} />

@@ -17,6 +17,9 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 | # | Ideia | Situação |
 |---|-------|----------|
+| 1 | Processo fictício, fase 2b: **caça aos vícios** (o professor seleciona o trecho com defeito e explica; a turma toca nos parágrafos suspeitos; a conferência fica fechada até o professor liberar, e os vícios nem vão para o link antes disso; na aula, "Mostrar os vícios" destaca todos na projeção) | Pronta |
+| 2 | **"E agora?"**: num evento, uma pergunta com opções; na aula, antes de liberar o evento, a turma vota pelo celular (mesma sala do jogo, sem pontos) e o resultado aparece no projetor | Pronta |
+| 3 | **PDF dos autos**: na página da turma, um botão monta os autos num PDF (capa, partes, eventos, peças escritas e PDFs anexados), com folhas numeradas e a marca "PROCESSO FICTÍCIO"; só os eventos liberados. Usa a biblioteca pdf-lib, carregada só no clique. "Vício:" e "E agora:" também no processo em texto e no pedido para a IA | Pronta |
 
 ## Pacotes anteriores
 

@@ -1312,3 +1312,4 @@ button.pilula:hover { border-color: var(--tinta); }
 .jogar-votos li { display: grid; grid-template-columns: 22px 1fr 32px; gap: 8px; align-items: center; }
 .jogar-votos-barra { height: 12px; background: var(--linha); border-radius: 99px; overflow: hidden; }
 .jogar-votos-barra span { display: block; height: 100%; background: var(--destaque); border-radius: 99px; }
+.proc-baixar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin: -4px 0; }

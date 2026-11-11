@@ -221,6 +221,10 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 13. **Glossário**: termos como "juntada", "conclusos para despacho" e "aviso de recebimento" ficam sublinhados na página da turma; tocando, aparece a explicação. Na aba **Glossário** do processo você acrescenta termos seus.
 14. **Cliente em cena**: na aba **Cliente em cena**, escolha um caso da Consulta. A página da turma começa com o cliente contando o problema (sem a resposta).
 15. No texto colado, as linhas "Fase: citação" e "Prazo: 15 dias úteis para o réu contestar" (logo abaixo de "Evento:") já preenchem esses campos; acrescente "(quando vence?)" no fim do prazo para o desafio.
+16. **Caça aos vícios**: numa peça escrita, selecione o trecho com defeito e clique em **Marcar o trecho selecionado como vício**; escreva o que está errado (com o artigo). Na página da turma, a peça ganha a faixa "Caça aos vícios": o aluno clica em **Começar a caça** e toca nos parágrafos suspeitos. Enquanto a conferência estiver fechada, as marcações só ficam guardadas no aparelho; em **Eventos › Liberar a conferência**, o aluno passa a ver na hora se acertou ("Achou!") e pode pedir os que faltam. Na aula, com o processo aberto, **Mostrar os vícios** destaca todos na projeção.
+17. **E agora?**: no evento de uma decisão, marque **"E agora?"** e escreva a pergunta e as opções. Na aula, com o processo aberto, aparece **E agora? Abrir votação** antes de liberar esse evento: a turma entra pelo QR (como no jogo), você clica em **Abrir a votação**, cada um vota no celular e o resultado aparece no projetor. Clique em **Fechar a votação** e depois em **Liberar o evento** para mostrar a decisão.
+18. **PDF dos autos**: na página da turma, **Baixar os autos (PDF)** monta um PDF com a capa, as partes, a lista de eventos, as peças escritas e os PDFs anexados, com folhas numeradas e a marca "PROCESSO FICTÍCIO". Só entram os eventos já liberados.
+19. No texto colado, "Vício: trecho | explicação" (logo depois do texto da peça) e "E agora: pergunta | opção | opção" (logo abaixo de "Evento:") já preenchem esses campos.
 
 ## Guardar o acervo no Google Drive (vários computadores)
 
