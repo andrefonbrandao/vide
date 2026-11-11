@@ -13,14 +13,18 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 12** aberto em 2026-11-11, a partir da versão 0.27.0. **Fechado e publicado como versão 0.28.0.**
-O próximo pacote recomeça esta seção a partir da versão publicada.
+**Pacote 13** aberto em 2026-11-11, a partir da versão 0.28.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+
+## Pacotes anteriores
+
+### Pacote 12 (publicado como 0.28.0 em 2026-11-11)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | Processo fictício, fase 2a: **mapa do procedimento** na página da turma ("o processo está aqui", fase sugerida pela descrição ou escolhida no evento); **prazos correndo** (o evento abre um prazo em dias úteis ou corridos, sem feriados; vencimento e dias que faltam; desafio **"Quando vence?"**, em que o aluno faz a conta e confere); **glossário** (termos dos eventos sublinhados com a explicação; o Vide traz uma lista e o professor acrescenta os seus); **cliente em cena** (um caso da Consulta abre a página da turma, com o cliente contando o problema); "Fase:" e "Prazo:" no processo em texto e no pedido para a IA | Publicada (0.28.0) |
-
-## Pacotes anteriores
 
 ### Pacote 11 (publicado como 0.27.0 em 2026-11-11)
 

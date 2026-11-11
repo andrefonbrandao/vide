@@ -9,6 +9,7 @@ import { PAGINA_INTEIRA } from '../material/regiao';
 import { acharCitacoes, chaveCitacao } from '../processo/citacoes';
 import { liberado } from '../processo/liberacao';
 import { lerTexto, type Trecho } from '../processo/texto';
+import { achados, mapaVicios } from '../processo/vicios';
 import type { ArtigoCitado, DadosProcesso, Documento, EventoPublicado, Parte } from '../processo/tipos';
 import { glossarioCompleto } from '../processo/glossario';
 import { ClienteEmCena, ComTermos, Glossario, MapaProcedimento, Prazos } from './ProcessoExtras';
@@ -136,30 +137,67 @@ export function PdfDaPeca({ arquivo, buscar }: { arquivo: string; buscar: Buscar
 }
 
 /** O texto da peça, com títulos, citações e listas (e os artigos citados clicáveis). */
-export function TextoPeca({ texto, artigos }: { texto: string; artigos?: Record<string, ArtigoCitado> }) {
+/** Caça aos vícios: como cada parte da peça aparece e o que acontece ao tocar. */
+export interface MarcarVicios {
+  estado: (chave: string) => 'certo' | 'errado' | 'marcada' | 'revelado' | null;
+  explicacoes: (chave: string) => string[];
+  aoTocar?: (chave: string) => void;
+}
+
+export function TextoPeca({ texto, artigos, marcar }: { texto: string; artigos?: Record<string, ArtigoCitado>; marcar?: MarcarVicios }) {
   const blocos = useMemo(() => lerTexto(texto), [texto]);
   const [aberto, setAberto] = useState<ArtigoCitado | null>(null);
   if (!blocos.length) return <p className="ajuda">(documento sem texto)</p>;
+  const props = (chave: string) => {
+    if (!marcar) return {};
+    const est = marcar.estado(chave);
+    return {
+      className: `vicio-parte${est ? ` ${est}` : ''}${marcar.aoTocar ? ' tocavel' : ''}`,
+      onClick: marcar.aoTocar
+        ? (ev: React.MouseEvent) => {
+            if ((ev.target as Element).closest('button, a')) return;
+            marcar.aoTocar!(chave);
+          }
+        : undefined,
+    };
+  };
+  const nota = (chave: string) => {
+    if (!marcar) return null;
+    const est = marcar.estado(chave);
+    if (est === 'certo' || est === 'revelado')
+      return marcar.explicacoes(chave).map((x, k) => (
+        <span key={k} className={`vicio-nota ${est}`}>
+          {est === 'certo' ? 'Achou! ' : 'Vício: '}
+          {x || 'defeito plantado aqui.'}
+        </span>
+      ));
+    if (est === 'errado') return <span className="vicio-nota errado">Aqui não há vício plantado.</span>;
+    return null;
+  };
   return (
     <>
       {aberto && <JanelaArtigo artigo={aberto} aoFechar={() => setAberto(null)} />}
-      <div className="peca-texto">
+      <div className={`peca-texto${marcar?.aoTocar ? ' cacando' : ''}`}>
         {blocos.map((b, i) => {
           if (b.tipo === 'lista')
             return (
               <ul key={i}>
                 {b.itens.map((it, k) => (
-                  <li key={k}>
+                  <li key={k} {...props(`${i}.${k}`)}>
                     <Trechos trechos={it} artigos={artigos} aoAbrir={setAberto} />
+                    {nota(`${i}.${k}`)}
                   </li>
                 ))}
               </ul>
             );
           const Tag = b.tipo === 'titulo' ? 'h2' : b.tipo === 'subtitulo' ? 'h3' : b.tipo === 'citacao' ? 'blockquote' : 'p';
           return (
-            <Tag key={i}>
-              <Trechos trechos={b.trechos} artigos={artigos} aoAbrir={setAberto} />
-            </Tag>
+            <Fragment key={i}>
+              <Tag {...props(`${i}`)}>
+                <Trechos trechos={b.trechos} artigos={artigos} aoAbrir={setAberto} />
+              </Tag>
+              {nota(`${i}`)}
+            </Fragment>
           );
         })}
       </div>
@@ -191,19 +229,99 @@ function PartesDoPolo({ titulo, partes }: { titulo: string; partes: Parte[] }) {
   );
 }
 
+/** Caça aos vícios na leitura de uma peça (marcações guardadas só neste aparelho). */
+function useCaca(dados: DadosProcesso, doc: Documento, mostrarVicios: boolean | 'esconder'): { barra: React.ReactNode; marcar?: MarcarVicios } {
+  const total = doc.vicios?.length ?? doc.qtdVicios ?? 0;
+  const chave = `vide.vicios.${dados.capa.numero}.${doc.id}`;
+  const [marcadas, setMarcadasEstado] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(chave) ?? '[]') as string[];
+    } catch {
+      return [];
+    }
+  });
+  const [cacando, setCacando] = useState(() => marcadas.length > 0);
+  const [revelar, setRevelar] = useState(false);
+  const mapa = useMemo(() => (doc.vicios ? mapaVicios(doc.texto, doc.vicios) : null), [doc]);
+  if (!total || doc.tipo !== 'texto' || mostrarVicios === 'esconder') return { barra: null };
+  const setMarcadas = (l: string[]) => {
+    setMarcadasEstado(l);
+    try {
+      localStorage.setItem(chave, JSON.stringify(l));
+    } catch {
+      /* ignore */
+    }
+  };
+  if (mostrarVicios && mapa)
+    return {
+      barra: (
+        <p className="vicios-barra professor">
+          <strong>Caça aos vícios:</strong> {total} {total === 1 ? 'vício plantado' : 'vícios plantados'} nesta peça (destacados abaixo).
+        </p>
+      ),
+      marcar: { estado: (k) => (mapa.has(k) ? 'revelado' : null), explicacoes: (k) => (mapa.get(k) ?? []).map((v) => v.explicacao) },
+    };
+  const achou = doc.vicios ? achados(doc.texto, doc.vicios, marcadas).size : 0;
+  const barra = (
+    <div className="vicios-barra">
+      <div>
+        <strong>Caça aos vícios:</strong> esta peça tem {total} {total === 1 ? 'defeito plantado' : 'defeitos plantados'}.{' '}
+        {!cacando
+          ? 'Ache os trechos com problema.'
+          : mapa
+            ? `Você achou ${achou} de ${total}.`
+            : `Você marcou ${marcadas.length} ${marcadas.length === 1 ? 'parte' : 'partes'}. A conferência abre quando o professor liberar.`}
+      </div>
+      {!cacando ? (
+        <button className="botao pequeno escuro" onClick={() => setCacando(true)}>
+          Começar a caça
+        </button>
+      ) : (
+        <>
+          <span className="ajuda" style={{ margin: 0 }}>
+            Toque num parágrafo para marcar (ou desmarcar).
+          </span>
+          {mapa && achou < total && !revelar && (
+            <button className="link-discreto" onClick={() => setRevelar(true)}>
+              mostrar os que faltam
+            </button>
+          )}
+          {marcadas.length > 0 && (
+            <button className="link-discreto" onClick={() => (setMarcadas([]), setRevelar(false))}>
+              recomeçar
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
+  if (!cacando) return { barra };
+  return {
+    barra,
+    marcar: {
+      estado: (k) => (marcadas.includes(k) ? (mapa ? (mapa.has(k) ? 'certo' : 'errado') : 'marcada') : revelar && mapa?.has(k) ? 'revelado' : null),
+      explicacoes: (k) => (mapa?.get(k) ?? []).map((v) => v.explicacao),
+      aoTocar: (k) => setMarcadas(marcadas.includes(k) ? marcadas.filter((x) => x !== k) : [...marcadas, k]),
+    },
+  };
+}
+
 function Peca({
   dados,
   evento,
   doc,
   aoFechar,
   buscar,
+  mostrarVicios = false,
 }: {
   dados: DadosProcesso;
   evento: EventoPublicado;
   doc: Documento;
   aoFechar: () => void;
   buscar?: BuscarArquivo;
+  mostrarVicios?: boolean | 'esconder';
 }) {
+  const caca = useCaca(dados, doc, mostrarVicios);
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && aoFechar();
     window.addEventListener('keydown', esc);
@@ -224,10 +342,11 @@ function Peca({
         <p className="proc-folha-cab">
           {doc.titulo || evento.descricao} <span className="mono">({doc.sigla})</span>
         </p>
+        {caca.barra}
         {doc.tipo === 'pdf' && doc.arquivo && buscar ? (
           <PdfDaPeca arquivo={doc.arquivo} buscar={buscar} />
         ) : (
-          <TextoPeca texto={doc.texto} artigos={doc.artigos} />
+          <TextoPeca texto={doc.texto} artigos={doc.artigos} marcar={caca.marcar} />
         )}
         <p className="proc-folha-rodape">
           {MARCA} · Evento {evento.numero} · {dataBR(evento.data)}
@@ -248,8 +367,11 @@ export function VisaoProcesso({
   buscar,
   lendoControlado,
   aoLer,
+  mostrarVicios,
 }: {
   dados: DadosProcesso;
+  /** Destaca os vícios plantados (prévia do professor e projeção, quando ele quiser); 'esconder' = sem caça (aula). */
+  mostrarVicios?: boolean | 'esconder';
   previa?: boolean;
   novos?: Set<string>;
   buscar?: BuscarArquivo;
@@ -280,7 +402,7 @@ export function VisaoProcesso({
   // O mapa e os prazos seguem o que a turma já vê (na prévia, só os liberados contam para o mapa).
   const emOrdem = [...dados.eventos].sort((a, b) => a.numero - b.numero);
   const vistos = previa ? emOrdem.filter((e) => !('libera' in e) || liberado(e as EventoPublicado, agora)) : emOrdem;
-  if (lendo) return <Peca dados={dados} evento={lendo.e} doc={lendo.d} aoFechar={() => setLendo(null)} buscar={buscar} />;
+  if (lendo) return <Peca key={lendo.d.id} dados={dados} evento={lendo.e} doc={lendo.d} aoFechar={() => setLendo(null)} buscar={buscar} mostrarVicios={mostrarVicios ?? previa} />;
   const qtdNovos = novos ? dados.eventos.filter((e) => novos.has(e.id)).length : 0;
   const campos: [string, string][] = [
     ['Nº do processo', capa.numero],
@@ -367,7 +489,12 @@ export function VisaoProcesso({
                       {e.documentos.length ? (
                         <span className="proc-docs">
                           {e.documentos.map((d) => (
-                            <button key={d.id} className="proc-doc" onClick={() => setLendo({ e, d })} title={d.titulo || d.sigla}>
+                            <button
+                              key={d.id}
+                              className={`proc-doc${d.vicios?.length || d.qtdVicios ? ' com-vicio' : ''}`}
+                              onClick={() => setLendo({ e, d })}
+                              title={`${d.titulo || d.sigla}${d.vicios?.length || d.qtdVicios ? ' · caça aos vícios' : ''}`}
+                            >
                               {d.sigla}
                             </button>
                           ))}

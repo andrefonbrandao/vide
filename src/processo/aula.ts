@@ -5,7 +5,7 @@ import { abrirCanal } from '../comum/canal';
 import { registrar } from '../comum/registro';
 import { lerProcesso, salvarProcesso } from './banco';
 import { liberado, paraAluno } from './liberacao';
-import { comArtigos, dadosParaPublicar, liberaEm, publicarProcesso } from './publicar';
+import { comArtigos, comCliente, dadosParaPublicar, liberaEm, publicarProcesso } from './publicar';
 import type { DadosProcesso, Evento, Processo } from './tipos';
 
 export interface LeituraProcesso {
@@ -19,6 +19,8 @@ export interface TelaProcesso {
   lendo: LeituraProcesso | null;
   /** Rolagem (0 a 1), acompanhando a tela do professor. */
   fracao: number;
+  /** Caça aos vícios: o professor mostra os vícios plantados na projeção. */
+  vicios?: boolean;
 }
 
 export interface EstadoAulaProcesso {
@@ -51,9 +53,18 @@ class AulaProcesso {
     this.ouvintes.forEach((f) => f());
   }
 
-  private async montar(p: Processo, lendo: LeituraProcesso | null, fracao: number): Promise<TelaProcesso> {
-    const dados = paraAluno(await comArtigos(dadosParaPublicar(p)), Date.now());
-    return { dados, lendo, fracao };
+  private async montar(p: Processo, lendo: LeituraProcesso | null, fracao: number, vicios = false): Promise<TelaProcesso> {
+    const dados = paraAluno(await comCliente(await comArtigos(dadosParaPublicar(p, { comVicios: vicios })), p), Date.now());
+    return { dados, lendo, fracao, vicios };
+  }
+
+  /** Mostra (ou esconde) os vícios plantados na projeção. */
+  async mostrarVicios(sim: boolean): Promise<void> {
+    const p = this.estado.processo;
+    const t = this.estado.tela;
+    if (!p || !t) return;
+    this.mudar({ tela: await this.montar(p, t.lendo, t.fracao, sim) });
+    void registrar('sessao', `processo: vícios ${sim ? 'mostrados' : 'escondidos'} na projeção`);
   }
 
   async abrir(id: string): Promise<void> {
@@ -96,7 +107,7 @@ class AulaProcesso {
     let novo: Processo = { ...p, eventos: p.eventos.map((e) => (e.id === eventoId ? { ...e, liberacao: { modo: 'agora' as const } } : e)) };
     novo = await salvarProcesso(novo);
     const t = this.estado.tela;
-    this.mudar({ processo: novo, tela: await this.montar(novo, t?.lendo ?? null, t?.fracao ?? 0), aviso: novo.publicacao ? 'Liberado. Atualizando o link da turma…' : 'Liberado na projeção (o processo ainda não tem link para a turma).' });
+    this.mudar({ processo: novo, tela: await this.montar(novo, t?.lendo ?? null, t?.fracao ?? 0, t?.vicios), aviso: novo.publicacao ? 'Liberado. Atualizando o link da turma…' : 'Liberado na projeção (o processo ainda não tem link para a turma).' });
     const ev = novo.eventos.findIndex((e) => e.id === eventoId);
     void registrar('sessao', `processo: evento ${ev + 1} liberado na aula`, { descricao: novo.eventos[ev]?.descricao });
     if (!novo.publicacao) return;

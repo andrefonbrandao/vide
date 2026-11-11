@@ -84,6 +84,7 @@ export function PainelProcesso() {
   }, [tela?.lendo]);
   if (!tela || !processo) return null;
   const pendentes = a.pendentes();
+  const temVicios = processo.eventos.some((e) => e.documentos.some((d) => d.vicios?.length));
   const proximo = pendentes[0];
   const liberar = async (id: string) => {
     setLiberando(true);
@@ -104,7 +105,7 @@ export function PainelProcesso() {
         </span>
       </div>
       <div ref={caixa} className="previa-processo" data-rolavel>
-        <VisaoProcesso dados={tela.dados} buscar={buscarNoAcervo} lendoControlado={tela.lendo} aoLer={(l) => a.ler(l)} />
+        <VisaoProcesso dados={tela.dados} buscar={buscarNoAcervo} lendoControlado={tela.lendo} aoLer={(l) => a.ler(l)} mostrarVicios={tela.vicios ? true : 'esconder'} />
       </div>
       <div className="painel-jogo-acoes">
         {proximo ? (
@@ -125,6 +126,11 @@ export function PainelProcesso() {
               </option>
             ))}
           </select>
+        )}
+        {temVicios && (
+          <button className={`botao${tela.vicios ? ' escuro' : ''}`} onClick={() => void a.mostrarVicios(!tela.vicios)} title="Destaca na projeção os vícios plantados nas peças, com a explicação">
+            {tela.vicios ? 'Esconder os vícios' : 'Mostrar os vícios'}
+          </button>
         )}
         {tela.lendo && (
           <button className="botao" onClick={() => a.ler(null)}>

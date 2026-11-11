@@ -285,7 +285,7 @@ export function Projecao() {
       {processo && !jogo && !consulta && (
         <div className={`proj-jogo${lateral && painelDentro ? ' encolhido' : ''}${item && !lateral && painelDentro ? ' oculto' : ''}`}>
           <div className="proj-processo" ref={processoRef}>
-            <VisaoProcesso dados={processo.dados} buscar={buscarNoAcervo} lendoControlado={processo.lendo} />
+            <VisaoProcesso dados={processo.dados} buscar={buscarNoAcervo} lendoControlado={processo.lendo} mostrarVicios={processo.vicios ? true : 'esconder'} />
           </div>
         </div>
       )}

@@ -18,7 +18,9 @@ export function liberaEm(e: Evento): number | null {
   return Number.isFinite(t) ? t : null;
 }
 
-export function dadosParaPublicar(p: Processo): DadosProcesso {
+/** `comVicios`: leva os vícios mesmo com a conferência fechada (prévia do professor e projeção). */
+export function dadosParaPublicar(p: Processo, opcoes: { comVicios?: boolean } = {}): DadosProcesso {
+  const mostrar = opcoes.comVicios || !!p.conferenciaVicios;
   return {
     formato: 'vide-processo@1',
     capa: p.capa,
@@ -31,7 +33,12 @@ export function dadosParaPublicar(p: Processo): DadosProcesso {
       libera: liberaEm(p.eventos[i]),
       documentos: e.documentos
         .filter((d) => (d.tipo === 'pdf' ? !!d.materialId : d.texto.trim() || d.titulo.trim()))
-        .map(({ materialId, ...d }) => (d.tipo === 'pdf' ? { ...d, texto: '', arquivo: materialId } : d)),
+        .map(({ materialId, vicios, ...d }) => {
+          if (d.tipo === 'pdf') return { ...d, texto: '', arquivo: materialId };
+          const vs = (vicios ?? []).filter((v) => v.trecho.trim());
+          if (!vs.length) return d;
+          return mostrar ? { ...d, vicios: vs } : { ...d, qtdVicios: vs.length };
+        }),
     })),
     publicadoEm: agoraISO(),
     ...(p.glossario?.some((t) => t.termo.trim() && t.explicacao.trim()) ? { glossario: p.glossario.filter((t) => t.termo.trim() && t.explicacao.trim()) } : {}),

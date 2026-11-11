@@ -5,6 +5,7 @@ import type { Fala } from '../consulta/tipos';
 import type { FaseId } from './fases';
 import type { Termo } from './glossario';
 import type { Prazo } from './prazos';
+import type { Vicio } from './vicios';
 
 export type Polo = 'ativo' | 'passivo' | 'outro';
 
@@ -43,6 +44,10 @@ export interface Documento {
   paginas?: number;
   /** No link: o texto dos artigos citados na peça, pela chave da citação. */
   artigos?: Record<string, ArtigoCitado>;
+  /** Caça aos vícios: defeitos plantados (no link, só depois que a conferência é liberada). */
+  vicios?: Vicio[];
+  /** No link, com a conferência fechada: só quantos vícios a peça tem. */
+  qtdVicios?: number;
 }
 
 /** Quando o evento aparece para os alunos. */
@@ -109,6 +114,8 @@ export interface Processo extends Sincronizavel {
   /** Termos próprios do glossário (somam-se aos do Vide). */
   glossario?: Termo[];
   cliente?: ClienteProcesso | null;
+  /** Caça aos vícios: a turma já pode conferir as marcações? */
+  conferenciaVicios?: boolean;
 }
 
 /** Evento como vai para o link: com a liberação já em milissegundos (null = segurado). */

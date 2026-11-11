@@ -193,6 +193,14 @@ export function lerProcessoTexto(texto: string): ProcessoLido {
     }
     if (doc) {
       if (/^\s*fim do documento\s*$/i.test(linha)) return fecharDoc();
+      const vc = /^\s*v[ií]cio\s*:\s*(.*)$/i.exec(linha);
+      if (vc && (doc as Documento).tipo === 'texto') {
+        const [trecho = '', explicacao = ''] = vc[1].split('|').map((x) => x.trim());
+        const d = doc as Documento;
+        if (trecho) d.vicios = [...(d.vicios ?? []), { id: novoId(), trecho, explicacao }];
+        else lido.avisos.push(`Linha ${nl}: "Vício:" sem o trecho foi ignorado.`);
+        return;
+      }
       linhasDoc.push(linha);
       return;
     }
@@ -294,6 +302,7 @@ export function processoParaTexto(p: Processo, opcoes: { soEventos?: boolean } =
     for (const d of e.documentos) {
       l.push(`Documento: ${d.sigla} | ${d.titulo}${d.tipo === 'pdf' ? ' (PDF)' : ''}`);
       if (d.tipo === 'texto' && d.texto.trim()) l.push(d.texto.trim());
+      for (const v of d.vicios ?? []) l.push(`Vício: ${v.trecho.replace(/\n+/g, ' ')} | ${v.explicacao}`);
     }
     l.push('');
   }
@@ -314,7 +323,7 @@ export function pedidoProcessoIA(o: { tema: string; ate: string; eventos: number
 
 Tema do caso: ${o.tema.trim() || '[TEMA, ex.: ação de cobrança por produto não entregue]'}.
 O processo vai ${fase}, com cerca de ${o.eventos} eventos, começando em ${o.inicio || '[DATA DE INÍCIO]'}.
-${o.vicios.trim() ? `Plante nas peças, de forma discreta, estes defeitos para a turma encontrar: ${o.vicios.trim()}. Não avise nas peças que são defeitos.\n` : ''}
+${o.vicios.trim() ? `Plante nas peças, de forma discreta, estes defeitos para a turma encontrar: ${o.vicios.trim()}. Não avise no texto das peças que são defeitos. Logo depois do texto de cada peça com defeito, escreva uma linha para cada defeito: "Vício: <trecho exato copiado da peça, de uma só linha> | <explicação curta, com o artigo do CPC>". Essas linhas ficam escondidas da turma até a conferência.\n` : ''}
 Responda SOMENTE com o processo, sem comentários antes ou depois, exatamente neste formato:
 
 ${MODELO_PROCESSO}

@@ -52,12 +52,14 @@ import { copiarProcesso } from '../processo/copiar';
 import { prefixoSigla, semSiglasRepetidas } from '../processo/siglas';
 import { gerarNumero } from '../processo/numero';
 import { db } from '../dados/db';
+import { novoId } from '../dados/modelo';
 import type { Material } from '../dados/modelo';
 import { importarMaterial, listarMateriais } from '../material/documento';
 import { comArtigos, comCliente, dadosParaPublicar, desativarProcesso, liberaEm, MAX_PDF, publicarProcesso } from '../processo/publicar';
 import { urlDoProcesso, type DadosProcesso, type Documento, type Evento, type Parte, type Processo } from '../processo/tipos';
 import { LinkEQr } from './CompartilharTreino';
-import { buscarNoAcervo, PdfDaPeca, TextoPeca, VisaoProcesso } from './ProcessoAluno';
+import { buscarNoAcervo, PdfDaPeca, TextoPeca, VisaoProcesso, type MarcarVicios } from './ProcessoAluno';
+import { mapaVicios, viciosPerdidos } from '../processo/vicios';
 import { ColarEventos, ColarProcesso, CopiarComoTexto } from './ProcessoTexto';
 import { Figura } from './ConsultaTela';
 import { ClienteEmCena } from './ProcessoExtras';
@@ -235,7 +237,7 @@ function EditorPeca({ doc, aoMudar, pasta }: { doc: Documento; aoMudar: (d: Docu
       </div>
       {ver ? (
         <div className="proc-folha marca-dagua" style={{ fontSize: 15 }}>
-          <TextoPeca texto={doc.texto} />
+          <TextoPeca texto={doc.texto} marcar={marcarNoEditor(doc)} />
         </div>
       ) : (
         <textarea
@@ -252,7 +254,67 @@ function EditorPeca({ doc, aoMudar, pasta }: { doc: Documento; aoMudar: (d: Docu
         Marcações: <span className="mono"># título</span>, <span className="mono">## subtítulo</span>, <span className="mono">&gt; citação</span>,{' '}
         <span className="mono">- lista</span>, <span className="mono">**negrito**</span>, <span className="mono">_itálico_</span>. Linha em branco separa parágrafos.
       </p>
+      <EditorVicios doc={doc} aoMudar={aoMudar} campo={ref} />
     </div>
+  );
+}
+
+/** Na prévia da peça no editor: os vícios destacados. */
+function marcarNoEditor(doc: Documento): MarcarVicios | undefined {
+  if (!doc.vicios?.length) return undefined;
+  const mapa = mapaVicios(doc.texto, doc.vicios);
+  return { estado: (k) => (mapa.has(k) ? 'revelado' : null), explicacoes: (k) => (mapa.get(k) ?? []).map((v) => v.explicacao) };
+}
+
+/** Caça aos vícios: o professor seleciona o trecho com defeito e escreve a explicação. */
+function EditorVicios({ doc, aoMudar, campo }: { doc: Documento; aoMudar: (d: Documento) => void; campo: React.RefObject<HTMLTextAreaElement | null> }) {
+  const [msg, setMsg] = useState<string | null>(null);
+  const vicios = doc.vicios ?? [];
+  const perdidos = new Set(viciosPerdidos(doc.texto, vicios).map((v) => v.id));
+  const marcar = () => {
+    const t = campo.current;
+    const sel = t ? t.value.slice(t.selectionStart, t.selectionEnd).trim() : '';
+    if (!sel) return setMsg('Primeiro selecione, no texto da peça, o trecho com o defeito (clique em "Voltar a editar" se estiver vendo a prévia).');
+    if (sel.length > 600) return setMsg('Trecho grande demais: selecione só a frase com o defeito.');
+    setMsg(null);
+    aoMudar({ ...doc, vicios: [...vicios, { id: novoId(), trecho: sel, explicacao: '' }] });
+  };
+  return (
+    <details className="proc-vicios-editor" open={vicios.length > 0}>
+      <summary>
+        Caça aos vícios {vicios.length ? `(${vicios.length})` : ''} <span className="ajuda">· só você vê</span>
+      </summary>
+      <p className="ajuda" style={{ margin: '6px 0' }}>
+        Selecione no texto o trecho com o defeito e clique em <strong>Marcar como vício</strong>. A turma toca nos parágrafos suspeitos; a conferência abre quando você liberar (no alto da aba Eventos).
+      </p>
+      <button type="button" className="botao pequeno escuro" onMouseDown={(e) => e.preventDefault()} onClick={marcar}>
+        Marcar o trecho selecionado como vício
+      </button>
+      {msg && <p className="digitar-msg erro">{msg}</p>}
+      {vicios.length > 0 && (
+        <ol className="proc-vicios-lista">
+          {vicios.map((v) => (
+            <li key={v.id}>
+              <span className="proc-vicio-trecho">“{v.trecho.length > 120 ? `${v.trecho.slice(0, 120)}…` : v.trecho}”</span>
+              {perdidos.has(v.id) && <span className="proc-selo">o trecho não está mais no texto</span>}
+              <div className="linha-opcoes">
+                <input
+                  type="text"
+                  aria-label="O que está errado"
+                  placeholder="O que está errado, com o artigo (ex.: citação por edital sem tentar a pessoal — art. 256)"
+                  value={v.explicacao}
+                  onChange={(e) => aoMudar({ ...doc, vicios: vicios.map((x) => (x.id === v.id ? { ...x, explicacao: e.target.value } : x)) })}
+                  style={{ flex: 1, minWidth: 240 }}
+                />
+                <button type="button" className="botao pequeno" onClick={() => aoMudar({ ...doc, vicios: vicios.filter((x) => x.id !== v.id) })}>
+                  Tirar
+                </button>
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+    </details>
   );
 }
 
@@ -706,7 +768,7 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
     [], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
-  const dados = useMemo(() => (p ? dadosParaPublicar(p) : null), [p]);
+  const dados = useMemo(() => (p ? dadosParaPublicar(p, { comVicios: true }) : null), [p]);
   // Prévia com os artigos citados clicáveis (lê o acervo deste computador).
   const [previa, setPrevia] = useState<DadosProcesso | null>(null);
   useEffect(() => {
@@ -728,6 +790,9 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
     </div>
   );
   const liberados = dados.eventos.filter((e) => e.libera !== null && e.libera <= Date.now()).length;
+  const docsComVicio = p.eventos.flatMap((e) => e.documentos).filter((d) => d.tipo === 'texto' && d.vicios?.length);
+  const totalVicios = docsComVicio.reduce((n, d) => n + (d.vicios?.length ?? 0), 0);
+  const pecasComVicio = docsComVicio.length;
 
   return (
     <>
@@ -889,6 +954,18 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
 
       {aba === 'eventos' && (
         <>
+          {totalVicios > 0 && (
+            <div className={`cartao proc-conferencia${p.conferenciaVicios ? ' aberta' : ''}`}>
+              <span>
+                <strong>Caça aos vícios:</strong> {totalVicios} {totalVicios === 1 ? 'vício plantado' : 'vícios plantados'} em {pecasComVicio}{' '}
+                {pecasComVicio === 1 ? 'peça' : 'peças'}.{' '}
+                {p.conferenciaVicios ? 'Conferência liberada: a turma já sabe na hora se acertou.' : 'Conferência fechada: a turma marca os trechos, mas ainda não sabe se acertou.'}
+              </span>
+              <button className={`botao pequeno${p.conferenciaVicios ? '' : ' escuro'}`} onClick={() => mudar({ ...p, conferenciaVicios: !p.conferenciaVicios })}>
+                {p.conferenciaVicios ? 'Fechar a conferência' : 'Liberar a conferência'}
+              </button>
+            </div>
+          )}
           <p className="ajuda">
             Evento novo começa <strong>segurado</strong> (só você vê). Escolha quando a turma passa a vê-lo: numa data, ou libere na hora.
           </p>
