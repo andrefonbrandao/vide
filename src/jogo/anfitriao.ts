@@ -7,7 +7,7 @@ import { guardarResultado } from './banco';
 import { MotorJogo, type ModoJogo } from './motor';
 import type { DoAluno, ParaAnfitriao } from './protocolo';
 import { gerarCodigoJogo, gerarToken, urlDoJogo } from './protocolo';
-import type { QuestaoJogo } from './tipos';
+import type { QuestaoJogo, ResultadoPergunta } from './tipos';
 
 export interface EstadoAnfitriao {
   ativo: boolean;
@@ -35,6 +35,8 @@ class Anfitriao {
   private motor: MotorJogo | null = null;
   private sala: ConexaoSala<ParaAnfitriao, unknown> | null = null;
   private relogio: number | null = null;
+  /** Quem quer saber o resultado quando o jogo for encerrado (ex.: a votação do processo). */
+  private aoEncerrar: ((r: ResultadoPergunta[]) => void) | null = null;
   /** Conceito: quantas dicas já foram mandadas aos celulares (para mandar a próxima quando aparecer). */
   private dicasEnviadas = 0;
   private qrGrande = false;
@@ -58,7 +60,7 @@ class Anfitriao {
     this.ouvintes.forEach((f) => f());
   }
 
-  iniciar(nome: string, questoes: QuestaoJogo[], ranking: boolean, opcoes: { modo?: ModoJogo; votoS?: number } = {}): void {
+  iniciar(nome: string, questoes: QuestaoJogo[], ranking: boolean, opcoes: { modo?: ModoJogo; votoS?: number; aoEncerrar?: (r: ResultadoPergunta[]) => void } = {}): void {
     if (this.estado.ativo) this.encerrar();
     const modo = opcoes.modo ?? 'perguntas';
     // A forca usa só as questões "Adivinhe o conceito" (a palavra é o conceito).
@@ -74,6 +76,7 @@ class Anfitriao {
     const codigo = gerarCodigoJogo();
     const chave = gerarToken();
     this.motor = new MotorJogo(questoes, ranking, modo, Math.max(3, opcoes.votoS ?? 10) * 1000);
+    this.aoEncerrar = opcoes.aoEncerrar ?? null;
     this.qrGrande = false;
     this.sala = new ConexaoSala<ParaAnfitriao, unknown>(
       codigo,
@@ -121,6 +124,8 @@ class Anfitriao {
     if (m) {
       const perguntas = m.historico.filter(Boolean);
       const participantes = m.visaoTela().nJogadores;
+      if (perguntas.length) this.aoEncerrar?.(perguntas);
+      this.aoEncerrar = null;
       if (perguntas.length && !m.enquete) {
         void guardarResultado({ questionario: this.estado.nome, participantes, ranking: m.ranking, perguntas });
       }

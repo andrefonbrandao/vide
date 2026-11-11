@@ -56,13 +56,15 @@ import { novoId } from '../dados/modelo';
 import type { Material } from '../dados/modelo';
 import { importarMaterial, listarMateriais } from '../material/documento';
 import { comArtigos, comCliente, dadosParaPublicar, desativarProcesso, liberaEm, MAX_PDF, publicarProcesso } from '../processo/publicar';
-import { urlDoProcesso, type DadosProcesso, type Documento, type Evento, type Parte, type Processo } from '../processo/tipos';
+import { urlDoProcesso, type DadosProcesso, type Documento, type Evento, type ModoProcesso, type Parte, type Processo } from '../processo/tipos';
 import { LinkEQr } from './CompartilharTreino';
 import { buscarNoAcervo, PdfDaPeca, TextoPeca, VisaoProcesso, type MarcarVicios } from './ProcessoAluno';
 import { mapaVicios, viciosPerdidos } from '../processo/vicios';
 import { ColarEventos, ColarProcesso, CopiarComoTexto } from './ProcessoTexto';
 import { Figura } from './ConsultaTela';
 import { ClienteEmCena } from './ProcessoExtras';
+import { PainelDeliberacao } from './Deliberacao';
+import { deliberacaoAberta, modoDe } from '../processo/deliberacao';
 import { irPara } from '../comum/navegacao';
 import { listarCasos } from '../consulta/banco';
 import { sortearConsulente } from '../consulta/personagens';
@@ -93,6 +95,13 @@ const DESCRICOES = [
   'REMESSA AO TRIBUNAL',
   'TRÂNSITO EM JULGADO',
 ];
+/** Os jeitos de conduzir o processo (o professor escolhe conforme a disciplina e o tempo). */
+export const MODOS: { id: ModoProcesso; nome: string; desc: string; emBreve?: boolean }[] = [
+  { id: 'ilustrativo', nome: 'Ilustrativo', desc: 'Você monta o processo; a turma examina pelo link, como contexto para a disciplina. O mais simples.' },
+  { id: 'colaborativo', nome: 'Colaborativo', desc: 'Os atos são liberados em etapas e analisados pela turma em sala; você anota o que a turma decidiu e a IA escreve o próximo ato a partir disso.' },
+  { id: 'participativo', nome: 'Participativo', desc: 'Escritórios da turma representam as partes e enviam as peças; você escolhe o que juntar aos autos.', emBreve: true },
+];
+
 const USUARIOS = ['ADVOGADO DO AUTOR', 'ADVOGADO DO RÉU', 'JUIZ', 'SECRETARIA', 'OFICIAL DE JUSTIÇA', 'SISTEMA'];
 
 function proximaSigla(p: Processo, descricao: string): string {
@@ -453,6 +462,7 @@ function EditorEvento({
           )}
         </div>
       </div>
+      <MaisRecursos enxuto={modoDe(p) === 'ilustrativo'} usados={!!(e.fase || e.prazo || e.agora)}>
       <div className="grade-2">
         <div className="campo">
           <label htmlFor={`fase-${e.id}`}>Fase no mapa do procedimento</label>
@@ -537,6 +547,7 @@ function EditorEvento({
           </>
         )}
       </div>
+      </MaisRecursos>
       <div className="campo">
         <label>Documentos</label>
         {e.documentos.map((d) => (
@@ -672,6 +683,17 @@ function EditorGlossario({ termos, aoMudar }: { termos: Termo[]; aoMudar: (t: Te
   );
 }
 
+/** No modo ilustrativo, os recursos extras do evento ficam guardados aqui (abre sozinho se algum estiver em uso). */
+function MaisRecursos({ enxuto, usados, children }: { enxuto: boolean; usados: boolean; children: React.ReactNode }) {
+  if (!enxuto) return <>{children}</>;
+  return (
+    <details className="proc-mais" open={usados}>
+      <summary>Mais recursos: fase no mapa, prazo e "E agora?"</summary>
+      {children}
+    </details>
+  );
+}
+
 function EditorPartes({ partes, aoMudar }: { partes: Parte[]; aoMudar: (p: Parte[]) => void }) {
   const mudar = (x: Parte) => aoMudar(partes.map((y) => (y.id === x.id ? x : y)));
   const polos: [Parte['polo'], string][] = [
@@ -741,7 +763,7 @@ function EditorPartes({ partes, aoMudar }: { partes: Parte[]; aoMudar: (p: Parte
   );
 }
 
-type Aba = 'capa' | 'partes' | 'cliente' | 'eventos' | 'glossario' | 'previa';
+type Aba = 'capa' | 'partes' | 'cliente' | 'eventos' | 'deliberacao' | 'glossario' | 'previa';
 
 function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) {
   const [p, setP] = useState<Processo | null>(null);
@@ -918,6 +940,7 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
             ['partes', 'Partes'],
             ['cliente', p.cliente ? 'Cliente em cena ✓' : 'Cliente em cena'],
             ['eventos', `Eventos (${p.eventos.length})`],
+            ...(modoDe(p) === 'colaborativo' ? ([['deliberacao', `Deliberação da turma${deliberacaoAberta(p)?.pontos.length ? ` (${deliberacaoAberta(p)!.pontos.length})` : ''}`]] as [Aba, string][]) : []),
             ['glossario', p.glossario?.length ? `Glossário (${p.glossario.length})` : 'Glossário'],
             ['previa', 'Ver como a turma vê'],
           ] as [Aba, string][]
@@ -947,6 +970,25 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
 
       {aba === 'capa' && (
         <div className="cartao">
+          <div className="campo">
+            <label>Jeito de conduzir</label>
+            <div className="proc-modos" role="radiogroup" aria-label="Jeito de conduzir">
+              {MODOS.map((m) => (
+                <label key={m.id} className={`proc-modo${modoDe(p) === m.id ? ' atual' : ''}${m.emBreve ? ' em-breve' : ''}`}>
+                  <input type="radio" name="modo" checked={modoDe(p) === m.id} disabled={m.emBreve} onChange={() => mudar({ ...p, modo: m.id })} />
+                  <span>
+                    <strong>
+                      {m.nome}
+                      {m.emBreve && <span className="selo">em breve</span>}
+                    </strong>
+                    <span className="ajuda" style={{ margin: 0 }}>
+                      {m.desc}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
           <div className="campo">
             <label htmlFor="capa-numero">Nº do processo (fictício)</label>
             <div className="linha-opcoes">
@@ -991,6 +1033,11 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
 
       {aba === 'partes' && <EditorPartes partes={p.partes} aoMudar={(partes) => mudar({ ...p, partes })} />}
       {aba === 'cliente' && <EditorCliente p={p} aoMudar={(cliente) => mudar({ ...p, cliente })} />}
+      {aba === 'deliberacao' && (
+        <div className="cartao">
+          <PainelDeliberacao p={p} aoMudar={mudar} />
+        </div>
+      )}
       {aba === 'glossario' && <EditorGlossario termos={p.glossario ?? []} aoMudar={(glossario) => mudar({ ...p, glossario })} />}
 
       {aba === 'eventos' && (
@@ -1091,6 +1138,7 @@ export function Processos({ acao = null }: { acao?: 'novo-processo' | 'colar-pro
     }
   });
   const [novoTitulo, setNovoTitulo] = useState('');
+  const [novoModo, setNovoModo] = useState<ModoProcesso>('ilustrativo');
   const [copiando, setCopiando] = useState<string | null>(null);
   const [colando, setColando] = useState(acao === 'colar-processo');
   const [criando, setCriando] = useState(acao === 'novo-processo');
@@ -1118,7 +1166,8 @@ export function Processos({ acao = null }: { acao?: 'novo-processo' | 'colar-pro
           className="cartao linha-opcoes"
           onSubmit={async (e) => {
             e.preventDefault();
-            const p = await criarProcesso(novoTitulo || `Processo da turma ${new Date().getFullYear()}`);
+            const criado = await criarProcesso(novoTitulo || `Processo da turma ${new Date().getFullYear()}`);
+            const p = novoModo === 'ilustrativo' ? criado : await salvarProcesso({ ...criado, modo: novoModo });
             setNovoTitulo('');
             setCriando(false);
             abrir(p.id);
@@ -1133,6 +1182,13 @@ export function Processos({ acao = null }: { acao?: 'novo-processo' | 'colar-pro
             style={{ flex: 1, minWidth: 240 }}
             aria-label="Nome do novo processo"
           />
+          <select className="seletor" aria-label="Jeito de conduzir" value={novoModo} onChange={(e) => setNovoModo(e.target.value as ModoProcesso)}>
+            {MODOS.filter((m) => !m.emBreve).map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.nome}
+              </option>
+            ))}
+          </select>
           <button className="botao primario">Criar em branco</button>
           <button type="button" className="botao" onClick={() => setCriando(false)}>
             Cancelar

@@ -29,6 +29,10 @@ export function dadosParaPublicar(p: Processo, opcoes: { comVicios?: boolean } =
       .map((x) => ({ ...x, advogados: x.advogados.filter((a) => a.nome.trim() || a.oab.trim()) })),
     eventos: p.eventos.map(({ liberacao: _l, agora: _a, ...e }, i) => ({
       ...e,
+      ...(() => {
+        const d = (p.deliberacoes ?? []).find((x) => x.eventos?.[0] === e.id && x.pontos.length);
+        return d ? { deliberacao: d.pontos.map((x) => x.texto) } : {};
+      })(),
       numero: i + 1,
       libera: liberaEm(p.eventos[i]),
       documentos: e.documentos

@@ -2,6 +2,8 @@
 import { irPara } from '../comum/navegacao';
 import { anfitriao } from '../jogo/anfitriao';
 import type { EAgora } from '../processo/tipos';
+import { comPonto, deliberacaoAberta, modoDe, pontoDaVotacao } from '../processo/deliberacao';
+import { PainelDeliberacao } from './Deliberacao';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { aulaProcesso } from '../processo/aula';
 import { listarProcessos } from '../processo/banco';
@@ -65,6 +67,7 @@ export function PainelProcesso() {
   const caixa = useRef<HTMLDivElement>(null);
   const [escolhido, setEscolhido] = useState('');
   const [liberando, setLiberando] = useState(false);
+  const [deliberando, setDeliberando] = useState(false);
   const a = aulaProcesso();
   // Rolagem da tela do professor -> projeção.
   useEffect(() => {
@@ -90,7 +93,15 @@ export function PainelProcesso() {
   const proximo = pendentes[0];
   const abrirVotacao = (ag: EAgora) => {
     const opcoes = ag.opcoes.map((o) => o.trim()).filter(Boolean).slice(0, 6);
-    anfitriao().iniciar(`E agora? ${ag.pergunta}`, [{ tipo: 'multipla', enunciado: ag.pergunta.trim() || 'E agora?', alternativas: opcoes, correta: -1, tempo: 90, explicacao: '', fundamento: '' }], false, { modo: 'enquete' });
+    anfitriao().iniciar(`E agora? ${ag.pergunta}`, [{ tipo: 'multipla', enunciado: ag.pergunta.trim() || 'E agora?', alternativas: opcoes, correta: -1, tempo: 90, explicacao: '', fundamento: '' }], false, {
+      modo: 'enquete',
+      // Processo colaborativo: o resultado da votação entra na deliberação da turma.
+      aoEncerrar: (r) => {
+        const atual = aulaProcesso().obter().processo;
+        if (!atual || modoDe(atual) !== 'colaborativo' || !r[0]) return;
+        void aulaProcesso().atualizar(comPonto(atual, pontoDaVotacao(ag.pergunta, opcoes, r[0].respostas), 'votacao'));
+      },
+    });
   };
   const liberar = async (id: string) => {
     setLiberando(true);
@@ -143,6 +154,11 @@ export function PainelProcesso() {
             {tela.vicios ? 'Esconder os vícios' : 'Mostrar os vícios'}
           </button>
         )}
+        {modoDe(processo) === 'colaborativo' && (
+          <button className="botao" onClick={() => setDeliberando(true)} title="Anotar o que a turma decidiu e pedir à IA o próximo ato">
+            Deliberação da turma{deliberacaoAberta(processo)?.pontos.length ? ` (${deliberacaoAberta(processo)!.pontos.length})` : ''}
+          </button>
+        )}
         {tela.lendo && (
           <button className="botao" onClick={() => a.ler(null)}>
             Voltar ao processo
@@ -153,6 +169,19 @@ export function PainelProcesso() {
           Fechar processo
         </button>
       </div>
+      {deliberando && (
+        <div className="modal-fundo" data-ui onMouseDown={(ev) => ev.target === ev.currentTarget && setDeliberando(false)}>
+          <div className="modal" role="dialog" aria-label="Deliberação da turma">
+            <div className="atividades-cab">
+              <h2>Deliberação da turma</h2>
+              <button className="botao pequeno" style={{ marginLeft: 'auto' }} onClick={() => setDeliberando(false)}>
+                Fechar
+              </button>
+            </div>
+            <PainelDeliberacao p={processo} aoMudar={(novo) => void a.atualizar(novo)} noAula />
+          </div>
+        </div>
+      )}
       {aviso && (
         <p className="digitar-msg" style={{ flexBasis: 'auto', margin: 0 }}>
           {aviso}

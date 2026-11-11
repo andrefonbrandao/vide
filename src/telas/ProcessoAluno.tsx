@@ -478,6 +478,16 @@ export function VisaoProcesso({
                     </td>
                     <td data-rotulo="Descrição">
                       {e.descricao ? <ComTermos texto={e.descricao} termos={termos} /> : '—'}
+                      {e.deliberacao && e.deliberacao.length > 0 && (
+                        <details className="proc-deliberacao">
+                          <summary>O que a turma decidiu antes deste ato</summary>
+                          <ul>
+                            {e.deliberacao.map((x, k) => (
+                              <li key={k}>{x}</li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
                       {novo && <span className="proc-selo">novo</span>}
                       {naoLiberado && (
                         <span className="proc-selo futuro">

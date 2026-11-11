@@ -123,12 +123,42 @@ export interface Processo extends Sincronizavel {
   cliente?: ClienteProcesso | null;
   /** Caça aos vícios: a turma já pode conferir as marcações? */
   conferenciaVicios?: boolean;
+  /** Jeito de conduzir (vazio = ilustrativo). */
+  modo?: ModoProcesso;
+  /** Colaborativo: o que a turma decidiu em sala antes de cada ato. */
+  deliberacoes?: Deliberacao[];
+}
+
+/**
+ * ilustrativo: o professor monta tudo, a turma examina;
+ * colaborativo: a turma delibera em sala e a IA escreve o próximo ato a partir disso;
+ * participativo: escritórios da turma enviam peças.
+ */
+export type ModoProcesso = 'ilustrativo' | 'colaborativo' | 'participativo';
+
+export interface PontoDeliberacao {
+  id: string;
+  texto: string;
+  /** professor: anotado na aula; votacao: resultado de um "E agora?"; vicio: vício mostrado na aula. */
+  origem: 'professor' | 'votacao' | 'vicio';
+}
+
+export interface Deliberacao {
+  id: string;
+  criadaEm: string;
+  /** O ato que a IA vai escrever a partir dos pontos: "CONTESTAÇÃO". */
+  proximoAto: string;
+  pontos: PontoDeliberacao[];
+  /** Os eventos que nasceram desta deliberação (quando a resposta da IA foi colada). */
+  eventos?: string[];
 }
 
 /** Evento como vai para o link: com a liberação já em milissegundos (null = segurado). */
 export interface EventoPublicado extends Omit<Evento, 'liberacao'> {
   numero: number;
   libera: number | null;
+  /** Colaborativo: os pontos que a turma deliberou antes deste ato. */
+  deliberacao?: string[];
 }
 
 /** O que fica publicado no Cloudflare. O serviço só entrega os eventos já liberados. */

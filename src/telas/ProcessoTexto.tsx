@@ -7,7 +7,7 @@ import { dadosParaPublicar } from '../processo/publicar';
 import type { Evento, Processo } from '../processo/tipos';
 import { VisaoProcesso } from './ProcessoAluno';
 
-async function copiar(texto: string): Promise<boolean> {
+export async function copiar(texto: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(texto);
     return true;

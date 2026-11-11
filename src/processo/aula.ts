@@ -6,6 +6,7 @@ import { registrar } from '../comum/registro';
 import { lerProcesso, salvarProcesso } from './banco';
 import { liberado, paraAluno } from './liberacao';
 import { comArtigos, comCliente, dadosParaPublicar, liberaEm, publicarProcesso } from './publicar';
+import { comPonto, modoDe } from './deliberacao';
 import type { DadosProcesso, Evento, Processo } from './tipos';
 
 export interface LeituraProcesso {
@@ -58,12 +59,27 @@ class AulaProcesso {
     return { dados, lendo, fracao, vicios };
   }
 
+  /** Grava uma mudança no processo aberto (ex.: a deliberação da turma) e refaz a projeção. */
+  async atualizar(novo: Processo): Promise<void> {
+    const salvo = await salvarProcesso(novo);
+    const t = this.estado.tela;
+    this.mudar({ processo: salvo, tela: await this.montar(salvo, t?.lendo ?? null, t?.fracao ?? 0, t?.vicios) });
+  }
+
   /** Mostra (ou esconde) os vícios plantados na projeção. */
   async mostrarVicios(sim: boolean): Promise<void> {
     const p = this.estado.processo;
     const t = this.estado.tela;
     if (!p || !t) return;
-    this.mudar({ tela: await this.montar(p, t.lendo, t.fracao, sim) });
+    let atual = p;
+    if (sim && modoDe(p) === 'colaborativo') {
+      // Processo colaborativo: os vícios mostrados (das peças que a turma já vê) entram na deliberação.
+      const agora = Date.now();
+      for (const e of p.eventos.filter((x) => liberado({ libera: liberaEm(x) }, agora)))
+        for (const d of e.documentos) for (const v of d.vicios ?? []) if (v.explicacao.trim()) atual = comPonto(atual, `Vício em ${d.sigla}: ${v.explicacao.trim()}`, 'vicio');
+      if (atual !== p) atual = await salvarProcesso(atual);
+    }
+    this.mudar({ processo: atual, tela: await this.montar(atual, t.lendo, t.fracao, sim) });
     void registrar('sessao', `processo: vícios ${sim ? 'mostrados' : 'escondidos'} na projeção`);
   }
 
