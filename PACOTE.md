@@ -13,12 +13,13 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 14** aberto em 2026-11-11, a partir da versão 0.29.0 (já publicada).
+**Pacote 14** aberto em 2026-11-11, a partir da versão 0.29.0. **Fechado e publicado como versão 0.30.0.**
+O próximo pacote recomeça esta seção a partir da versão publicada.
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| 1 | Processo fictício, fase 3a: **jeito de conduzir** cada processo — **ilustrativo** (o professor monta tudo; o editor fica enxuto, com "Mais recursos" para fase, prazo e "E agora?"), **colaborativo** (a turma analisa cada ato em sala; o professor anota a **deliberação da turma** na Aula ou no editor, com as votações "E agora?" e os vícios mostrados entrando sozinhos; o Vide monta o **pedido do próximo ato para a IA** e recebe a resposta colada; a turma vê "O que a turma decidiu antes deste ato") e **participativo** (aparece como "projeto futuro": escritórios e envio de peças ficam para depois, para o app não pesar) | Pronta |
-| 2 | Processo fictício, fase 3c: **perguntas sobre o processo** (aba Perguntas: pedido pronto para a IA com o processo até um evento, colar no formato das Questões, cada pergunta ligada a um evento); na página da turma, "Teste o que você sabe sobre o processo", só com as perguntas dos eventos liberados, conferidas no próprio aparelho; as perguntas ficam no banco com o assunto "processo: <nome>", para o jogo, a forca e o treino em casa | Pronta |
+| 1 | Processo fictício, fase 3a: **jeito de conduzir** cada processo — **ilustrativo** (o professor monta tudo; o editor fica enxuto, com "Mais recursos" para fase, prazo e "E agora?"), **colaborativo** (a turma analisa cada ato em sala; o professor anota a **deliberação da turma** na Aula ou no editor, com as votações "E agora?" e os vícios mostrados entrando sozinhos; o Vide monta o **pedido do próximo ato para a IA** e recebe a resposta colada; a turma vê "O que a turma decidiu antes deste ato") e **participativo** (aparece como "projeto futuro": escritórios e envio de peças ficam para depois, para o app não pesar) | Publicada (0.30.0) |
+| 2 | Processo fictício, fase 3c: **perguntas sobre o processo** (aba Perguntas: pedido pronto para a IA com o processo até um evento, colar no formato das Questões, cada pergunta ligada a um evento); na página da turma, "Teste o que você sabe sobre o processo", só com as perguntas dos eventos liberados, conferidas no próprio aparelho; as perguntas ficam no banco com o assunto "processo: <nome>", para o jogo, a forca e o treino em casa | Publicada (0.30.0) |
 
 ## Pacotes anteriores
 
