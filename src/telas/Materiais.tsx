@@ -1,6 +1,8 @@
 // Materiais do professor (PDFs, imagens) organizados em pastas e etiquetas.
 // - <ListaMateriais/> e <AdicionarMaterial/>: aba Acervo (organizar, apagar, carregar).
 // - <SeletorMaterial/>: botão da tela da aula, com busca, para escolher o material.
+import { Figura } from './ConsultaTela';
+import { confirmar } from '../comum/avisos';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Material } from '../dados/modelo';
 import { abrirDocumentoPorId, atualizarMaterial, excluirMaterial, importarMaterial, limparEtiquetas, listarMateriais, type Documento } from '../material/documento';
@@ -160,11 +162,15 @@ export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
 
   if (lista.length === 0) {
     return (
-      <div className="vazio-acervo">
-        <p>Nenhum material guardado ainda. Seus slides (PDF) e imagens aparecem aqui, organizados em pastas.</p>
-        <button className="botao primario com-icone" onClick={aoAdicionar}>
-          <IcMais /> Adicionar material
-        </button>
+      <div className="vazio-guia">
+        <Figura id="m4" expressao="feliz" className="vazio-guia-figura" />
+        <div>
+          <h2>Nenhum material ainda</h2>
+          <p className="ajuda">Seus slides (PDF) e imagens aparecem aqui, organizados em pastas, para projetar ao lado dos artigos.</p>
+          <button className="botao escuro com-icone" onClick={aoAdicionar}>
+            <IcMais /> Adicionar material
+          </button>
+        </div>
       </div>
     );
   }
@@ -194,7 +200,7 @@ export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
         <button
           className="botao pequeno"
           onClick={async () => {
-            if (!confirm(`Apagar "${m.nome}" dos materiais?`)) return;
+            if (!(await confirmar({ titulo: `Apagar "${m.nome}" dos materiais?`, botao: 'Apagar', perigo: true }))) return;
             await excluirMaterial(m.id);
           }}
         >

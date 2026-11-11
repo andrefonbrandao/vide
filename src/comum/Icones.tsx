@@ -228,3 +228,61 @@ export const IcPerguntas = (p: P) => (
     <path d="M12 14.5v.01" />
   </Svg>
 );
+
+export const IcInicio = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z" />
+  </Svg>
+);
+
+export const IcLink = (p: P) => (
+  <Svg {...p}>
+    <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
+    <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+  </Svg>
+);
+
+export const IcResultados = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 20V10M10 20V4M16 20v-7M21 20H3" />
+  </Svg>
+);
+
+export const IcRegistro = (p: P) => (
+  <Svg {...p}>
+    <path d="M6 3h12v18H6z" />
+    <path d="M9 8h6M9 12h6M9 16h4" />
+  </Svg>
+);
+
+export const IcAjustes = (p: P) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1" />
+  </Svg>
+);
+
+export const IcBusca = (p: P) => (
+  <Svg {...p}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="m20 20-4-4" />
+  </Svg>
+);
+
+export const IcSeta = (p: P) => (
+  <Svg {...p}>
+    <path d="m9 6 6 6-6 6" />
+  </Svg>
+);
+
+export const IcQr = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2" />
+  </Svg>
+);
+
+export const IcPlay = (p: P) => (
+  <Svg {...p}>
+    <path d="M7 4v16l13-8z" />
+  </Svg>
+);

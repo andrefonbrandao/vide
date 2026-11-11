@@ -3,6 +3,7 @@
 // Com material (slides/PDF): roda = passa as páginas; clique esquerdo = projeta o
 // candidato mais recente (ou clique direto num candidato).
 // Sempre: clique direito = recolhe o artigo; clique na roda = a roda passa a rolar o artigo.
+import { avisar, confirmar } from '../comum/avisos';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { controlador, type EstadoAula } from './controlador';
 import { PainelMaterial } from './PainelMaterial';
@@ -116,6 +117,15 @@ function DigitarArtigo({ ativa }: { ativa: boolean }) {
 
 export function Aula({ ativa }: { ativa: boolean }) {
   const ctl = controlador();
+  // Artigo escolhido na busca geral (Ctrl K): entra nas alternativas da aula.
+  useEffect(() => {
+    const levar = (e: Event) => {
+      const r = ctl.adicionarDigitado(String((e as CustomEvent<string>).detail ?? ''));
+      if (!r.ok) avisar(r.mensagem, 'erro');
+    };
+    window.addEventListener('vide-levar-artigo', levar);
+    return () => window.removeEventListener('vide-levar-artigo', levar);
+  }, [ctl]);
   const e: EstadoAula = useSyncExternalStore(ctl.assinar, ctl.obter);
   const [, setRelogio] = useState(0);
   const transcricaoRef = useRef<HTMLDivElement>(null);
@@ -445,11 +455,11 @@ export function Aula({ ativa }: { ativa: boolean }) {
           <button
             className="botao com-icone"
             title={`Limpa a tela e começa uma nova sessão no registro (a anterior fica guardada). Sessão atual iniciada às ${new Date(e.sessaoInicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.`}
-            onClick={() => {
-              if (confirm('Começar uma nova sessão? A tela será limpa; o registro da sessão anterior continua guardado.')) {
-                void ctl.novaSessao();
-              }
-            }}
+            onClick={() =>
+              void confirmar({ titulo: 'Começar uma nova sessão?', texto: 'A tela será limpa; o registro da sessão anterior continua guardado.', botao: 'Nova sessão' }).then(
+                (ok) => ok && void ctl.novaSessao(),
+              )
+            }
           >
             <IcNovaSessao /> Nova sessão
           </button>

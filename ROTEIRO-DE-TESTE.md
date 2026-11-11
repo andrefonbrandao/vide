@@ -4,11 +4,13 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 
 ---
 
+> **Navegação (versão 0.27):** à esquerda fica a barra lateral com **Início**, **Aula**, **Biblioteca** (Leis, Materiais), **Atividades** (Questões, Casos, Processos, Links da turma), **Turma** (Resultados, Registro das aulas) e **Ajustes**. No alto: a **busca** (Ctrl K) e o botão **+ Criar**.
+
 ## Parte 1 — Preparar (em casa, uns 15 minutos, uma vez só)
 
 1. **Abra o Vide no Chrome** pelo endereço do Cloudflare (veja o LEIAME).
 2. **Importe as leis** (repita para cada lei; comece pelo CPC):
-   1. Na aba **Acervo**, clique no botão **+** (à direita) e em **Adicionar norma**. Escolha a lei em **1. Qual lei você vai importar?**
+   1. Clique em **+ Criar** (no alto, à direita) › **Lei**. Escolha a lei em **1. Qual lei você vai importar?**
    2. Clique no link do Planalto que aparece no passo 2, aperte **Ctrl + S** e salve o arquivo (por exemplo, em Downloads).
    3. Volte ao Vide e, no passo 3, escolha o arquivo salvo.
    4. Confira o resumo. No CPC, o esperado é **cerca de 1.073 artigos** e **0 duplicidades**. A Constituição vem em duas partes: **CF** e **ADCT**.
@@ -83,10 +85,10 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 
 **Preparar (em casa):**
 1. No PowerPoint, salve os slides em PDF: **Arquivo › Exportar › Criar PDF**. Também servem PDFs de acórdãos, textos e imagens (PNG, JPG).
-2. No Vide, na aba **Acervo**, clique em **+** › **Adicionar material**: preencha a **Pasta** (use "/" para subpastas, ex.: *Processo Civil II/Sentença*) e as **Etiquetas** (ex.: *sentença, recursos*) e escolha os arquivos (pode escolher vários de uma vez). Os materiais guardados ficam na aba **Materiais**, organizados como no explorador de arquivos: clique na pasta, depois na subpasta, até chegar ao arquivo (a linha do alto mostra o caminho e serve para voltar; **Adicionar aqui** já guarda na pasta aberta). A busca procura em todas as pastas. Para ver o conteúdo de um arquivo, clique no nome dele (ou em **Ver**): ele abre grande, com as páginas (setas do teclado passam as páginas) e, ao lado, os campos para **renomear**, mudar de **pasta** e de etiquetas; **Próximo ▶** passa ao arquivo seguinte da mesma pasta, guardando o que você mudou. **Organizar** continua servindo para mudar sem abrir o arquivo.
+2. No Vide, clique em **+ Criar** › **Material**: preencha a **Pasta** (use "/" para subpastas, ex.: *Processo Civil II/Sentença*) e as **Etiquetas** (ex.: *sentença, recursos*) e escolha os arquivos (pode escolher vários de uma vez). Os materiais guardados ficam em **Biblioteca › Materiais** (barra lateral), organizados como no explorador de arquivos: clique na pasta, depois na subpasta, até chegar ao arquivo (a linha do alto mostra o caminho e serve para voltar; **Adicionar aqui** já guarda na pasta aberta). A busca procura em todas as pastas. Para ver o conteúdo de um arquivo, clique no nome dele (ou em **Ver**): ele abre grande, com as páginas (setas do teclado passam as páginas) e, ao lado, os campos para **renomear**, mudar de **pasta** e de etiquetas; **Próximo ▶** passa ao arquivo seguinte da mesma pasta, guardando o que você mudou. **Organizar** continua servindo para mudar sem abrir o arquivo.
 
 **Na aula:**
-1. Clique na faixa **Material** (logo abaixo dos botões do alto). Os usados recentemente aparecem no topo; abaixo, navegue pelas pastas como no Acervo (pasta › subpasta › arquivo; a linha do caminho serve para voltar). A lista já abre na pasta do material em uso. A busca (nome, pasta ou etiqueta) procura em todas as pastas. Escolha o arquivo; o projetor mostra a página 1.
+1. Clique na faixa **Material** (logo abaixo dos botões do alto). Os usados recentemente aparecem no topo; abaixo, navegue pelas pastas como em Materiais (pasta › subpasta › arquivo; a linha do caminho serve para voltar). A lista já abre na pasta do material em uso. A busca (nome, pasta ou etiqueta) procura em todas as pastas. Escolha o arquivo; o projetor mostra a página 1.
 2. **Roda do mouse** passa as páginas. O passador de slides (PageDown/PageUp) também funciona.
 3. **Para ampliar uma parte da página:** na miniatura do centro da sua tela, **arraste o mouse** desenhando um retângulo sobre o trecho. O projetor mostra só aquele trecho, ocupando a tela inteira.
    - Com zoom, a roda **desce dentro da página**; no fim, continua no alto da página seguinte (bom para PDF em pé).
@@ -129,19 +131,19 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 ## Jogo de perguntas (alunos respondendo pelo celular)
 
 **Preparar (em casa):**
-1. Na aba **Acervo**, clique em **+** › **Adicionar questões**.
+1. Clique em **+ Criar** › **Questões**.
    - **Colar várias de uma vez:** cole as questões no formato mostrado na tela (enunciado, alternativas A a D e "Resposta: C"; sem alternativas, a questão é de verdadeiro ou falso, com "Resposta: V" ou "F"). "Tempo", "Explicação" e "Fundamento" (ex.: `485 VI`) são opcionais. Se pedir questões ao Claude ou ao Gemini, use **Copiar o modelo** e mande junto.
    - O Vide mostra quantas questões entendeu e aponta as que têm problema.
    - Dê um nome em **Criar um questionário com estas questões** para já montar o jogo.
    - **Assuntos:** escreva os assuntos no campo **Assuntos** (valem para todas as questões coladas) ou numa linha "Assunto: sentença, recursos" dentro de cada questão. Na aba **Questões**, os assuntos aparecem como botões para filtrar o banco.
    - Ou use **Escrever uma questão** para fazer uma por vez.
-2. A aba **Questões** do Acervo abre numa tela de **início** com os atalhos **Novo treino em casa**, **Adicionar questões** e **Novo questionário**. Os botões no alto levam às seções: **Questões** (editar e filtrar o banco), **Questionários**, **Treinos em casa** (links criados) e **Resultados** dos jogos.
+2. Em **Atividades › Questões** (barra lateral), a tela abre num **início** com os atalhos **Novo treino em casa**, **Adicionar questões** e **Novo questionário**. Os botões no alto levam às seções: **Questões** (editar e filtrar o banco), **Questionários**, **Treinos em casa** (links criados). Os **Resultados** dos jogos ficam em **Turma › Resultados**, e todos os links publicados, em **Atividades › Links da turma**.
 
 **Na aula:**
 1. Abra a projeção normalmente e clique em **Atividades** (no alto da tela da Aula).
 2. Escolha como montar o jogo:
    - **Sortear por assunto:** digite parte do assunto no campo de busca (maiúsculas e acentos não importam; Enter escolhe o primeiro encontrado) ou clique nele na lista (ou em "Todos os assuntos") e quantas questões (5, 10, 15, 20 ou outro número). O Vide sorteia as questões, em ordem aleatória. Se houver menos questões do assunto do que o pedido, ele avisa e usa todas.
-   - **Questionário pronto:** a sequência que você montou no Acervo.
+   - **Questionário pronto:** a sequência que você montou em Atividades › Questões.
 
    Escolha o **tempo**: "o tempo sugerido de cada questão" (o do cadastro) ou um tempo igual para todas, separado para múltipla escolha/V-F e para "Adivinhe o conceito" (as dicas se espalham pelo tempo escolhido). O Vide lembra a última escolha.
 
@@ -155,7 +157,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 9. O iPhone (controle) também tem o botão para avançar o jogo.
 
 **Adivinhe o conceito** (outra modalidade, no mesmo jogo):
-- Cadastre em **Acervo › + › Adicionar questões** › **Escrever uma questão** › **Adivinhe o conceito**: o conceito (a resposta), de 2 a 4 dicas da mais difícil para a mais fácil, e, se quiser, outras respostas aceitas. Ou cole assim:
+- Cadastre em **+ Criar › Questões** › **Escrever uma questão** › **Adivinhe o conceito**: o conceito (a resposta), de 2 a 4 dicas da mais difícil para a mais fácil, e, se quiser, outras respostas aceitas. Ou cole assim:
   ```
   Conceito: sentença
   Dica: sou uma manifestação judicial
@@ -166,12 +168,12 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
   Assunto: sentença
   ```
 - Na aula, o projetor mostra "Quem sou eu?" e a 1ª dica; as outras aparecem em intervalos iguais (60 s e 3 dicas: 0 s, 20 s e 40 s). O aluno digita a resposta no celular; maiúsculas, acentos, "a/o", "é a…" no início, plural, hífen e pequenos erros de digitação não importam (1 letra em palavras de 5 a 8 letras, 2 a partir de 9; palavras curtas precisam ser exatas). Se errar, vê "“x” não é a resposta" e espera 5 segundos para tentar de novo. No fim da rodada, quem errou vê no celular o que digitou.
-- Depois do jogo, em **Acervo › Questões › Resultados**, cada conceito mostra o que foi digitado (sem nomes). Use **Aceitar nas próximas** para incluir uma resposta nas aceitas daquele conceito (vale nos próximos jogos e treinos).
+- Depois do jogo, em **Atividades › Questões › Resultados**, cada conceito mostra o que foi digitado (sem nomes). Use **Aceitar nas próximas** para incluir uma resposta nas aceitas daquele conceito (vale nos próximos jogos e treinos).
 - Quem acerta antes ganha mais pontos (de 1.000 no início a 300 no fim). O projetor mostra quantos já acertaram e com quantas dicas (ex.: "3 com 1 dica · 2 com 2 dicas"), sem nomes. No fim do tempo (ou quando todos acertam), aparece a resposta.
 - No sorteio por assunto, escolha em **Tipo de questão**: todos, só múltipla escolha e V/F, ou só "Adivinhe o conceito".
 
 **Treino em casa (link para os alunos):**
-1. Em **Acervo › Questões**, na parte **Treino em casa**, clique em **Compartilhar para treino**.
+1. Em **Atividades › Questões**, na parte **Treino em casa**, clique em **Compartilhar para treino**.
 2. Dê um título e escolha as questões: **Por assunto** (com o tipo de questão e quantas por sessão), **Questionário pronto** ou **Escolher as questões** (marcando uma a uma).
    - Por assunto, escolha **Sortear novas questões a cada sessão** (o aluno pode treinar várias vezes, com variedade) ou **Lista fixa** (sorteada agora, igual para todos, para direcionar o treino).
 3. Escolha quando o aluno vê a resposta certa: **logo depois de cada questão** (com a explicação e o texto do artigo do fundamento) ou **só no fim**.
@@ -180,7 +182,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 5. O aluno abre o link, escreve o nome se quiser (só para o PDF) e treina sem tempo e sem competição. No "Adivinhe o conceito", ele pede as dicas quando quiser. No fim, vê o resultado e pode tocar em **Salvar em PDF**. A qualquer momento, o link **salvar PDF até aqui** (no alto) mostra o resultado parcial, só com as questões já respondidas, para salvar em PDF e depois voltar às questões. Se a página recarregar, ele continua de onde parou.
 6. Nada do aluno é guardado no serviço do Vide; o resultado fica só no aparelho dele. As respostas certas vão junto com as questões no link (é um treino, não uma prova).
 
-**O que fica guardado:** só os números de cada questão (quantos marcaram cada alternativa), em **Acervo › Questões › Resultados dos jogos**, com exportação para Excel. Nenhum apelido ou nome é guardado.
+**O que fica guardado:** só os números de cada questão (quantos marcaram cada alternativa), em **Atividades › Questões › Resultados dos jogos**, com exportação para Excel. Nenhum apelido ou nome é guardado.
 
 **Cuidados:** cada aluno precisa de internet no celular. Não recarregue nem feche a página do Vide no computador durante o jogo: o jogo roda nela. Se um aluno recarregar a página, ele volta ao jogo com os mesmos pontos.
 
@@ -191,20 +193,20 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 3. Os alunos entram pelo QR code, como no jogo de perguntas. Em **Começar**, cada um vota numa letra no celular; a mais votada entra na palavra (se todos votarem antes, sai na hora).
 4. Quem souber a palavra toca em **Já sei a palavra** e digita. Palavra errada não custa à turma (a pessoa só espera 5 s).
 5. Com 6 erros, a forca vence. **Revelar a palavra** encerra a rodada a qualquer momento; **Próxima palavra** segue.
-6. No treino em casa: em **Acervo › Questões › Treinos em casa**, escolha o formato **Forca**. Ali cada aluno joga sozinho (palavra errada conta um erro).
+6. No treino em casa: em **Atividades › Questões › Treinos em casa**, escolha o formato **Forca**. Ali cada aluno joga sozinho (palavra errada conta um erro).
 
 ## Consulta (casos com personagens, em grupo)
 
-1. Em **Acervo › Casos › Adicionar casos**, escreva o tema e clique em **Copiar pedido para a IA**. Cole no Claude, copie a resposta e cole no campo **Casos**. Confira a prévia (personagem, balões, resposta) e clique em **Guardar**.
+1. Em **Atividades › Casos › Adicionar casos**, escreva o tema e clique em **Copiar pedido para a IA**. Cole no Claude, copie a resposta e cole no campo **Casos**. Confira a prévia (personagem, balões, resposta) e clique em **Guardar**.
 2. Revise a resposta e o fundamento de cada caso (**Ver** e **Editar** na lista).
 3. Na aula, em **Atividades › Consulta (em grupo)**, sorteie por assunto ou escolha os casos e clique em **Começar a consulta**.
 4. As falas aparecem uma a uma e o cronômetro corre. **Pausar** e **+1 minuto** ajustam o tempo; **Ver a resposta (só na sua tela)** mostra a resposta só para você.
 5. No fim do tempo (ou ao clicar em **Mostrar a resposta**), o advogado ou o juiz responde. **Projetar fundamento** põe o artigo ao lado.
-6. Treino em casa: **Acervo › Casos › Treino em casa › Compartilhar casos para treino**.
+6. Treino em casa: **Atividades › Casos › Treino em casa › Compartilhar casos para treino**.
 
 ## Processo fictício da turma
 
-1. Em **Acervo › Processos**, dê um nome e clique em **Novo processo em branco**.
+1. Em **Atividades › Processos**, dê um nome e clique em **Novo processo em branco**.
 2. **Capa**: confira o número (fictício, "tribunal 99"), a classe, o juízo, o juiz, o valor da causa. **Partes**: autor, réu e advogados.
 3. **Eventos**: **+ Evento**, descrição e usuário; junte documentos com **+ Peça escrita** (botões de título, citação, negrito…), **+ Anexar PDF** ou **+ PDF dos materiais**. Escreva "art. 319 do CPC" numa peça: o aluno poderá clicar e ler o artigo.
 4. Em **Para a turma**, cada evento fica segurado (só você vê), agendado numa data ou liberado. Evento novo começa segurado.
@@ -212,7 +214,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 6. Abra o link no celular: capa, partes, eventos e peças; os eventos novos aparecem como "novidades".
 7. Na aula: **Atividades › Processo da turma** projeta o processo; clique numa sigla (INIC1…) para projetar a peça e use **Liberar o evento…** para soltar o próximo ato.
 8. No semestre seguinte: **Copiar** o processo, com a nova data de início; as datas andam juntas.
-9. Para cadastrar mais rápido: **Colar processo** (em Acervo › Processos). Preencha o tema e clique em **Copiar pedido para a IA**; cole no Claude, copie a resposta e cole em **Processo em texto**. Confira a prévia e clique em **Criar o processo**.
+9. Para cadastrar mais rápido: **Colar processo** (em Atividades › Processos). Preencha o tema e clique em **Copiar pedido para a IA**; cole no Claude, copie a resposta e cole em **Processo em texto**. Confira a prévia e clique em **Criar o processo**.
 10. Dentro do processo: **Colar eventos** (em Eventos) acrescenta atos escritos fora do Vide; **Copiar como texto** copia o processo inteiro (para revisar no Word ou pedir à IA que continue).
 
 ## Guardar o acervo no Google Drive (vários computadores)

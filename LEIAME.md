@@ -49,7 +49,7 @@ O computador continua mostrando a projeção; o iPhone vira microfone e controle
 
 ## Jogo de perguntas
 
-- Questões (múltipla escolha e verdadeiro/falso) e questionários ficam em **Acervo › Questões**; dá para colar várias questões de uma vez em texto simples.
+- Questões (múltipla escolha e verdadeiro/falso) e questionários ficam em **Atividades › Questões**; dá para colar várias questões de uma vez em texto simples.
 - Na Aula, **Atividades** abre uma sala: os alunos entram pelo celular (QR code ou `/j` + código de 6 números) só com um apelido, respondem e veem o resultado. Ranking com pódio é opcional (ligado por padrão).
 - Por dentro: o computador do professor conduz o jogo (`src/jogo/`); um Durable Object "Jogo" no Cloudflare (`worker/index.ts`) só repassa as mensagens. Nada de nomes é gravado; o resultado guardado tem só números por questão.
 

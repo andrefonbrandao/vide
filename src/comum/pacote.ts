@@ -49,7 +49,7 @@ export function textoDoArtigo(item: Item): string {
   return linhas.join('\n');
 }
 
-/** Fala de teste (digitada em Acervo › Testes), que não é da aula. */
+/** Fala de teste (digitada em Ajustes › Conferência e testes), que não é da aula. */
 function ehFalaDeTeste(e: EventoRegistro): boolean {
   const trecho = e.dados?.trecho;
   return typeof trecho === 'string' && trecho.startsWith('sim:');

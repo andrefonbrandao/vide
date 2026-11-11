@@ -19,7 +19,7 @@ export function EscolherProcesso({ aoFechar }: { aoFechar: () => void }) {
     <>
       {!lista.length ? (
         <p className="aviso">
-          Nenhum processo ainda. Monte um em <strong>Acervo › Processos</strong>.
+          Nenhum processo ainda. Monte um em <strong>Atividades › Processos</strong>.
         </p>
       ) : (
         <div className="lista-questionarios">

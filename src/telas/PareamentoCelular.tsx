@@ -1,4 +1,5 @@
 // Janela de pareamento: QR code para abrir o controle no celular.
+import { confirmar } from '../comum/avisos';
 import qrcode from 'qrcode-generator';
 import { useMemo } from 'react';
 import { urlDoControle } from '../remoto/protocolo';
@@ -62,7 +63,7 @@ export function PareamentoCelular({ e, ctl, aoFechar }: { e: EstadoAula; ctl: Co
             <button
               className="botao"
               onClick={() => {
-                if (confirm('Desconectar o celular? Para usar de novo, será preciso ler um QR code novo.')) ctl.desconectarCelular();
+                void confirmar({ titulo: 'Desconectar o celular?', texto: 'Para usar de novo, será preciso ler um QR code novo.', botao: 'Desconectar' }).then((ok) => ok && ctl.desconectarCelular());
               }}
             >
               Desconectar celular

@@ -1,4 +1,5 @@
 // Botão do Google Drive no alto do Vide e a janela com a conta e a sincronização.
+import { confirmar } from '../comum/avisos';
 import { useState, useSyncExternalStore } from 'react';
 import { servicoDrive, type EstadoDrive } from '../drive/servico';
 
@@ -108,16 +109,19 @@ function JanelaDrive({ aoFechar }: { aoFechar: () => void }) {
               <span className="espaco" />
               <button
                 className="botao pequeno"
-                onClick={() => confirm('Desconectar o Google Drive? O acervo continua neste computador e no Drive.') && void s.sair()}
+                onClick={() => void confirmar({ titulo: 'Desconectar o Google Drive?', texto: 'O acervo continua neste computador e no Drive.', botao: 'Desconectar' }).then((ok) => ok && void s.sair())}
               >
                 Sair
               </button>
               <button
                 className="botao pequeno"
                 onClick={() =>
-                  confirm(
-                    'Sair e APAGAR o Vide deste computador (leis, materiais, questões e registros)? O que já está no Drive continua lá e volta quando você entrar de novo.',
-                  ) && void s.sairEApagar()
+                  void confirmar({
+                    titulo: 'Sair e apagar o Vide deste computador?',
+                    texto: 'Leis, materiais, questões e registros saem deste computador. O que já está no Drive continua lá e volta quando você entrar de novo.',
+                    botao: 'Sair e apagar',
+                    perigo: true,
+                  }).then((ok) => ok && void s.sairEApagar())
                 }
               >
                 Sair e apagar deste computador

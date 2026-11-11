@@ -1,4 +1,5 @@
-// Acervo › Casos: os casos do jogo "Consulta" (personagens com um problema concreto).
+// Atividades › Casos: os casos do jogo "Consulta" (personagens com um problema concreto).
+import { confirmar } from '../comum/avisos';
 import { useEffect, useMemo, useState } from 'react';
 import { adicionarCasos, assuntosDosCasos, excluirCaso, listarCasos, salvarCaso } from '../consulta/banco';
 import { casoParaTexto, lerCasos, MODELO_CASO, pedidoParaIA } from '../consulta/importar';
@@ -108,12 +109,15 @@ function ListaCasos({ casos, aoAdicionar }: { casos: Caso[]; aoAdicionar: () => 
   );
   if (!casos.length)
     return (
-      <div className="cartao">
-        <p>Nenhum caso ainda.</p>
-        <p className="ajuda">Cole casos prontos (por exemplo, criados com a ajuda de uma IA a partir do modelo) ou escreva o seu.</p>
-        <button className="botao primario" onClick={aoAdicionar}>
-          Adicionar casos
-        </button>
+      <div className="vazio-guia">
+        <Figura id="m3" expressao="duvida" className="vazio-guia-figura" />
+        <div>
+          <h2>Nenhum caso ainda</h2>
+          <p className="ajuda">Cole casos prontos (por exemplo, pedidos a uma IA com o pedido pronto) ou escreva o seu. Eles viram consultas com personagens na aula.</p>
+          <button className="botao escuro" onClick={aoAdicionar}>
+            Adicionar casos
+          </button>
+        </div>
       </div>
     );
   return (
@@ -147,7 +151,7 @@ function ListaCasos({ casos, aoAdicionar }: { casos: Caso[]; aoAdicionar: () => 
             <button className="botao pequeno" onClick={() => setEditando(editando === c.id ? null : c.id)}>
               Editar
             </button>
-            <button className="botao pequeno" onClick={() => confirm(`Apagar o caso "${c.nome}"?`) && void excluirCaso(c.id)}>
+            <button className="botao pequeno" onClick={() => void confirmar({ titulo: `Apagar o caso "${c.nome}"?`, botao: 'Apagar', perigo: true }).then((ok) => ok && void excluirCaso(c.id))}>
               Apagar
             </button>
             {aberto === c.id && editando !== c.id && (
@@ -394,7 +398,7 @@ function TreinoComCasos({ casos }: { casos: Caso[] }) {
                 <button
                   className="botao pequeno"
                   onClick={async () => {
-                    if (!confirm(`Desativar o link "${l.titulo}"?`)) return;
+                    if (!(await confirmar({ titulo: `Desativar o link "${l.titulo}"?`, botao: 'Desativar', perigo: true }))) return;
                     try {
                       await desativarLinkTreino(l);
                     } catch (e) {
@@ -438,10 +442,6 @@ export function Casos() {
   if (!casos) return <p className="ajuda">Carregando…</p>;
   return (
     <>
-      <p className="ajuda">
-        Casos para o jogo <strong>Consulta</strong> (em Aula › Atividades): um personagem conta um problema concreto, a turma discute em grupo
-        e, no fim do tempo, o advogado ou o juiz responde.
-      </p>
       <nav className="secoes-questoes" aria-label="Seções de casos">
         <button className={`botao pequeno${secao === 'lista' ? ' escuro' : ''}`} onClick={() => setSecao('lista')}>
           Casos ({casos.length})

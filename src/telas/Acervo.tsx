@@ -1,7 +1,7 @@
-// Acervo: leis (importação do HTML salvo do Planalto ou .txt, revisão de
-// duplicidades), lei principal da aula, materiais (PDFs), conferência de
-// artigos e teste do detector.
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+// Leis do acervo (importação do HTML salvo do Planalto ou .txt, revisão de
+// duplicidades), lei principal da aula, conferência de artigos e teste do detector.
+import { confirmar } from '../comum/avisos';
+import { useEffect, useMemo, useState } from 'react';
 import { db, excluirDiploma, listarDiplomas, salvarDiploma } from '../dados/db';
 import type { Diploma, Item } from '../dados/modelo';
 import { agoraISO, novoId } from '../dados/modelo';
@@ -28,11 +28,8 @@ import { lerArquivo } from '../fatiador/html';
 import { chaveItemArtigo, resolver } from '../comum/legislacao';
 import { Detector, chaveReferencia } from '../voz/detector';
 import { Folha } from './Projecao';
-import { AdicionarMaterial, ListaMateriais } from './Materiais';
-import { IcCasos, IcLei, IcMais, IcPasta, IcPerguntas, IcProcesso, IcTeste } from '../comum/Icones';
-import { Processos } from './Processos';
-import { Casos } from './Casos';
-import { AdicionarQuestoes, ListaQuestoes } from './Questoes';
+import { IcLei, IcMais } from '../comum/Icones';
+import { Figura } from './ConsultaTela';
 
 interface Parte {
   def: DefDiploma;
@@ -66,29 +63,9 @@ function montarItens(artigos: ArtigoFatiado[], def: DefDiploma, arquivo: string,
 
 const OUTRA = '__outra';
 
-type AbaAcervo = 'legislacao' | 'materiais' | 'questoes' | 'casos' | 'processos' | 'testes' | 'nova-norma' | 'novo-material' | 'novas-questoes';
-
-export function Acervo() {
-  const [aba, setAbaEstado] = useState<AbaAcervo>(() => {
-    try {
-      return (sessionStorage.getItem('vide.abaAcervo') as AbaAcervo) || 'legislacao';
-    } catch {
-      return 'legislacao';
-    }
-  });
-  const setAba = (a: AbaAcervo) => {
-    setAbaEstado(a);
-    try {
-      sessionStorage.setItem('vide.abaAcervo', a);
-    } catch {
-      /* ignore */
-    }
-  };
+/** Página "Leis": as leis do acervo, a lei principal e a importação de uma lei nova. */
+export function SecaoLeis({ importando, setImportando }: { importando: boolean; setImportando: (v: boolean) => void }) {
   const [leis, setLeis] = useState<Diploma[]>([]);
-  const [menuMais, setMenuMais] = useState(false);
-  /** Muda para abrir a seção Casos de novo (ex.: direto em "Adicionar casos"). */
-  const [chaveCasos, setChaveCasos] = useState(0);
-  const maisRef = useRef<HTMLDivElement>(null);
   const recarregar = async () => setLeis(await listarDiplomas());
   useEffect(() => {
     void recarregar();
@@ -96,110 +73,22 @@ export function Acervo() {
     window.addEventListener('vide-acervo-mudou', r);
     return () => window.removeEventListener('vide-acervo-mudou', r);
   }, []);
-  useEffect(() => {
-    if (!menuMais) return;
-    const fora = (ev: MouseEvent) => {
-      if (maisRef.current && !maisRef.current.contains(ev.target as Node)) setMenuMais(false);
-    };
-    window.addEventListener('mousedown', fora);
-    return () => window.removeEventListener('mousedown', fora);
-  }, [menuMais]);
-
-  const botaoAba = (a: AbaAcervo, rotulo: string, icone: ReactNode) => (
-    <button className="aba-acervo" aria-current={aba === a ? 'page' : undefined} onClick={() => setAba(a)}>
-      {icone} {rotulo}
-    </button>
+  return importando ? (
+    <ImportarLegislacao aoConcluir={() => void recarregar()} aoVer={() => setImportando(false)} />
+  ) : (
+    <LeisNoAcervo leis={leis} recarregar={recarregar} aoAdicionar={() => setImportando(true)} />
   );
+}
 
+/** Ferramentas de conferência (em Ajustes): conferir um artigo e testar a detecção de citações. */
+export function SecaoTestes() {
+  const [leis, setLeis] = useState<Diploma[]>([]);
+  useEffect(() => void listarDiplomas().then(setLeis), []);
   return (
-    <div className="pagina">
-      <h1>Acervo</h1>
-      <p className="ajuda">
-        O acervo fica guardado <strong>neste navegador, neste computador</strong>. A aula não precisa de internet para consultá-lo
-        (só o reconhecimento de voz precisa).
-      </p>
-
-      <nav className="menu-acervo" aria-label="Seções do acervo">
-        {botaoAba('legislacao', 'Legislação', <IcLei />)}
-        {botaoAba('materiais', 'Materiais', <IcPasta />)}
-        {botaoAba('questoes', 'Questões', <IcPerguntas />)}
-        {botaoAba('casos', 'Casos', <IcCasos />)}
-        {botaoAba('processos', 'Processos', <IcProcesso />)}
-        {botaoAba('testes', 'Testes', <IcTeste />)}
-        <div className="mais-acervo" ref={maisRef}>
-          <button
-            className={`botao-mais${aba === 'nova-norma' || aba === 'novo-material' || aba === 'novas-questoes' ? ' ativo' : ''}`}
-            onClick={() => setMenuMais(!menuMais)}
-            aria-label="Adicionar norma ou material"
-            title="Adicionar norma ou material"
-            aria-expanded={menuMais}
-          >
-            <IcMais tamanho={22} />
-          </button>
-          {menuMais && (
-            <div className="popover-menu para-baixo" role="menu">
-              <button type="button" role="menuitem" className="opcao-menu" onClick={() => { setAba('nova-norma'); setMenuMais(false); }}>
-                <IcLei />
-                <span>
-                  <strong>Adicionar norma</strong>
-                  <span className="opcao-menu-desc">Importar uma lei do Planalto (CPC, CF, CC…).</span>
-                </span>
-              </button>
-              <button type="button" role="menuitem" className="opcao-menu" onClick={() => { setAba('novo-material'); setMenuMais(false); }}>
-                <IcPasta />
-                <span>
-                  <strong>Adicionar material</strong>
-                  <span className="opcao-menu-desc">Carregar slides em PDF ou imagens.</span>
-                </span>
-              </button>
-              <button type="button" role="menuitem" className="opcao-menu" onClick={() => { setAba('novas-questoes'); setMenuMais(false); }}>
-                <IcPerguntas />
-                <span>
-                  <strong>Adicionar questões</strong>
-                  <span className="opcao-menu-desc">Escrever ou colar questões para o jogo de perguntas.</span>
-                </span>
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="opcao-menu"
-                onClick={() => {
-                  try {
-                    sessionStorage.setItem('vide.secaoCasos', 'adicionar');
-                  } catch {
-                    /* ignore */
-                  }
-                  setAba('casos');
-                  setChaveCasos((n) => n + 1);
-                  setMenuMais(false);
-                }}
-              >
-                <IcCasos />
-                <span>
-                  <strong>Adicionar casos</strong>
-                  <span className="opcao-menu-desc">Colar casos para o jogo Consulta (com o pedido pronto para a IA).</span>
-                </span>
-              </button>
-            </div>
-          )}
-        </div>
-      </nav>
-
-      {aba === 'legislacao' && <LeisNoAcervo leis={leis} recarregar={recarregar} aoAdicionar={() => setAba('nova-norma')} />}
-      {aba === 'materiais' && <ListaMateriais aoAdicionar={() => setAba('novo-material')} />}
-      {aba === 'questoes' && <ListaQuestoes aoAdicionar={() => setAba('novas-questoes')} />}
-      {aba === 'novas-questoes' && <AdicionarQuestoes aoVer={() => setAba('questoes')} />}
-      {aba === 'casos' && <Casos key={chaveCasos} />}
-      {aba === 'processos' && <Processos />}
-      {aba === 'testes' && (
-        <>
-          <Conferir leis={leis} />
-          <TestarDetector />
-        </>
-      )}
-      {aba === 'nova-norma' && <ImportarLegislacao aoConcluir={() => void recarregar()} aoVer={() => setAba('legislacao')} />}
-      {aba === 'novo-material' && <AdicionarMaterial aoVer={() => setAba('materiais')} />}
-    </div>
+    <>
+      <Conferir leis={leis} />
+      <TestarDetector />
+    </>
   );
 }
 
@@ -207,17 +96,20 @@ function LeisNoAcervo({ leis, recarregar, aoAdicionar }: { leis: Diploma[]; reca
   const [principal, setPrincipal] = useState(diplomaPrincipal());
   if (!leis.length) {
     return (
-      <div className="vazio-acervo">
-        <p>Nenhuma lei guardada ainda.</p>
-        <button className="botao primario com-icone" onClick={aoAdicionar}>
-          <IcMais /> Adicionar norma
-        </button>
+      <div className="vazio-guia">
+        <Figura id="juiz-h" expressao="neutro" className="vazio-guia-figura" />
+        <div>
+          <h2>Nenhuma lei ainda</h2>
+          <p className="ajuda">Importe o CPC, a Constituição ou outra lei a partir do site do Planalto. Os artigos ficam prontos para projetar na aula.</p>
+          <button className="botao escuro com-icone" onClick={aoAdicionar}>
+            <IcMais /> Importar lei
+          </button>
+        </div>
       </div>
     );
   }
   return (
     <>
-      <h2>Leis no acervo</h2>
       <div className="cartao">
         <table className="tabela">
           <thead>
@@ -233,7 +125,7 @@ function LeisNoAcervo({ leis, recarregar, aoAdicionar }: { leis: Diploma[]; reca
                   <button
                     className="botao pequeno"
                     onClick={async () => {
-                      if (!confirm(`Apagar ${abreviacaoDe(l.sigla)} do acervo?`)) return;
+                      if (!(await confirmar({ titulo: `Apagar ${abreviacaoDe(l.sigla)} do acervo?`, botao: 'Apagar', perigo: true }))) return;
                       await excluirDiploma(l.sigla);
                       window.dispatchEvent(new Event('vide-acervo-mudou'));
                       await recarregar();

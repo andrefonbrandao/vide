@@ -1,4 +1,5 @@
-// Acervo › Questões: criar links de treino em casa e ver/desativar os já criados.
+// Atividades › Questões: criar links de treino em casa e ver/desativar os já criados.
+import { confirmar } from '../comum/avisos';
 import qrcode from 'qrcode-generator';
 import { useEffect, useMemo, useState } from 'react';
 import { assuntosDasQuestoes, sortearQuestoes, type FiltroTipo } from '../jogo/banco';
@@ -375,7 +376,7 @@ export function TreinosEmCasa({
                 <button
                   className="botao pequeno"
                   onClick={async () => {
-                    if (!confirm(`Desativar o link "${l.titulo}"? Quem abrir o link verá que ele foi desativado.`)) return;
+                    if (!(await confirmar({ titulo: `Desativar o link "${l.titulo}"?`, texto: 'Quem abrir o link verá que ele foi desativado.', botao: 'Desativar', perigo: true }))) return;
                     try {
                       setErro(null);
                       await desativarLinkTreino(l);

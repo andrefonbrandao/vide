@@ -1,5 +1,6 @@
-// Acervo › Processos: a biblioteca de processos fictícios e o editor de cada um
+// Atividades › Processos: a biblioteca de processos fictícios e o editor de cada um
 // (capa, partes, eventos com as peças e a liberação para a turma).
+import { confirmar } from '../comum/avisos';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { criarProcesso, excluirProcesso, lerProcesso, listarProcessos, novaParte, novoDocumento, novoEvento, salvarProcesso } from '../processo/banco';
 
@@ -57,6 +58,7 @@ import { urlDoProcesso, type DadosProcesso, type Documento, type Evento, type Pa
 import { LinkEQr } from './CompartilharTreino';
 import { buscarNoAcervo, PdfDaPeca, TextoPeca, VisaoProcesso } from './ProcessoAluno';
 import { ColarEventos, ColarProcesso, CopiarComoTexto } from './ProcessoTexto';
+import { Figura } from './ConsultaTela';
 
 
 
@@ -385,7 +387,7 @@ function EditorEvento({
         {e.documentos.map((d) => (
           <div key={d.id} className="proc-doc-bloco">
             <EditorPeca doc={d} aoMudar={mudarDoc} pasta={`Processos/${p.titulo.replace(/\//g, '-')}`} />
-            <button type="button" className="link-discreto" style={{ marginLeft: 0 }} onClick={() => confirm(`Apagar o documento ${d.sigla}?`) && aoMudar({ ...e, documentos: e.documentos.filter((x) => x.id !== d.id) })}>
+            <button type="button" className="link-discreto" style={{ marginLeft: 0 }} onClick={() => void confirmar({ titulo: `Apagar o documento ${d.sigla}?`, botao: 'Apagar', perigo: true }).then((ok) => ok && aoMudar({ ...e, documentos: e.documentos.filter((x) => x.id !== d.id) }))}>
               apagar este documento
             </button>
           </div>
@@ -400,7 +402,7 @@ function EditorEvento({
           ↓ Descer
         </button>
         <span className="espaco" />
-        <button type="button" className="botao pequeno" onClick={() => confirm(`Apagar o evento ${numero}?`) && aoApagar()}>
+        <button type="button" className="botao pequeno" onClick={() => void confirmar({ titulo: `Apagar o evento ${numero}?`, botao: 'Apagar', perigo: true }).then((ok) => ok && aoApagar())}>
           Apagar evento
         </button>
       </div>
@@ -599,7 +601,7 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
               <button
                 className="botao pequeno"
                 onClick={async () => {
-                  if (!confirm('Desativar o link? Quem abrir verá que o processo não existe mais. O processo continua guardado aqui.')) return;
+                  if (!(await confirmar({ titulo: 'Desativar o link da turma?', texto: 'Quem abrir verá que o processo não existe mais. O processo continua guardado aqui.', botao: 'Desativar', perigo: true }))) return;
                   try {
                     await desativarProcesso(p.publicacao!);
                     mudar({ ...p, publicacao: null });
@@ -795,9 +797,10 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
   );
 }
 
-export function Processos() {
+export function Processos({ acao = null }: { acao?: 'novo-processo' | 'colar-processo' | string | null }) {
   const [lista, setLista] = useState<Processo[] | null>(null);
   const [aberto, setAberto] = useState<string | null>(() => {
+    if (acao) return null;
     try {
       return sessionStorage.getItem('vide.processoAberto');
     } catch {
@@ -806,7 +809,8 @@ export function Processos() {
   });
   const [novoTitulo, setNovoTitulo] = useState('');
   const [copiando, setCopiando] = useState<string | null>(null);
-  const [colando, setColando] = useState(false);
+  const [colando, setColando] = useState(acao === 'colar-processo');
+  const [criando, setCriando] = useState(acao === 'novo-processo');
   const abrir = (id: string | null) => {
     setAberto(id);
     try {
@@ -826,29 +830,49 @@ export function Processos() {
   if (colando) return <ColarProcesso aoCriar={(id) => (setColando(false), abrir(id))} aoCancelar={() => setColando(false)} />;
   return (
     <>
-      <p className="ajuda">
-        Processos fictícios que a turma acompanha ao longo do semestre: você monta a capa, as partes e os eventos com as peças; os alunos
-        abrem pelo link, sem cadastro, e veem só o que você liberou.
-      </p>
-      <form
-        className="cartao linha-opcoes"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          const p = await criarProcesso(novoTitulo || `Processo da turma ${new Date().getFullYear()}`);
-          setNovoTitulo('');
-          abrir(p.id);
-        }}
-      >
-        <input type="text" placeholder="Nome do novo processo (só você vê), ex.: Turma 2027/1 — ação de cobrança" value={novoTitulo} onChange={(e) => setNovoTitulo(e.target.value)} style={{ flex: 1, minWidth: 240 }} aria-label="Nome do novo processo" />
-        <button className="botao primario">Novo processo em branco</button>
-        <button type="button" className="botao" onClick={() => setColando(true)} title="Colar um processo inteiro em texto (por exemplo, criado com a ajuda de uma IA)">
-          Colar processo
-        </button>
-      </form>
+      {criando && (
+        <form
+          className="cartao linha-opcoes"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const p = await criarProcesso(novoTitulo || `Processo da turma ${new Date().getFullYear()}`);
+            setNovoTitulo('');
+            abrir(p.id);
+          }}
+        >
+          <input
+            autoFocus
+            type="text"
+            placeholder="Nome do novo processo (só você vê), ex.: Turma 2027/1 — ação de cobrança"
+            value={novoTitulo}
+            onChange={(e) => setNovoTitulo(e.target.value)}
+            style={{ flex: 1, minWidth: 240 }}
+            aria-label="Nome do novo processo"
+          />
+          <button className="botao primario">Criar em branco</button>
+          <button type="button" className="botao" onClick={() => setCriando(false)}>
+            Cancelar
+          </button>
+        </form>
+      )}
       {lista === null ? (
         <p className="ajuda">Carregando…</p>
       ) : !lista.length ? (
-        <p className="ajuda">Nenhum processo ainda.</p>
+        <div className="vazio-guia">
+          <Figura id="adv-h" expressao="feliz" className="vazio-guia-figura" />
+          <div>
+            <h2>Nenhum processo ainda</h2>
+            <p className="ajuda">Monte um processo em branco ou cole um processo em texto (por exemplo, pedido pronto a uma IA).</p>
+            <div className="linha-opcoes">
+              <button className="botao escuro" onClick={() => setCriando(true)}>
+                Novo processo
+              </button>
+              <button className="botao" onClick={() => setColando(true)}>
+                Colar processo
+              </button>
+            </div>
+          </div>
+        </div>
       ) : (
         <ul className="lista-ordem">
           {lista.map((p) => (
@@ -869,7 +893,7 @@ export function Processos() {
               <button
                 className="botao pequeno"
                 onClick={async () => {
-                  if (!confirm(`Apagar o processo "${p.titulo}"?${p.publicacao ? ' O link da turma também será desativado.' : ''}`)) return;
+                  if (!(await confirmar({ titulo: `Apagar o processo "${p.titulo}"?`, texto: p.publicacao ? 'O link da turma também será desativado.' : undefined, botao: 'Apagar', perigo: true }))) return;
                   if (p.publicacao) await desativarProcesso(p.publicacao).catch(() => undefined);
                   await excluirProcesso(p.id);
                 }}

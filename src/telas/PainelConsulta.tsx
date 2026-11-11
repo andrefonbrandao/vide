@@ -1,4 +1,5 @@
 // Jogo "Consulta" na tela do professor: escolher os casos e conduzir a discussão.
+import { confirmar } from '../comum/avisos';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { apresentador } from '../consulta/apresentador';
 import { assuntosDosCasos, listarCasos } from '../consulta/banco';
@@ -40,7 +41,7 @@ export function EscolherConsulta({ aoFechar }: { aoFechar: () => void }) {
     return (
       <>
         <p className="aviso">
-          Nenhum caso ainda. Cadastre em <strong>Acervo › Casos</strong>.
+          Nenhum caso ainda. Cadastre em <strong>Atividades › Casos</strong>.
         </p>
         <div className="modal-botoes">
           <button className="botao" onClick={aoFechar}>
@@ -192,7 +193,7 @@ export function PainelConsulta({ ctl }: { ctl: ControladorAula }) {
           </button>
         )}
         <span className="espaco" />
-        <button className="botao" onClick={() => (tela.fase === 'fim' || confirm('Encerrar a consulta agora?')) && a.encerrar()}>
+        <button className="botao" onClick={() => (tela.fase === 'fim' ? a.encerrar() : void confirmar({ titulo: 'Encerrar a consulta agora?', botao: 'Encerrar' }).then((ok) => ok && a.encerrar()))}>
           Encerrar
         </button>
       </div>

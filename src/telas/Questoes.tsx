@@ -1,5 +1,7 @@
-// Acervo › Questões: banco de questões, questionários (sequências para a aula),
+// Atividades › Questões: banco de questões, questionários (sequências para a aula),
 // importação por texto e resultados dos jogos (só números, sem nomes de alunos).
+import { Figura } from './ConsultaTela';
+import { confirmar } from '../comum/avisos';
 import { useEffect, useMemo, useState } from 'react';
 import { baixar } from '../comum/registro';
 import { diplomaPrincipal, todosDiplomas } from '../dados/diplomas';
@@ -488,20 +490,31 @@ function EditorQuestionario({ inicial, questoes, aoFechar }: { inicial?: Questio
   );
 }
 
-type SecaoQuestoes = 'inicio' | 'banco' | 'questionarios' | 'treinos' | 'resultados';
+export type SecaoQuestoes = 'inicio' | 'banco' | 'questionarios' | 'treinos' | 'resultados';
 const CHAVE_SECAO = 'vide.secaoQuestoes';
 
-export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
+export function ListaQuestoes({ aoAdicionar, secaoFixa }: { aoAdicionar: () => void; secaoFixa?: SecaoQuestoes }) {
   const { questoes, questionarios, resultados } = useDados();
   // Seção aberta (lembrada enquanto a aba do navegador estiver aberta). Começa no início.
-  const [secao, setSecaoEstado] = useState<SecaoQuestoes>(() => {
+  const [secaoLida, setSecaoEstado] = useState<SecaoQuestoes>(() => {
     try {
-      return (sessionStorage.getItem(CHAVE_SECAO) as SecaoQuestoes) || 'inicio';
+      const s = (sessionStorage.getItem(CHAVE_SECAO) as SecaoQuestoes) || 'inicio';
+      return s === 'resultados' ? 'inicio' : s;
     } catch {
       return 'inicio';
     }
   });
-  const [criarTreino, setCriarTreino] = useState(false);
+  const secao = secaoFixa ?? secaoLida;
+  // Atalho "Criar › Treino em casa": já abre o formulário.
+  const [criarTreino, setCriarTreino] = useState(() => {
+    try {
+      const v = sessionStorage.getItem('vide.criarTreino') === '1';
+      sessionStorage.removeItem('vide.criarTreino');
+      return v;
+    } catch {
+      return false;
+    }
+  });
   const setSecao = (s: SecaoQuestoes) => {
     setSecaoEstado(s);
     setCriarTreino(false);
@@ -526,7 +539,7 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
   const pastas = todasPastas(questoes.map((q) => ({ ...q, nome: q.enunciado })));
 
   const vazio = !questoes.length;
-  const nav = (
+  const nav = secaoFixa ? null : (
     <nav className="secoes-questoes" aria-label="Seções de questões">
       {(
         [
@@ -534,7 +547,6 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
           ['banco', `Questões (${questoes.length})`],
           ['questionarios', `Questionários (${questionarios.length})`],
           ['treinos', 'Treinos em casa'],
-          ['resultados', `Resultados (${resultados.length})`],
         ] as [SecaoQuestoes, string][]
       ).map(([s, r]) => (
         <button key={s} className={`botao pequeno${secao === s ? ' escuro' : ''}`} aria-current={secao === s ? 'page' : undefined} onClick={() => setSecao(s)}>
@@ -627,7 +639,7 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
                   </button>
                   <button
                     className="botao pequeno"
-                    onClick={() => confirm(`Apagar o questionário "${qz.nome}"? As questões continuam no banco.`) && void excluirQuestionario(qz.id)}
+                    onClick={() => void confirmar({ titulo: `Apagar o questionário "${qz.nome}"?`, texto: 'As questões continuam no banco.', botao: 'Apagar', perigo: true }).then((ok) => ok && void excluirQuestionario(qz.id))}
                   >
                     Apagar
                   </button>
@@ -709,7 +721,7 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
                   <button className="botao pequeno" onClick={() => setEditandoQ(q)}>
                     Editar
                   </button>
-                  <button className="botao pequeno" onClick={() => confirm('Apagar esta questão?') && void excluirQuestao(q.id)}>
+                  <button className="botao pequeno" onClick={() => void confirmar({ titulo: 'Apagar esta questão?', botao: 'Apagar', perigo: true }).then((ok) => ok && void excluirQuestao(q.id))}>
                     Apagar
                   </button>
                 </div>
@@ -726,9 +738,17 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
 
       {secao === 'resultados' && (
       <>
-      <h2>Resultados dos jogos</h2>
-      <p className="ajuda">Os números de cada questão (quantos marcaram cada alternativa) e, no "Adivinhe o conceito", o que foi digitado. Nenhum apelido é guardado.</p>
-      {!resultados.length && <p className="ajuda">Nenhum jogo encerrado ainda.</p>}
+      {!secaoFixa && <h2>Resultados dos jogos</h2>}
+      <p className="ajuda">Quantos marcaram cada alternativa e, no "Adivinhe o conceito", o que foi digitado. Nenhum apelido é guardado.</p>
+      {!resultados.length && (
+        <div className="vazio-guia">
+          <Figura id="h1" expressao="neutro" className="vazio-guia-figura" />
+          <div>
+            <h2>Nenhum jogo encerrado ainda</h2>
+            <p className="ajuda">Os resultados aparecem aqui quando você encerra um jogo em Aula › Atividades.</p>
+          </div>
+        </div>
+      )}
       {resultados.map((r) => {
         const total = r.perguntas.reduce((s, p) => s + p.respostas.reduce((a, n) => a + n, 0) + p.semResposta, 0);
         const certas = r.perguntas.reduce((s, p) => s + p.respostas[p.correta], 0);
@@ -757,7 +777,7 @@ export function ListaQuestoes({ aoAdicionar }: { aoAdicionar: () => void }) {
               >
                 Exportar .csv
               </button>
-              <button className="botao pequeno" onClick={() => confirm('Apagar este resultado?') && void excluirResultado(r.id)}>
+              <button className="botao pequeno" onClick={() => void confirmar({ titulo: 'Apagar este resultado?', botao: 'Apagar', perigo: true }).then((ok) => ok && void excluirResultado(r.id))}>
                 Apagar
               </button>
             </div>

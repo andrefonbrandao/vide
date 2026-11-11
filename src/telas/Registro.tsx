@@ -1,4 +1,5 @@
 // Registro de teste: lista as sessões e exporta em .txt e .csv.
+import { confirmar } from '../comum/avisos';
 import { useEffect, useState } from 'react';
 import type { EventoRegistro } from '../dados/modelo';
 import { controlador } from './controlador';
@@ -65,19 +66,16 @@ export function Registro() {
   };
 
   return (
-    <div className="pagina">
-      <h1>Registro de teste</h1>
-      <p className="ajuda">
-        Tudo o que acontece no modo aula fica anotado com horário: a transcrição, as referências detectadas, o que foi projetado
-        e recolhido, os comandos de voz e as quedas do reconhecimento. Cada aula vira uma <strong>sessão</strong> (uma nova
-        começa sozinha depois de 3 horas sem uso). O botão abaixo começa uma sessão nova na hora e limpa a tela da aula
-        (transcrição, candidatos e referências); as sessões anteriores continuam guardadas aqui.
-      </p>
-      <p className="ajuda">
-        <strong>Material de revisão:</strong> em cada aula, <strong>Copiar pacote para o Claude</strong> junta a transcrição e o
-        texto integral dos dispositivos que você projetou (as alternativas que não foram projetadas ficam de fora). Cole no
-        claude.ai e peça o que quiser: resumo, questões, esquema…
-      </p>
+    <div>
+      <details className="ajuda-dobravel">
+        <summary>Como funciona o registro</summary>
+        <p className="ajuda">
+          Tudo o que acontece na aula fica anotado com horário: a transcrição, as referências detectadas, o que foi projetado e
+          recolhido e os comandos de voz. Cada aula vira uma <strong>sessão</strong> (uma nova começa sozinha depois de 3 horas sem
+          uso). <strong>Copiar pacote para o Claude</strong> junta a transcrição e o texto integral dos dispositivos projetados:
+          cole no claude.ai e peça um resumo, questões, um esquema…
+        </p>
+      </details>
       <p>
         <button
           className="botao"
@@ -122,7 +120,7 @@ export function Registro() {
               <button
                 className="botao pequeno"
                 onClick={async () => {
-                  if (!confirm('Apagar esta sessão do registro? Não dá para desfazer.')) return;
+                  if (!(await confirmar({ titulo: 'Apagar esta sessão do registro?', texto: 'Não dá para desfazer.', botao: 'Apagar', perigo: true }))) return;
                   await apagarSessao(s.id);
                   if (aberta === s.id) setAberta(null);
                   void recarregar();

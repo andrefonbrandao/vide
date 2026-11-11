@@ -1,4 +1,5 @@
 // Jogo de perguntas na tela do professor: escolher o questionário e conduzir o jogo.
+import { confirmar } from '../comum/avisos';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { anfitriao, rankingPreferido } from '../jogo/anfitriao';
 import { assuntosDasQuestoes, listarQuestionarios, listarQuestoes, questoesDo, sortearQuestoes, type FiltroTipo } from '../jogo/banco';
@@ -213,7 +214,7 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
         ) : modo === 'assunto' ? (
           banco.length === 0 ? (
             <p className="aviso">
-              Nenhuma questão ainda. Cadastre em <strong>Acervo › Questões</strong>.
+              Nenhuma questão ainda. Cadastre em <strong>Atividades › Questões</strong>.
             </p>
           ) : (
             <div className="sorteio-assunto">
@@ -260,7 +261,7 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
                   {buscaAssunto.trim() && !encontrados.length && <p className="ajuda" style={{ margin: 6 }}>Nenhum assunto com "{buscaAssunto.trim()}".</p>}
                 </div>
                 {assuntos.length === 0 && (
-                  <span className="ajuda">As questões ainda não têm assunto: cadastre em Acervo › Questões (campo "Assuntos").</span>
+                  <span className="ajuda">As questões ainda não têm assunto: cadastre em Atividades › Questões (campo "Assuntos").</span>
                 )}
               </div>
               {!forca && (
@@ -305,7 +306,7 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
           )
         ) : lista.length === 0 ? (
           <p className="aviso">
-            Nenhum questionário ainda. Crie um em <strong>Acervo › Questões</strong>.
+            Nenhum questionário ainda. Crie um em <strong>Atividades › Questões</strong>.
           </p>
         ) : (
           <div className="lista-questionarios" role="radiogroup">
@@ -428,7 +429,8 @@ export function PainelJogo({ ctl }: { ctl: ControladorAula }) {
         <button
           className="botao"
           onClick={() => {
-            if (tela.fase === 'fim' || confirm('Encerrar o jogo agora? Os alunos saem da sala.')) anfitriao().encerrar();
+            if (tela.fase === 'fim') anfitriao().encerrar();
+            else void confirmar({ titulo: 'Encerrar o jogo agora?', texto: 'Os alunos saem da sala.', botao: 'Encerrar' }).then((ok) => ok && anfitriao().encerrar());
           }}
         >
           Encerrar jogo

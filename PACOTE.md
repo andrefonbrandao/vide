@@ -13,14 +13,19 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 10** aberto em 2026-11-10, a partir da versão 0.25.0. **Fechado e publicado como versão 0.26.0.**
-O próximo pacote recomeça esta seção a partir da versão publicada.
+**Pacote 11** aberto em 2026-11-11, a partir da versão 0.26.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | Nova organização, parte 1: **barra lateral clara** (Início, Aula; Biblioteca: Leis, Materiais; Atividades: Questões, Casos, Processos, Links da turma; Turma: Resultados, Registro das aulas; Ajustes), que se recolhe durante a aula; tela de **Início** ("Pronto para a aula?", continue de onde parou, criar rápido, links ativos); botão **+ Criar**; **busca geral** (Ctrl K) por artigos, materiais, questões, casos e processos, levando o artigo para a aula; **Links da turma** num lugar só; páginas com o mesmo cabeçalho; avisos rápidos e janelas de confirmação do próprio Vide no lugar das do navegador; telas vazias com personagem e o que fazer; barra inferior no celular | Pronta |
+
+## Pacotes anteriores
+
+### Pacote 10 (publicado como 0.26.0 em 2026-11-11)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | Processo em texto: **Colar processo** (capa, partes, eventos e peças num formato de texto, com prévia e avisos; documentos "(PDF)" ficam com "falta anexar o PDF"); **Colar eventos** num processo existente (siglas repetidas renumeradas); **Copiar como texto** (o processo inteiro no mesmo formato, para revisar ou pedir à IA que continue); **pedido pronto para a IA** (tema, até que fase, quantos eventos, data de início e defeitos para plantar) | Publicada (0.26.0) |
-
-## Pacotes anteriores
 
 ### Pacote 9 (publicado como 0.25.0 em 2026-11-10)
 
