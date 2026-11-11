@@ -10,6 +10,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 - Ao publicar, o conteúdo deste ramo é levado para `claude/wizardly-clarke-nwd93w` e este
   arquivo passa a registrar o pacote como publicado (com a data e a versão).
 - Mudanças mais trabalhosas ou arriscadas são avisadas antes e podem ficar fora do pacote.
+- A cada 5 pacotes publicados (pacotes 15, 20, 25…), roda-se o **teste de peso** (`npm run peso`, ver `PESO.md`); se o Vide estiver pesado, o Claude recomenda a melhoria antes de mexer.
 
 ## Situação
 
