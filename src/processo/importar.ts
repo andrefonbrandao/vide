@@ -213,6 +213,14 @@ export function lerProcessoTexto(texto: string): ProcessoLido {
         else lido.avisos.push(`Linha ${nl}: prazo não entendido ("${pz[1].trim()}"). Use, por exemplo, "15 dias úteis para o réu contestar".`);
         return;
       }
+      const ag = /^\s*e agora\s*\??\s*:\s*(.*)$/i.exec(linha);
+      if (ag) {
+        const [pergunta = '', ...opcoes] = ag[1].split('|').map((x) => x.trim());
+        const ops = opcoes.filter(Boolean).slice(0, 6);
+        if (pergunta && ops.length >= 2) (evento as Evento).agora = { pergunta, opcoes: ops };
+        else lido.avisos.push(`Linha ${nl}: "E agora" precisa da pergunta e de pelo menos duas opções, separadas por "|".`);
+        return;
+      }
       const fs = /^\s*fase\s*:\s*(.*)$/i.exec(linha);
       if (fs) {
         const f = lerFase(fs[1]);
@@ -299,6 +307,7 @@ export function processoParaTexto(p: Processo, opcoes: { soEventos?: boolean } =
     l.push(`Evento: ${dataBR(e.data)} | ${e.descricao} | ${e.usuario} | ${lib}`);
     if (e.fase) l.push(`Fase: ${FASES.find((f) => f.id === e.fase)?.nome ?? e.fase}`);
     if (e.prazo) l.push(`Prazo: ${prazoParaTexto(e.prazo)}`);
+    if (e.agora) l.push(`E agora: ${e.agora.pergunta} | ${e.agora.opcoes.join(' | ')}`);
     for (const d of e.documentos) {
       l.push(`Documento: ${d.sigla} | ${d.titulo}${d.tipo === 'pdf' ? ' (PDF)' : ''}`);
       if (d.tipo === 'texto' && d.texto.trim()) l.push(d.texto.trim());
@@ -336,5 +345,6 @@ Regras:
 - Cite os artigos do CPC por extenso no texto ("art. 319 do CPC", "art. 335"). Use só artigos que existem e que se aplicam; os prazos e datas devem ser coerentes com o CPC (dias úteis).
 - Peças realistas, mas curtas: de 1 a 4 parágrafos por seção, para caberem na leitura em aula.
 - Logo abaixo da linha "Evento:", quando couber: "Fase:" (petição inicial, citação, contestação e réplica, saneamento, instrução, sentença, recurso ou cumprimento) e "Prazo:" para o evento que abre um prazo (ex.: "Prazo: 15 dias úteis para o réu contestar"), contado da data do evento.
+- Antes de 1 ou 2 decisões importantes do juiz, uma linha "E agora: <pergunta para a turma votar> | <opção> | <opção> | <opção>" (de 2 a 4 opções curtas), logo abaixo da linha "Evento:" da decisão.
 - Para documentos que não são texto (procuração, comprovantes, fotos), escreva só a linha "Documento: SIGLA | Título (PDF)", sem texto.`;
 }

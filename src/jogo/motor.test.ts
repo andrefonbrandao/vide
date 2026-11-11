@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest';
-import { MotorJogo, calcularPontos } from './motor';
+import { describe, expect, test, it } from 'vitest';
+import { MotorJogo, calcularPontos, rotuloAvancar } from './motor';
 import type { QuestaoJogo } from './tipos';
 
 const q = (correta: number, tempo = 20): QuestaoJogo => ({
@@ -145,5 +145,29 @@ describe('respostas digitadas do conceito', () => {
     m.avancar(11_000); // 2ª questão
     expect(m.responderTexto('a', 1, 'preclusão', 12_000)).toBe('errado');
     expect(m.responderTexto('b', 1, 'precluso', 12_000)).toBe('certo');
+  });
+});
+
+describe('enquete ("E agora?")', () => {
+  it('conta os votos, sem resposta certa, pontos ou fim automático', () => {
+    const q = { tipo: 'multipla' as const, enunciado: 'E agora?', alternativas: ['Defere', 'Indefere', 'Emenda'], correta: -1, tempo: 60, explicacao: '', fundamento: '' };
+    const m = new MotorJogo([q], true, 'enquete');
+    expect(m.ranking).toBe(false);
+    m.entrar('a', 'Ana');
+    m.entrar('b', 'Bia');
+    m.avancar(0);
+    expect(m.responder('a', 0, 2, 1000)).toBe(true);
+    expect(m.responder('b', 0, 2, 1000)).toBe(true);
+    m.encerrarPergunta();
+    expect(m.visaoTela().distribuicao).toEqual([0, 0, 2]);
+    expect(m.visaoTela().acertoPorPergunta).toEqual([0]);
+    const al = m.visaoAlunoComum(2000);
+    expect(al.correta).toBeNull();
+    expect(al.votos).toEqual([0, 0, 2]);
+    expect(m.visaoPessoal('a')?.acertou).toBe(false);
+    expect(m.visaoPessoal('a')?.pontos).toBe(0);
+    m.avancar(3000);
+    expect(m.fase).toBe('resultado');
+    expect(rotuloAvancar({ ...m.visaoTela(), modo: 'enquete' })).toBeNull();
   });
 });

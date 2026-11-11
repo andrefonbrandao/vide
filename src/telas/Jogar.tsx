@@ -388,9 +388,7 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
       {retrato.fase === 'pergunta' && p && !retrato.forca && (
         <div className="jogar-pergunta">
           <div className="jogar-info">
-            <span>
-              Questão {retrato.indice + 1} de {retrato.total}
-            </span>
+            <span>{retrato.modo === 'enquete' ? 'Votação' : `Questão ${retrato.indice + 1} de ${retrato.total}`}</span>
             <span className="jogar-tempo">{Math.ceil(Math.max(0, prazoLocal - agora) / 1000)}s</span>
           </div>
           <div className="jogar-barra-tempo">
@@ -465,7 +463,7 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
               </button>
             ))}
           </div>
-          {v.resposta != null && <p className="jogar-enviada">Resposta enviada. Aguarde o resultado.</p>}
+          {v.resposta != null && <p className="jogar-enviada">{retrato.modo === 'enquete' ? 'Voto enviado. Aguarde o resultado.' : 'Resposta enviada. Aguarde o resultado.'}</p>}
           </>
           )}
         </div>
@@ -491,7 +489,34 @@ export function Jogar({ codigoInicial }: { codigoInicial: string }) {
         </div>
       )}
 
-      {(retrato.fase === 'resultado' || retrato.fase === 'ranking') && !retrato.forca && (
+      {retrato.fase === 'resultado' && retrato.modo === 'enquete' && (
+        <div className="jogar-centro">
+          <p className="jogar-resultado">Votação encerrada</p>
+          {v.resposta != null ? (
+            <p className="jogar-posicao">
+              Seu voto: <strong>{LETRAS[v.resposta]}</strong>
+            </p>
+          ) : (
+            <p className="ajuda">Você não votou.</p>
+          )}
+          {retrato.votos && (
+            <ul className="jogar-votos">
+              {retrato.votos.map((n, i) => (
+                <li key={i}>
+                  <b>{LETRAS[i]}</b>
+                  <span className="jogar-votos-barra">
+                    <span style={{ width: `${(n / Math.max(1, ...retrato.votos!)) * 100}%` }} />
+                  </span>
+                  <span>{n}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="ajuda">Olhe para o projetor: o professor vai mostrar o que aconteceu no processo.</p>
+        </div>
+      )}
+
+      {(retrato.fase === 'resultado' || retrato.fase === 'ranking') && !retrato.forca && retrato.modo !== 'enquete' && (
         <div className="jogar-centro">
           <p className={`jogar-resultado ${v.acertou ? 'certo' : 'errado'}`}>
             {v.acertou ? 'Acertou!' : v.resposta == null && !retrato.conceito ? 'Sem resposta' : 'Não foi dessa vez'}

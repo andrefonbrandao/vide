@@ -66,6 +66,13 @@ export interface Evento {
   fase?: FaseId | null;
   /** Prazo que este evento abre (contado da data do evento). */
   prazo?: Prazo | null;
+  /** "E agora?": votação da turma em aula, antes de liberar este evento. */
+  agora?: EAgora | null;
+}
+
+export interface EAgora {
+  pergunta: string;
+  opcoes: string[];
 }
 
 /** "Cliente em cena": o caso da Consulta que abre o processo (o cliente conta o problema). */

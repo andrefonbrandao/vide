@@ -27,7 +27,7 @@ export function dadosParaPublicar(p: Processo, opcoes: { comVicios?: boolean } =
     partes: p.partes
       .filter((x) => x.nome.trim())
       .map((x) => ({ ...x, advogados: x.advogados.filter((a) => a.nome.trim() || a.oab.trim()) })),
-    eventos: p.eventos.map(({ liberacao: _l, ...e }, i) => ({
+    eventos: p.eventos.map(({ liberacao: _l, agora: _a, ...e }, i) => ({
       ...e,
       numero: i + 1,
       libera: liberaEm(p.eventos[i]),

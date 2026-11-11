@@ -528,7 +528,7 @@ export function PainelJogo({ ctl }: { ctl: ControladorAula }) {
             {tela.qrGrande ? 'Esconder QR grande' : 'Mostrar QR grande'}
           </button>
         )}
-        {tela.modo !== 'forca' && (
+        {tela.modo === 'perguntas' && (
           <label className="caixa-marcar">
             <input type="checkbox" checked={tela.ranking} onChange={(ev) => anfitriao().definirRanking(ev.target.checked)} />
             Ranking e pódio
@@ -538,11 +538,11 @@ export function PainelJogo({ ctl }: { ctl: ControladorAula }) {
         <button
           className="botao"
           onClick={() => {
-            if (tela.fase === 'fim') anfitriao().encerrar();
+            if (tela.fase === 'fim' || (tela.modo === 'enquete' && tela.fase === 'resultado')) anfitriao().encerrar();
             else void confirmar({ titulo: 'Encerrar o jogo agora?', texto: 'Os alunos saem da sala.', botao: 'Encerrar' }).then((ok) => ok && anfitriao().encerrar());
           }}
         >
-          Encerrar jogo
+          {tela.modo === 'enquete' ? 'Fechar a votação' : 'Encerrar jogo'}
         </button>
       </div>
       {msgFundamento && <p className="digitar-msg erro">{msgFundamento}</p>}

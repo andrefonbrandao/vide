@@ -350,7 +350,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
           onClick={() => !atividade && setVerJogo(true)}
           title="Atividades: jogo de perguntas, forca, consulta ou processo da turma"
         >
-          <IcPerguntas /> {jogo.ativo ? `Jogo aberto · ${jogo.codigo}` : consulta.ativo ? 'Consulta aberta' : processoAula.ativo ? 'Processo aberto' : 'Atividades'}
+          <IcPerguntas /> {jogo.ativo ? `${jogo.tela?.modo === 'enquete' ? 'Votação aberta' : 'Jogo aberto'} · ${jogo.codigo}` : consulta.ativo ? 'Consulta aberta' : processoAula.ativo ? 'Processo aberto' : 'Atividades'}
         </button>
         <button className="botao so-icone" onClick={telaCheia} title="Tela cheia (nesta janela)" aria-label="Tela cheia">
           <IcTelaCheia />

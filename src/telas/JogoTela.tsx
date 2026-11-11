@@ -291,6 +291,7 @@ export function JogoTela({ jogo }: { jogo: TelaJogo }) {
 function TelaDoJogo({ jogo }: { jogo: TelaJogo }) {
   const q = jogo.questao;
   const revelada = jogo.fase === 'resultado';
+  const enquete = jogo.modo === 'enquete';
   if ((jogo.fase === 'pergunta' || jogo.fase === 'resultado') && q && jogo.forca) return <TelaForca jogo={jogo} />;
   if ((jogo.fase === 'pergunta' || jogo.fase === 'resultado') && q?.tipo === 'conceito') return <TelaConceito jogo={jogo} />;
 
@@ -326,9 +327,7 @@ function TelaDoJogo({ jogo }: { jogo: TelaJogo }) {
     return (
       <div className="jogo-tela jogo-pergunta">
         <div className="jogo-topo">
-          <span className="jogo-rotulo">
-            Questão {jogo.indice + 1} de {jogo.total}
-          </span>
+          <span className="jogo-rotulo">{enquete ? 'E agora? Vote pelo celular' : `Questão ${jogo.indice + 1} de ${jogo.total}`}</span>
           <span className="espaco" />
           <EntradaCanto jogo={jogo} />
           {jogo.fase === 'pergunta' ? (
@@ -344,9 +343,10 @@ function TelaDoJogo({ jogo }: { jogo: TelaJogo }) {
         </div>
         <div className={`jogo-alternativas${q.alternativas.length <= 2 ? ' duas' : ''}`}>
           {q.alternativas.map((a, i) => {
-            const certa = i === q.correta;
+            const certa = !enquete && i === q.correta;
+            const maisVotada = enquete && dist && dist[i] === maior && dist[i] > 0;
             return (
-              <div key={i} className={`jogo-alt${revelada ? (certa ? ' certa' : ' apagada') : ''}`}>
+              <div key={i} className={`jogo-alt${revelada ? (enquete ? (maisVotada ? ' certa' : '') : certa ? ' certa' : ' apagada') : ''}`}>
                 <span className="jogo-alt-marca">
                   <Forma i={i} />
                   <b>{LETRAS[i]}</b>
@@ -368,7 +368,11 @@ function TelaDoJogo({ jogo }: { jogo: TelaJogo }) {
         <div className="jogo-rodape">
           {jogo.fase === 'pergunta' ? (
             <span>
-              <strong>{jogo.respondidas}</strong> de {jogo.aResponder} responderam
+              <strong>{jogo.respondidas}</strong> de {jogo.aResponder} {enquete ? 'votaram' : 'responderam'}
+            </span>
+          ) : enquete ? (
+            <span className="jogo-acerto">
+              {(dist ?? []).reduce((a, b) => a + b, 0)} votos
             </span>
           ) : (
             <>

@@ -5,8 +5,9 @@ import { dicasForca, errosForca, letrasDaPalavra, letraValida, MAX_ERROS_FORCA, 
 import { ESPERA_NOVA_TENTATIVA_MS, type QuestaoJogo, type ResultadoPergunta } from './tipos';
 
 export type Fase = 'sala' | 'pergunta' | 'resultado' | 'ranking' | 'fim';
-/** perguntas: alternativas e "Adivinhe o conceito"; forca: a turma toda vota letras para descobrir o conceito. */
-export type ModoJogo = 'perguntas' | 'forca';
+/** perguntas: alternativas e "Adivinhe o conceito"; forca: a turma toda vota letras para descobrir o conceito;
+ *  enquete: votação sem resposta certa ("E agora?" do processo fictício). */
+export type ModoJogo = 'perguntas' | 'forca' | 'enquete';
 export type FimForca = 'venceu' | 'perdeu' | 'encerrada';
 
 /** Forca: a rodada como a projeção e os celulares a veem (nunca a palavra escondida). */
@@ -108,6 +109,8 @@ export interface VisaoAlunoComum {
   forca?: (Omit<VisaoForca, 'votoInicio' | 'votoPrazo'> & { votoRestanteMs: number }) | null;
   /** Forca: quantas palavras a turma já descobriu. */
   placar?: number;
+  /** Enquete: quantos votaram em cada opção (depois de encerrada a votação). */
+  votos?: number[] | null;
 }
 
 /** O que cada celular recebe só para si. */
@@ -161,8 +164,12 @@ export class MotorJogo {
     readonly modo: ModoJogo = 'perguntas',
     readonly votoMs = 10_000,
   ) {
-    // Na forca a turma joga junta: sem pontos nem ranking.
-    if (modo === 'forca') this.ranking = false;
+    // Na forca a turma joga junta e na enquete não há resposta certa: sem pontos nem ranking.
+    if (modo !== 'perguntas') this.ranking = false;
+  }
+
+  get enquete(): boolean {
+    return this.modo === 'enquete';
   }
 
   get forca(): boolean {
@@ -417,7 +424,7 @@ export class MotorJogo {
         continue;
       }
       contagem[r.alt]++;
-      const acertou = conceito || r.alt === q.correta;
+      const acertou = !this.enquete && (conceito || r.alt === q.correta);
       const ganho = acertou ? (conceito ? pontosConceito(r.ms, tempoMs) : calcularPontos(r.ms, tempoMs)) : 0;
       j.pontos += ganho;
       if (acertou) j.acertos++;
@@ -426,7 +433,7 @@ export class MotorJogo {
     this.historico[this.indice] = {
       enunciado: conceito ? `Conceito: ${q.enunciado}` : q.enunciado,
       alternativas: conceito ? ['acertou'] : [...q.alternativas],
-      correta: conceito ? 0 : q.correta,
+      correta: conceito ? 0 : this.enquete ? -1 : q.correta,
       respostas: contagem,
       semResposta,
       ...(conceito
@@ -446,6 +453,8 @@ export class MotorJogo {
         this.encerrarPergunta();
         break;
       case 'resultado':
+        // Enquete: o resultado fica na tela até o professor encerrar.
+        if (this.enquete && this.ultima) break;
         if (this.ultima) this.fase = 'fim';
         else if (this.ranking) this.fase = 'ranking';
         else this.iniciarPergunta(agora);
@@ -472,6 +481,7 @@ export class MotorJogo {
 
   private acertoPorPergunta(): number[] {
     return this.historico.map((h) => {
+      if (h.correta < 0) return 0;
       const total = h.respostas.reduce((s, n) => s + n, 0) + h.semResposta;
       return total ? Math.round((h.respostas[h.correta] / total) * 100) : 0;
     });
@@ -579,8 +589,11 @@ export class MotorJogo {
               })()
             : { tipo: q.tipo, enunciado: q.enunciado, alternativas: q.alternativas, restanteMs: Math.max(0, this.prazo - agora) }
           : null,
-      correta: q && this.fase !== 'pergunta' && this.fase !== 'sala' ? q.correta : null,
+      correta: q && this.fase !== 'pergunta' && this.fase !== 'sala' && !this.enquete ? q.correta : null,
       conceito: q?.tipo === 'conceito' && this.fase !== 'pergunta' && this.fase !== 'sala' ? q.enunciado : null,
+      ...(this.enquete
+        ? { modo: 'enquete' as const, votos: this.fase === 'resultado' || this.fase === 'fim' ? (this.historico[this.indice]?.respostas ?? null) : null }
+        : {}),
     };
   }
 
@@ -625,6 +638,7 @@ function semTempos(f: VisaoForca): Omit<VisaoForca, 'votoInicio' | 'votoPrazo'> 
 export function rotuloAvancar(v: Pick<VisaoTela, 'fase' | 'indice' | 'total' | 'ranking'> & { modo?: ModoJogo }): string | null {
   const ultima = v.indice >= v.total - 1;
   const forca = v.modo === 'forca';
+  if (v.modo === 'enquete') return v.fase === 'sala' ? 'Abrir a votação' : v.fase === 'pergunta' ? 'Encerrar a votação' : null;
   switch (v.fase) {
     case 'sala':
       return 'Começar';

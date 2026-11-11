@@ -496,6 +496,47 @@ function EditorEvento({
           )}
         </div>
       </div>
+      <div className="campo proc-eagora-editor">
+        <label className="caixa-marcar" style={{ marginTop: 0 }}>
+          <input
+            type="checkbox"
+            checked={!!e.agora}
+            onChange={(ev) => aoMudar({ ...e, agora: ev.target.checked ? { pergunta: 'E agora? O que o juiz vai decidir?', opcoes: ['', ''] } : null })}
+          />
+          "E agora?": a turma vota pelo celular, em aula, antes de você liberar este evento
+        </label>
+        {e.agora && (
+          <>
+            <input type="text" aria-label="Pergunta da votação" value={e.agora.pergunta} onChange={(ev) => aoMudar({ ...e, agora: { ...e.agora!, pergunta: ev.target.value } })} />
+            {e.agora.opcoes.map((o, k) => (
+              <div key={k} className="linha-opcoes">
+                <span className="mono">{'ABCDEF'[k]}</span>
+                <input
+                  type="text"
+                  aria-label={`Opção ${'ABCDEF'[k]}`}
+                  placeholder={k === 0 ? 'ex.: Concede a tutela' : k === 1 ? 'ex.: Nega a tutela' : 'outra opção'}
+                  value={o}
+                  onChange={(ev) => aoMudar({ ...e, agora: { ...e.agora!, opcoes: e.agora!.opcoes.map((x, j) => (j === k ? ev.target.value : x)) } })}
+                  style={{ flex: 1 }}
+                />
+                {e.agora!.opcoes.length > 2 && (
+                  <button type="button" className="botao pequeno" onClick={() => aoMudar({ ...e, agora: { ...e.agora!, opcoes: e.agora!.opcoes.filter((_, j) => j !== k) } })}>
+                    Tirar
+                  </button>
+                )}
+              </div>
+            ))}
+            {e.agora.opcoes.length < 6 && (
+              <button type="button" className="botao pequeno" onClick={() => aoMudar({ ...e, agora: { ...e.agora!, opcoes: [...e.agora!.opcoes, ''] } })}>
+                + Opção
+              </button>
+            )}
+            <span className="ajuda" style={{ margin: 0 }}>
+              Na Aula, com o processo aberto, aparece o botão <strong>E agora? Abrir votação</strong> antes de liberar este evento.
+            </span>
+          </>
+        )}
+      </div>
       <div className="campo">
         <label>Documentos</label>
         {e.documentos.map((d) => (

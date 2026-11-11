@@ -1,5 +1,7 @@
 // Processo da turma na tela de aula: escolher o processo, projetar, abrir peças e liberar eventos.
 import { irPara } from '../comum/navegacao';
+import { anfitriao } from '../jogo/anfitriao';
+import type { EAgora } from '../processo/tipos';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { aulaProcesso } from '../processo/aula';
 import { listarProcessos } from '../processo/banco';
@@ -86,6 +88,10 @@ export function PainelProcesso() {
   const pendentes = a.pendentes();
   const temVicios = processo.eventos.some((e) => e.documentos.some((d) => d.vicios?.length));
   const proximo = pendentes[0];
+  const abrirVotacao = (ag: EAgora) => {
+    const opcoes = ag.opcoes.map((o) => o.trim()).filter(Boolean).slice(0, 6);
+    anfitriao().iniciar(`E agora? ${ag.pergunta}`, [{ tipo: 'multipla', enunciado: ag.pergunta.trim() || 'E agora?', alternativas: opcoes, correta: -1, tempo: 90, explicacao: '', fundamento: '' }], false, { modo: 'enquete' });
+  };
   const liberar = async (id: string) => {
     setLiberando(true);
     try {
@@ -108,6 +114,11 @@ export function PainelProcesso() {
         <VisaoProcesso dados={tela.dados} buscar={buscarNoAcervo} lendoControlado={tela.lendo} aoLer={(l) => a.ler(l)} mostrarVicios={tela.vicios ? true : 'esconder'} />
       </div>
       <div className="painel-jogo-acoes">
+        {proximo?.e.agora && proximo.e.agora.opcoes.filter((o) => o.trim()).length >= 2 && (
+          <button className="botao escuro" onClick={() => abrirVotacao(proximo.e.agora!)} title="A turma vota pelo celular antes de você liberar o evento">
+            E agora? Abrir votação
+          </button>
+        )}
         {proximo ? (
           <button className="botao primario" disabled={liberando} onClick={() => void liberar(proximo.e.id)} title="A turma passa a ver este evento (na projeção e no link)">
             Liberar o evento {proximo.numero}: {proximo.e.descricao || '(sem descrição)'}

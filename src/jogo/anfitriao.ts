@@ -64,7 +64,7 @@ class Anfitriao {
     // A forca usa só as questões "Adivinhe o conceito" (a palavra é o conceito).
     if (modo === 'forca') questoes = questoes.filter((q) => q.tipo === 'conceito' && q.enunciado.trim());
     if (!questoes.length) return;
-    if (modo !== 'forca') {
+    if (modo === 'perguntas') {
       try {
         localStorage.setItem(PREF_RANKING, ranking ? 'sim' : 'nao');
       } catch {
@@ -86,7 +86,7 @@ class Anfitriao {
       { rota: 'jogo', extras: { chave } },
     );
     this.mudar({ ativo: true, nome, codigo, fundamento: '' });
-    registrar('sessao', `${modo === 'forca' ? 'forca' : 'jogo de perguntas'} aberto: ${nome}`, { questoes: questoes.length, ranking: modo !== 'forca' && ranking });
+    registrar('sessao', `${modo === 'forca' ? 'forca' : modo === 'enquete' ? 'votação' : 'jogo de perguntas'} aberto: ${nome}`, { questoes: questoes.length, ranking: modo !== 'forca' && ranking });
     this.relogio = window.setInterval(() => this.verificarTempo(), 250);
     this.publicar();
   }
@@ -105,7 +105,7 @@ class Anfitriao {
   }
 
   definirRanking(ligado: boolean): void {
-    if (!this.motor || this.motor.forca) return;
+    if (!this.motor || this.motor.modo !== 'perguntas') return;
     this.motor.ranking = ligado;
     try {
       localStorage.setItem(PREF_RANKING, ligado ? 'sim' : 'nao');
@@ -121,7 +121,7 @@ class Anfitriao {
     if (m) {
       const perguntas = m.historico.filter(Boolean);
       const participantes = m.visaoTela().nJogadores;
-      if (perguntas.length) {
+      if (perguntas.length && !m.enquete) {
         void guardarResultado({ questionario: this.estado.nome, participantes, ranking: m.ranking, perguntas });
       }
       registrar('sessao', `jogo de perguntas encerrado: ${this.estado.nome}`, {

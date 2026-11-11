@@ -48,3 +48,13 @@ describe('vícios no processo em texto', () => {
     expect(txt).toContain('Vício: citação por edital | sem tentar a citação pessoal (art. 256)');
   });
 });
+
+describe('"E agora?" no processo em texto', () => {
+  it('lê a pergunta e as opções e devolve no texto', () => {
+    const l = lerProcessoTexto('Evento: 02/03/2027 10:00 | DECISÃO | JUIZ | segurado\nE agora: O juiz concede a tutela? | Concede | Nega | Pede emenda');
+    expect(l.avisos).toEqual([]);
+    expect(l.eventos[0].agora).toEqual({ pergunta: 'O juiz concede a tutela?', opcoes: ['Concede', 'Nega', 'Pede emenda'] });
+    expect(processoParaTexto({ eventos: l.eventos } as never, { soEventos: true })).toContain('E agora: O juiz concede a tutela? | Concede | Nega | Pede emenda');
+    expect(lerProcessoTexto('Evento: 02/03/2027 10:00 | DECISÃO | JUIZ | segurado\nE agora: só pergunta').avisos.length).toBe(1);
+  });
+});
