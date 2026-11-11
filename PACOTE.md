@@ -17,7 +17,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| 1 | Processo fictício, fase 3a: **jeito de conduzir** cada processo — **ilustrativo** (o professor monta tudo; o editor fica enxuto, com "Mais recursos" para fase, prazo e "E agora?"), **colaborativo** (a turma analisa cada ato em sala; o professor anota a **deliberação da turma** na Aula ou no editor, com as votações "E agora?" e os vícios mostrados entrando sozinhos; o Vide monta o **pedido do próximo ato para a IA** e recebe a resposta colada; a turma vê "O que a turma decidiu antes deste ato") e **participativo** (anunciado, chega na etapa 3b) | Pronta |
+| 1 | Processo fictício, fase 3a: **jeito de conduzir** cada processo — **ilustrativo** (o professor monta tudo; o editor fica enxuto, com "Mais recursos" para fase, prazo e "E agora?"), **colaborativo** (a turma analisa cada ato em sala; o professor anota a **deliberação da turma** na Aula ou no editor, com as votações "E agora?" e os vícios mostrados entrando sozinhos; o Vide monta o **pedido do próximo ato para a IA** e recebe a resposta colada; a turma vê "O que a turma decidiu antes deste ato") e **participativo** (aparece como "projeto futuro": escritórios e envio de peças ficam para depois, para o app não pesar) | Pronta |
 
 ## Pacotes anteriores
 

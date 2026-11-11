@@ -979,7 +979,7 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
                   <span>
                     <strong>
                       {m.nome}
-                      {m.emBreve && <span className="selo">em breve</span>}
+                      {m.emBreve && <span className="selo">projeto futuro</span>}
                     </strong>
                     <span className="ajuda" style={{ margin: 0 }}>
                       {m.desc}
