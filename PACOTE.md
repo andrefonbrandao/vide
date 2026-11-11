@@ -18,6 +18,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | Nova organização, parte 1: **barra lateral clara** (Início, Aula; Biblioteca: Leis, Materiais; Atividades: Questões, Casos, Processos, Links da turma; Turma: Resultados, Registro das aulas; Ajustes), que se recolhe durante a aula; tela de **Início** ("Pronto para a aula?", continue de onde parou, criar rápido, links ativos); botão **+ Criar**; **busca geral** (Ctrl K) por artigos, materiais, questões, casos e processos, levando o artigo para a aula; **Links da turma** num lugar só; páginas com o mesmo cabeçalho; avisos rápidos e janelas de confirmação do próprio Vide no lugar das do navegador; telas vazias com personagem e o que fazer; barra inferior no celular | Pronta |
+| 2 | Nova organização, parte 2: tela da **Aula** mais limpa (situação da escuta, da projeção e do celular em "pílulas" no alto; botão de tela cheia só com ícone; **No projetor agora** à direita, mostrando o artigo projetado, quando não há material nem atividade; rodapé discreto com a hora de início da sessão); **Atividades** viram uma galeria com personagens (Jogo de perguntas, Forca, Consulta, Processo da turma) e um passo a passo: escolher a atividade › conteúdo e opções; nas listas vazias, botões para criar o primeiro caso ou processo | Pronta |
 
 ## Pacotes anteriores
 

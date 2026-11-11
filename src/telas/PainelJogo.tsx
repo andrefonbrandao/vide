@@ -1,10 +1,13 @@
 // Jogo de perguntas na tela do professor: escolher o questionário e conduzir o jogo.
 import { confirmar } from '../comum/avisos';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { anfitriao, rankingPreferido } from '../jogo/anfitriao';
 import { assuntosDasQuestoes, listarQuestionarios, listarQuestoes, questoesDo, sortearQuestoes, type FiltroTipo } from '../jogo/banco';
 import { rotuloAvancar } from '../jogo/motor';
 import { OPCOES_VOTO_FORCA, VOTO_PADRAO_FORCA, type Questao, type QuestaoJogo, type Questionario } from '../jogo/tipos';
+import { IcCasos, IcForca, IcPerguntas, IcProcesso, IcSeta } from '../comum/Icones';
+import type { Expressao } from '../consulta/personagens';
+import { Figura } from './ConsultaTela';
 import { JogoTela } from './JogoTela';
 import { EscolherConsulta } from './PainelConsulta';
 import { EscolherProcesso } from './PainelProcesso';
@@ -76,7 +79,65 @@ function SeletorTempo({ id, valor, aoMudar }: { id: string; valor: number; aoMud
   );
 }
 
-/** Janela para abrir a sala: sorteio por assunto ou um questionário pronto. */
+/** As atividades da galeria: personagem, cor de fundo e o selo com o ícone. */
+const ATIVIDADES: { id: Jogo; titulo: string; curto: string; longo: string; figura: string; expressao: Expressao; cor: string; icone: ReactNode }[] = [
+  {
+    id: 'perguntas',
+    titulo: 'Jogo de perguntas',
+    curto: 'Pelo celular, com ranking e pódio.',
+    longo: 'Os alunos entram pelo QR, só com um apelido, e respondem no celular. Próximo passo: escolher as questões (por assunto ou questionário pronto).',
+    figura: 'h5',
+    expressao: 'feliz',
+    cor: '#dfe9e3',
+    icone: <IcPerguntas tamanho={22} />,
+  },
+  {
+    id: 'forca',
+    titulo: 'Forca',
+    curto: 'A turma vota letras pelo celular.',
+    longo: 'A palavra é o conceito das questões "Adivinhe o conceito". A turma joga junta: cada um vota numa letra e a mais votada entra. Próximo passo: escolher as palavras.',
+    figura: 'm1',
+    expressao: 'duvida',
+    cor: '#fbe3dc',
+    icone: <IcForca tamanho={22} />,
+  },
+  {
+    id: 'consulta',
+    titulo: 'Consulta',
+    curto: 'Caso em balões, discussão em grupo.',
+    longo: 'Um personagem conta um caso em balões no projetor; a turma discute em grupo e, no fim do tempo, o advogado ou o juiz responde. Não usa celular. Próximo passo: escolher os casos.',
+    figura: 'm3',
+    expressao: 'duvida',
+    cor: '#e8e2ee',
+    icone: <IcCasos tamanho={22} />,
+  },
+  {
+    id: 'processo',
+    titulo: 'Processo da turma',
+    curto: 'Projetar e liberar eventos.',
+    longo: 'Projeta o processo fictício como a turma vê. Você abre as peças e libera eventos durante a aula. Próximo passo: escolher o processo.',
+    figura: 'juiz-h',
+    expressao: 'neutro',
+    cor: '#e3e8ee',
+    icone: <IcProcesso tamanho={22} />,
+  },
+];
+
+function Passos({ passo }: { passo: 1 | 2 }) {
+  return (
+    <div className="passos" aria-label={`Passo ${passo} de 2`}>
+      <span className={`passo${passo === 1 ? ' atual' : ' feito'}`}>
+        <i>1</i>Atividade
+      </span>
+      <span className="passo-traco" />
+      <span className={`passo${passo === 2 ? ' atual' : ''}`}>
+        <i>2</i>Conteúdo e opções
+      </span>
+    </div>
+  );
+}
+
+/** Janela das atividades: 1) escolher na galeria; 2) conteúdo e opções. */
 export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
   const [lista, setLista] = useState<(Questionario & { total: number; conceitos: number })[] | null>(null);
   const [banco, setBanco] = useState<Questao[]>([]);
@@ -97,6 +158,8 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
     return j === 'forca' || j === 'consulta' || j === 'processo' ? j : 'perguntas';
   });
   const setJogo = (j: Jogo) => (setJogoEstado(j), gravarPref(CHAVE_JOGO, j));
+  const [passo, setPasso] = useState<1 | 2>(1);
+  const atual = ATIVIDADES.find((a) => a.id === jogo) ?? ATIVIDADES[0];
   const [votoS, setVotoEstado] = useState<number>(() => lerPref(CHAVE_VOTO, VOTO_PADRAO_FORCA));
   const setVoto = (v: number) => (setVotoEstado(v), gravarPref(CHAVE_VOTO, v));
   const forca = jogo === 'forca';
@@ -164,34 +227,80 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
   const qzEscolhido = lista?.find((x) => x.id === escolhido);
   const podeAbrir = modo === 'assunto' ? vaiTer > 0 : !!qzEscolhido && (forca ? qzEscolhido.conceitos > 0 : qzEscolhido.total > 0);
 
+  if (passo === 1)
+    return (
+      <div className="modal-fundo" data-ui onMouseDown={(ev) => ev.target === ev.currentTarget && aoFechar()}>
+        <div
+          className="modal atividades"
+          role="dialog"
+          aria-label="Atividades"
+          onKeyDown={(ev) => {
+            if (ev.key === 'Escape') aoFechar();
+          }}
+        >
+          <div className="atividades-cab">
+            <h2>Atividades</h2>
+            <Passos passo={1} />
+          </div>
+          <div className="galeria-atividades" role="radiogroup" aria-label="Que atividade">
+            {ATIVIDADES.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                role="radio"
+                aria-checked={jogo === a.id}
+                className={`cartao-atividade${jogo === a.id ? ' sel' : ''}`}
+                onClick={() => setJogo(a.id)}
+                onDoubleClick={() => (setJogo(a.id), setPasso(2))}
+              >
+                <span className="cartao-atividade-arte" style={{ background: a.cor }}>
+                  <Figura id={a.figura} expressao={a.expressao} />
+                  <span className="selo-icone">{a.icone}</span>
+                </span>
+                <span className="cartao-atividade-texto">
+                  <strong>{a.titulo}</strong>
+                  <span>{a.curto}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="atividades-rodape">
+            <div>
+              <strong>{atual.titulo}</strong>
+              <p className="ajuda">{atual.longo}</p>
+            </div>
+            <button className="botao" onClick={aoFechar}>
+              Cancelar
+            </button>
+            <button className="botao primario com-icone" autoFocus onClick={() => setPasso(2)}>
+              Continuar <IcSeta tamanho={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+
   return (
     <div className="modal-fundo" data-ui onMouseDown={(ev) => ev.target === ev.currentTarget && aoFechar()}>
-      <div className="modal" role="dialog" aria-label="Atividades">
-        <h2>Atividades</h2>
-        <div className="linha-opcoes" role="tablist" aria-label="Que jogo" style={{ marginBottom: 6 }}>
-          <button role="tab" aria-selected={jogo === 'perguntas'} className={`botao${jogo === 'perguntas' ? ' escuro' : ''}`} onClick={() => setJogo('perguntas')}>
-            Jogo de perguntas
+      <div className="modal atividades passo-2" role="dialog" aria-label={atual.titulo}>
+        <div className="atividades-cab">
+          <button type="button" className="atividades-voltar" onClick={() => setPasso(1)} title="Escolher outra atividade">
+            <span className="atividades-voltar-figura" style={{ background: atual.cor }}>
+              <Figura id={atual.figura} expressao={atual.expressao} />
+            </span>
+            <span>
+              <span className="link-discreto">‹ trocar atividade</span>
+              <h2>{atual.titulo}</h2>
+            </span>
           </button>
-          <button role="tab" aria-selected={forca} className={`botao${forca ? ' escuro' : ''}`} onClick={() => setJogo('forca')}>
-            Forca (a turma toda)
-          </button>
-          <button role="tab" aria-selected={jogo === 'consulta'} className={`botao${jogo === 'consulta' ? ' escuro' : ''}`} onClick={() => setJogo('consulta')}>
-            Consulta (em grupo)
-          </button>
-          <button role="tab" aria-selected={jogo === 'processo'} className={`botao${jogo === 'processo' ? ' escuro' : ''}`} onClick={() => setJogo('processo')}>
-            Processo da turma
-          </button>
+          <Passos passo={2} />
         </div>
         {jogo === 'processo' ? (
           <>
-            <p className="ajuda">Projeta o processo fictício como a turma vê. Você abre as peças e libera eventos durante a aula.</p>
             <EscolherProcesso aoFechar={aoFechar} />
           </>
         ) : jogo === 'consulta' ? (
           <>
-            <p className="ajuda">
-              Um personagem conta um caso em balões no projetor. A turma discute em grupo e, no fim do tempo, o advogado ou o juiz responde. Não usa celular.
-            </p>
             <EscolherConsulta aoFechar={aoFechar} />
           </>
         ) : (

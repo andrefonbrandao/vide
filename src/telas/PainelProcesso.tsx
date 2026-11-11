@@ -1,4 +1,5 @@
 // Processo da turma na tela de aula: escolher o processo, projetar, abrir peças e liberar eventos.
+import { irPara } from '../comum/navegacao';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { aulaProcesso } from '../processo/aula';
 import { listarProcessos } from '../processo/banco';
@@ -18,9 +19,12 @@ export function EscolherProcesso({ aoFechar }: { aoFechar: () => void }) {
   return (
     <>
       {!lista.length ? (
-        <p className="aviso">
-          Nenhum processo ainda. Monte um em <strong>Atividades › Processos</strong>.
-        </p>
+        <div className="aviso">
+          Nenhum processo ainda. Monte um em <strong>Atividades › Processos</strong>.{' '}
+          <button className="botao pequeno" onClick={() => (aoFechar(), irPara('processos', 'novo-processo'))}>
+            Novo processo
+          </button>
+        </div>
       ) : (
         <div className="lista-questionarios">
           {lista.map((p) => (

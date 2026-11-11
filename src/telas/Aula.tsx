@@ -9,8 +9,9 @@ import { controlador, type EstadoAula } from './controlador';
 import { PainelMaterial } from './PainelMaterial';
 import { importarMaterial } from '../material/documento';
 import { SeletorMaterial, marcarUsado } from './Materiais';
-import { IcPerguntas, IcCelular, IcMicrofone, IcNovaSessao, IcPausa, IcPin, IcProjecao, IcSair, IcTelaCheia } from '../comum/Icones';
+import { IcPerguntas, IcMicrofone, IcNovaSessao, IcPausa, IcPin, IcSair, IcTelaCheia } from '../comum/Icones';
 import { PareamentoCelular } from './PareamentoCelular';
+import { Folha } from './Projecao';
 import { IniciarJogo, PainelJogo, useJogo } from './PainelJogo';
 import { anfitriao } from '../jogo/anfitriao';
 import { apresentador } from '../consulta/apresentador';
@@ -267,6 +268,8 @@ export function Aula({ ativa }: { ativa: boolean }) {
   const consulta = useConsulta();
   const processoAula = useAulaProcesso();
   const atividade = jogo.ativo || consulta.ativo || processoAula.ativo;
+  // Sem material nem atividade: a coluna da direita mostra o que está no projetor.
+  const palco = !e.material && !atividade && !verTranscricao;
   const [carregando, setCarregando] = useState(false);
 
   const carregarMaterial = async (arquivo: File | undefined) => {
@@ -292,7 +295,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
   };
 
   return (
-    <div className={`aula${e.material || atividade ? ' com-material' : ''}${verTranscricao ? '' : ' sem-lateral'}`}>
+    <div className={`aula${e.material || atividade ? ' com-material' : ''}${verTranscricao ? '' : ' sem-lateral'}${palco ? ' com-palco' : ''}`}>
       <div className="aula-topo" data-ui>
         {!e.escutando ? (
           <button className="botao primario com-icone" onClick={() => ctl.iniciar()} disabled={!suporte}>
@@ -308,40 +311,50 @@ export function Aula({ ativa }: { ativa: boolean }) {
             </button>
           </>
         )}
-        <button className="botao com-icone" onClick={() => void ctl.abrirProjecao()}>
-          <IcProjecao /> {e.projecao.conectada ? 'Projeção aberta ✓' : 'Abrir projeção'}
-        </button>
-        <button className="botao com-icone" onClick={telaCheia}>
-          <IcTelaCheia /> Tela cheia
-        </button>
+        <div className="pilulas" role="group" aria-label="Situação">
+          {e.remoto.vozCelular ? (
+            <span className={`pilula ${classeStatus(e.remoto.vozCelular)}`} title={e.remoto.vozCelularDetalhe || 'Microfone do celular'}>
+              <span className="luz" />
+              Microfone do celular: {TEXTO_STATUS[e.remoto.vozCelular].toLowerCase()}
+              {e.remoto.vozCelularDetalhe && e.remoto.vozCelular !== 'ouvindo' ? ` — ${e.remoto.vozCelularDetalhe}` : ''}
+            </span>
+          ) : (
+            <span className={`pilula ${classeStatus(e.status)}`} title={e.statusDetalhe}>
+              <span className="luz" />
+              {TEXTO_STATUS[e.status]}
+              {e.statusDetalhe && e.status !== 'ouvindo' ? ` — ${e.statusDetalhe}` : ''}
+            </span>
+          )}
+          <button
+            type="button"
+            className={`pilula status${e.projecao.conectada ? ' ok' : ''}`}
+            onClick={() => void ctl.abrirProjecao()}
+            title={e.projecao.conectada ? 'A janela de projeção está aberta (clique para trazê-la de volta)' : 'Abre a janela que vai para o projetor'}
+          >
+            <span className="luz" />
+            {e.projecao.conectada ? 'Projeção aberta' : 'Abrir projeção'}
+          </button>
+          <button
+            type="button"
+            className={`pilula status${e.remoto.celularPresente ? ' ok' : ''}`}
+            onClick={() => setVerCelular(true)}
+            title="Usar o celular como microfone e controle remoto"
+          >
+            <span className="luz" />
+            {e.remoto.celularPresente ? 'Celular conectado' : 'Celular'}
+          </button>
+        </div>
+        <span className="espaco" />
         <button
           className={`botao com-icone${atividade ? ' escuro' : ''}`}
           onClick={() => !atividade && setVerJogo(true)}
-          title="Atividades: jogo de perguntas, forca ou consulta"
+          title="Atividades: jogo de perguntas, forca, consulta ou processo da turma"
         >
           <IcPerguntas /> {jogo.ativo ? `Jogo aberto · ${jogo.codigo}` : consulta.ativo ? 'Consulta aberta' : processoAula.ativo ? 'Processo aberto' : 'Atividades'}
         </button>
-        <span className="espaco" />
-        <button
-          className={`botao pequeno com-icone${e.remoto.celularPresente ? ' escuro' : ''}`}
-          onClick={() => setVerCelular(true)}
-          title="Usar o celular como microfone e controle remoto"
-        >
-          <IcCelular tamanho={18} /> {e.remoto.celularPresente ? 'Celular conectado' : 'Celular'}
+        <button className="botao so-icone" onClick={telaCheia} title="Tela cheia (nesta janela)" aria-label="Tela cheia">
+          <IcTelaCheia />
         </button>
-        {e.remoto.vozCelular ? (
-          <span className={classeStatus(e.remoto.vozCelular)} title={e.remoto.vozCelularDetalhe}>
-            <span className="luz" />
-            Microfone do celular: {TEXTO_STATUS[e.remoto.vozCelular].toLowerCase()}
-            {e.remoto.vozCelularDetalhe && e.remoto.vozCelular !== 'ouvindo' ? ` — ${e.remoto.vozCelularDetalhe}` : ''}
-          </span>
-        ) : (
-          <span className={classeStatus(e.status)} title={e.statusDetalhe}>
-            <span className="luz" />
-            {TEXTO_STATUS[e.status]}
-            {e.statusDetalhe && e.status !== 'ouvindo' ? ` — ${e.statusDetalhe}` : ''}
-          </span>
-        )}
       </div>
 
       <div className="aula-faixa-material" data-ui>
@@ -366,7 +379,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
           <div className="aviso" data-ui>Este navegador não tem reconhecimento de voz. Abra o Vide no Chrome ou no Edge.</div>
         )}
         {e.totalAcervo === 0 && (
-          <div className="aviso" data-ui>O acervo está vazio. Vá na aba <strong>Acervo</strong> e importe as leis antes da aula.</div>
+          <div className="aviso" data-ui>Nenhuma lei importada. Vá em <strong>Biblioteca › Leis</strong> e importe as leis antes da aula.</div>
         )}
         {e.projecao.conectada && e.projecao.versao !== __VERSAO__ && (
           <div className="aviso" data-ui>
@@ -422,70 +435,61 @@ export function Aula({ ativa }: { ativa: boolean }) {
           </ol>
         )}
 
-        <div className="no-projetor">
-          <span className={`status ${e.projetado ? 'ok' : ''}`}>
-            <span className="luz" />
-          </span>
-          {e.projetado ? (
-            <span>
-              No projetor: <span className="titulo">{e.projetado.titulo}</span>
-              {e.modoRoda === 'rolar' && (
-                <span className="ajuda">
-                  {' '}· a roda está rolando o texto{e.projecao.rolavel ? ` (${Math.round(e.projecao.fracao * 100)}%)` : ' (já cabe inteiro na tela)'}
-                </span>
-              )}
+        {!palco && (
+          <div className="no-projetor">
+            <span className={`status ${e.projetado ? 'ok' : ''}`}>
+              <span className="luz" />
             </span>
-          ) : e.material && !e.telaPreta ? (
-            <span>
-              No projetor: <span className="titulo">{e.material.nome}</span> <span className="ajuda">p. {e.material.pagina}</span>
-            </span>
-          ) : (
-            <span>Projetor em tela neutra (preta)</span>
-          )}
-          <span className="espaco" />
-          {!e.projecao.conectada && <span className="ajuda" style={{ margin: 0 }}>janela de projeção fechada</span>}
-          {e.projecao.conectada && !e.projecao.telaCheia && (
-            <span className="ajuda" style={{ margin: 0 }}>projeção aberta, mas fora da tela cheia</span>
-          )}
-        </div>
-        <div className="aula-esq-rodape" data-ui>
-          <button className="botao com-icone" onClick={() => ctl.marcar()} title="Anota no registro de teste que algo deu errado aqui (tecla M)">
-            <IcPin /> Registrar momento
-          </button>
-          <button
-            className="botao com-icone"
-            title={`Limpa a tela e começa uma nova sessão no registro (a anterior fica guardada). Sessão atual iniciada às ${new Date(e.sessaoInicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.`}
-            onClick={() =>
-              void confirmar({ titulo: 'Começar uma nova sessão?', texto: 'A tela será limpa; o registro da sessão anterior continua guardado.', botao: 'Nova sessão' }).then(
-                (ok) => ok && void ctl.novaSessao(),
-              )
-            }
-          >
-            <IcNovaSessao /> Nova sessão
-          </button>
-          <div className="controle-fonte" role="group" aria-label="Tamanho da fonte na projeção">
-            <span className="controle-fonte-rotulo">Fonte</span>
-            <button className="botao pequeno" onClick={() => ctl.diminuirFonte('mouse')} disabled={e.escala <= 0.6} title="Diminuir a fonte da norma projetada (tecla −)" aria-label="Diminuir fonte">
-              A−
-            </button>
-            <button className="botao pequeno controle-fonte-valor" onClick={() => ctl.fonteNormal('mouse')} disabled={e.escala === 1} title="Voltar ao tamanho normal (100%)">
-              {Math.round(e.escala * 100)}%
-            </button>
-            <button className="botao pequeno" onClick={() => ctl.aumentarFonte('mouse')} disabled={e.escala >= 2.5} title="Aumentar a fonte da norma projetada (tecla +)" aria-label="Aumentar fonte">
-              A+
-            </button>
+            {e.projetado ? (
+              <span>
+                No projetor: <span className="titulo">{e.projetado.titulo}</span>
+                {e.modoRoda === 'rolar' && (
+                  <span className="ajuda">
+                    {' '}· a roda está rolando o texto{e.projecao.rolavel ? ` (${Math.round(e.projecao.fracao * 100)}%)` : ' (já cabe inteiro na tela)'}
+                  </span>
+                )}
+              </span>
+            ) : e.material && !e.telaPreta ? (
+              <span>
+                No projetor: <span className="titulo">{e.material.nome}</span> <span className="ajuda">p. {e.material.pagina}</span>
+              </span>
+            ) : (
+              <span>Projetor em tela neutra (preta)</span>
+            )}
+            <span className="espaco" />
+            {!e.projecao.conectada && <span className="ajuda" style={{ margin: 0 }}>janela de projeção fechada</span>}
+            {e.projecao.conectada && !e.projecao.telaCheia && (
+              <span className="ajuda" style={{ margin: 0 }}>projeção aberta, mas fora da tela cheia</span>
+            )}
           </div>
-          <button
-            className="link-discreto"
-            onClick={() => setVerTranscricao(!verTranscricao)}
-            title="Mostra, numa coluna à direita, a transcrição bruta e as referências detectadas. A transcrição é gravada no Registro mesmo oculta."
-          >
-            {verTranscricao ? 'ocultar transcrição' : 'mostrar transcrição e referências'}
-          </button>
-        </div>
+        )}
       </div>
 
       {jogo.ativo ? <PainelJogo ctl={ctl} /> : consulta.ativo ? <PainelConsulta ctl={ctl} /> : processoAula.ativo ? <PainelProcesso /> : e.material && <PainelMaterial e={e} ctl={ctl} />}
+      {palco && (
+        <section className="aula-palco" data-ui aria-label="No projetor agora">
+          <span className="aula-palco-rotulo">No projetor agora</span>
+          <div className={`aula-palco-tela${e.projetado ? '' : ' preta'}`}>
+            {e.projetado ? <Folha item={e.projetado.projetavel} fontSize={`${Math.round(15 * e.escala)}px`} /> : <span>Tela neutra (preta)</span>}
+          </div>
+          <div className="aula-palco-acoes">
+            {e.projetado && (
+              <button className="botao pequeno" onClick={() => ctl.recolher('mouse')} title="Volta o projetor para a tela preta (clique direito ou tecla B)">
+                Recolher artigo
+              </button>
+            )}
+            {e.projetado && e.modoRoda === 'rolar' && (
+              <span className="aula-palco-info">
+                a roda está rolando o texto{e.projecao.rolavel ? ` (${Math.round(e.projecao.fracao * 100)}%)` : ' (já cabe inteiro)'}
+              </span>
+            )}
+            <span className="espaco" />
+            <span className="aula-palco-info">
+              {!e.projecao.conectada ? 'janela de projeção fechada' : !e.projecao.telaCheia ? 'projeção aberta, fora da tela cheia' : 'projeção em tela cheia'}
+            </span>
+          </div>
+        </section>
+      )}
       {verJogo && <IniciarJogo aoFechar={() => setVerJogo(false)} />}
       {verCelular && <PareamentoCelular e={e} ctl={ctl} aoFechar={() => setVerCelular(false)} />}
 
@@ -534,6 +538,43 @@ export function Aula({ ativa }: { ativa: boolean }) {
           </div>
         </aside>
       )}
+      <footer className="aula-rodape" data-ui>
+        <span className="aula-rodape-sessao">Sessão desde {new Date(e.sessaoInicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+        <span className="espaco" />
+        <button className="botao com-icone" onClick={() => ctl.marcar()} title="Anota no registro de teste que algo deu errado aqui (tecla M)">
+          <IcPin /> Registrar momento
+        </button>
+        <button
+          className="botao com-icone"
+          title={`Limpa a tela e começa uma nova sessão no registro (a anterior fica guardada). Sessão atual iniciada às ${new Date(e.sessaoInicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.`}
+          onClick={() =>
+            void confirmar({ titulo: 'Começar uma nova sessão?', texto: 'A tela será limpa; o registro da sessão anterior continua guardado.', botao: 'Nova sessão' }).then(
+              (ok) => ok && void ctl.novaSessao(),
+            )
+          }
+        >
+          <IcNovaSessao /> Nova sessão
+        </button>
+        <div className="controle-fonte" role="group" aria-label="Tamanho da fonte na projeção">
+          <span className="controle-fonte-rotulo">Fonte</span>
+          <button className="botao pequeno" onClick={() => ctl.diminuirFonte('mouse')} disabled={e.escala <= 0.6} title="Diminuir a fonte da norma projetada (tecla −)" aria-label="Diminuir fonte">
+            A−
+          </button>
+          <button className="botao pequeno controle-fonte-valor" onClick={() => ctl.fonteNormal('mouse')} disabled={e.escala === 1} title="Voltar ao tamanho normal (100%)">
+            {Math.round(e.escala * 100)}%
+          </button>
+          <button className="botao pequeno" onClick={() => ctl.aumentarFonte('mouse')} disabled={e.escala >= 2.5} title="Aumentar a fonte da norma projetada (tecla +)" aria-label="Aumentar fonte">
+            A+
+          </button>
+        </div>
+        <button
+          className="link-discreto"
+          onClick={() => setVerTranscricao(!verTranscricao)}
+          title="Mostra, numa coluna à direita, a transcrição bruta e as referências detectadas. A transcrição é gravada no Registro mesmo oculta."
+        >
+          {verTranscricao ? 'ocultar transcrição' : 'mostrar transcrição e referências'}
+        </button>
+      </footer>
     </div>
   );
 }

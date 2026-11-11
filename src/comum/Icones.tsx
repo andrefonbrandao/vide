@@ -286,3 +286,11 @@ export const IcPlay = (p: P) => (
     <path d="M7 4v16l13-8z" />
   </Svg>
 );
+
+export const IcForca = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 21h9M7 21V3h8v3" />
+    <circle cx="15" cy="8.5" r="2.5" />
+    <path d="M15 11v5M15 13l-2.5 2M15 13l2.5 2" />
+  </Svg>
+);

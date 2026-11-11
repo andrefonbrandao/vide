@@ -1,4 +1,5 @@
 // Jogo "Consulta" na tela do professor: escolher os casos e conduzir a discussão.
+import { irPara } from '../comum/navegacao';
 import { confirmar } from '../comum/avisos';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { apresentador } from '../consulta/apresentador';
@@ -40,9 +41,12 @@ export function EscolherConsulta({ aoFechar }: { aoFechar: () => void }) {
   if (!casos.length)
     return (
       <>
-        <p className="aviso">
-          Nenhum caso ainda. Cadastre em <strong>Atividades › Casos</strong>.
-        </p>
+        <div className="aviso">
+          Nenhum caso ainda. Cadastre em <strong>Atividades › Casos</strong>.{' '}
+          <button className="botao pequeno" onClick={() => (aoFechar(), irPara('casos', 'novo-caso'))}>
+            Novo caso
+          </button>
+        </div>
         <div className="modal-botoes">
           <button className="botao" onClick={aoFechar}>
             Fechar

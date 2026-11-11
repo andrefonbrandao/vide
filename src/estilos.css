@@ -1071,3 +1071,92 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
   .busca-gatilho { flex: 0 0 auto; padding: 9px 12px; }
   .busca-gatilho span { display: none; }
 }
+
+/* ---------- Pacote 11.2: Aula mais limpa e galeria de Atividades ---------- */
+.aula { grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.aula-topo { gap: 12px; padding: 12px 20px; }
+.pilulas { display: inline-flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.pilula {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 4px 12px; border-radius: 999px;
+  background: #fff; border: 1px solid var(--linha); font: inherit; font-size: 13px; font-weight: 700; color: var(--tinta); white-space: nowrap;
+}
+button.pilula { cursor: pointer; }
+button.pilula:hover { border-color: var(--tinta); }
+.pilula .luz { width: 9px; height: 9px; }
+.pilula.ok .luz { box-shadow: none; }
+.botao.so-icone { padding: 8px; min-width: 44px; justify-content: center; display: inline-flex; align-items: center; }
+
+/* "No projetor agora" (coluna da direita quando não há material nem atividade) */
+.aula.com-palco { grid-template-columns: minmax(0, 1fr) minmax(340px, 0.95fr); }
+.aula-palco {
+  margin: 16px 20px 16px 0; background: #13221e; color: #e9efe9; border-radius: 18px; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 12px; min-height: 0;
+}
+.aula-palco-rotulo { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #9fb8ab; }
+.aula-palco-tela {
+  aspect-ratio: 16 / 9; width: 100%; max-height: 100%; background: #fff; color: var(--tinta); border-radius: 10px;
+  overflow: hidden; position: relative; flex: none;
+}
+.aula-palco-tela .projecao-miolo { padding: 14px 18px; }
+.aula-palco-tela.preta { background: #000; color: #6f817a; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+.aula-palco-acoes { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.aula-palco-acoes .botao { background: #20352f; color: #fff; border-color: #2c4a41; }
+.aula-palco-acoes .botao:hover { background: #2c4a41; }
+.aula-palco-info { font-size: 13px; color: #9fb8ab; font-weight: 600; }
+
+/* Rodapé da aula: discreto, de ponta a ponta */
+.aula-rodape {
+  grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 8px 20px; border-top: 1px solid var(--linha); background: var(--fundo);
+}
+.aula-rodape-sessao { font-size: 13px; color: var(--tinta-2); font-weight: 600; }
+.aula-rodape > .botao { border-color: transparent; background: transparent; min-height: 36px; padding: 6px 12px; font-size: 14px; }
+.aula-rodape > .botao:hover { background: #fff; border-color: var(--linha); }
+.aula-rodape .controle-fonte { margin: 0 6px; }
+.aula-rodape .controle-fonte .botao { border-color: transparent; background: transparent; }
+.aula-rodape .controle-fonte .botao:hover:not(:disabled) { background: #fff; border-color: var(--linha); }
+
+/* Galeria de atividades */
+.modal.atividades { width: min(900px, 100%); padding: 22px 24px; }
+.atividades-cab { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+.atividades-cab h2 { margin: 0; font-size: 22px; }
+.passos { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--tinta-3, #7b8a84); }
+.passo { display: inline-flex; align-items: center; gap: 6px; }
+.passo i { font-style: normal; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--linha); color: var(--tinta); font-size: 12px; }
+.passo.atual { color: var(--tinta); }
+.passo.atual i { background: var(--tinta); color: #fff; }
+.passo.feito i { background: #cfe0d6; }
+.passo-traco { width: 16px; height: 2px; background: var(--linha); border-radius: 2px; }
+.galeria-atividades { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.cartao-atividade {
+  display: flex; flex-direction: column; text-align: left; padding: 0; overflow: hidden; cursor: pointer; font: inherit; color: inherit;
+  background: #fff; border: 1px solid var(--linha); border-radius: 16px; transition: transform 0.12s, box-shadow 0.12s;
+}
+.cartao-atividade:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(30, 58, 52, 0.1); }
+.cartao-atividade.sel { border: 2px solid var(--tinta); box-shadow: 0 8px 20px rgba(30, 58, 52, 0.15); }
+.cartao-atividade:focus-visible { outline: 3px solid var(--destaque); outline-offset: 2px; }
+.cartao-atividade-arte { height: 124px; position: relative; display: flex; justify-content: center; align-items: flex-end; overflow: hidden; }
+.cartao-atividade-arte .figura { width: 132px; margin-bottom: -26px; }
+.selo-icone {
+  position: absolute; right: 10px; bottom: 10px; width: 40px; height: 40px; border-radius: 12px; background: #fff; color: var(--tinta);
+  display: grid; place-items: center; box-shadow: 0 4px 10px rgba(30, 58, 52, 0.15);
+}
+.cartao-atividade-texto { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px 14px; }
+.cartao-atividade-texto strong { font-size: 16px; }
+.cartao-atividade-texto span { font-size: 13px; color: var(--tinta-2); line-height: 1.35; }
+.atividades-rodape {
+  display: flex; align-items: center; gap: 12px; margin-top: 14px; background: #fff; border: 1px solid var(--linha); border-radius: 14px; padding: 14px 16px;
+}
+.atividades-rodape > div { flex: 1; }
+.atividades-rodape .ajuda { margin: 2px 0 0; }
+.atividades-voltar { display: flex; align-items: center; gap: 12px; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; font: inherit; color: inherit; }
+.atividades-voltar .link-discreto { font-size: 13px; }
+.atividades-voltar-figura { width: 52px; height: 52px; border-radius: 14px; overflow: hidden; display: flex; justify-content: center; align-items: flex-end; flex: none; }
+.atividades-voltar-figura .figura { width: 60px; margin-bottom: -12px; }
+@media (max-width: 760px) {
+  .galeria-atividades { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .atividades-rodape { flex-wrap: wrap; }
+  .aula.com-palco { grid-template-columns: minmax(0, 1fr); }
+  .aula-palco { display: none; }
+}
+.atividades-rodape .ajuda { font-size: 14px; }

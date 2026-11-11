@@ -28,12 +28,12 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 
 ## Parte 2 — Ensaiar (em casa, uns 10 minutos)
 
-1. Na aba **Aula**, clique em **Iniciar escuta**.
+1. Na **Aula** (barra lateral), clique em **Iniciar escuta**.
 2. O navegador vai perguntar se o site pode usar o microfone. Clique em **Permitir**. O indicador deve mostrar **"Ouvindo"**, com a luz verde.
 3. Fale em voz normal: "Vamos ver o artigo 70 do CPC." Em 1 ou 2 segundos devem aparecer:
    - a frase na **Transcrição bruta** (ela fica oculta por padrão: clique em **mostrar transcrição e referências**, na barra de baixo; ela abre à direita, junto com as referências detectadas);
    - o candidato **art. 70 CPC**, à esquerda.
-4. Clique em **Abrir projeção**. Uma segunda janela abre.
+4. Clique na pílula **Abrir projeção** (no alto, ao lado de "Escuta desligada"). Uma segunda janela abre. A pílula fica verde ("Projeção aberta").
    - Sem projetor, ela fica por cima. Arraste-a para o lado.
    - Se o navegador avisar "pop-up bloqueado", clique no ícone da barra de endereço, escolha **Sempre permitir** e clique de novo em **Abrir projeção**.
 5. Treine os controles com o mouse sobre a tela do apresentador:
@@ -42,7 +42,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
    - **Clique direito:** volta à tela preta.
    - **Clique na roda:** o selo muda para "ROLAR O TEXTO PROJETADO". Agora a roda rola o texto no projetor. Experimente com "artigo mil e quinze". Clique na roda de novo para voltar.
 6. Com algo projetado, ajuste o **tamanho da fonte** nos botões **A−** e **A+** (embaixo, à esquerda; clicar na porcentagem volta a 100%). Também valem as teclas **+** e **−** e a voz: "aumenta a fonte", "diminui a letra", "letra maior". O tamanho escolhido fica guardado para os próximos artigos e as próximas aulas. Depois diga **"pode fechar"** (ou "tira da tela").
-7. Abra a aba **Registro**, clique em **Ver** e confira se tudo ficou anotado. Depois clique em **Começar uma nova sessão agora** (ou em **Nova sessão**, na tela da Aula). A tela de trabalho fica limpa e o ensaio não se mistura com a aula; o registro do ensaio continua guardado.
+7. Abra **Turma › Registro das aulas**, clique em **Ver** e confira se tudo ficou anotado. Depois clique em **Começar uma nova sessão agora** (ou em **Nova sessão**, na tela da Aula). A tela de trabalho fica limpa e o ensaio não se mistura com a aula; o registro do ensaio continua guardado.
 8. (Opcional) Repita os passos 1 a 3 no **Edge**, para comparar. Lembre-se de importar o CPC nele também.
 
 ## Parte 3 — Na aula
@@ -54,7 +54,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 3. Abra o Vide e clique em **Abrir projeção**.
    - Se a janela abrir no notebook, arraste-a para a tela do projetor. Para isso, leve-a para além da borda da tela.
    - Para pôr (ou tirar) a janela de projeção em tela cheia: leve o mouse até a **parte de baixo** dela e clique no botão **Tela cheia** que aparece; ou dê **duplo clique** em qualquer ponto dela; ou aperte a tecla **F** (ou **F11**) com o mouse sobre ela.
-4. Volte com o mouse para o notebook e clique em **Tela cheia** na tela do apresentador. Assim nenhum clique cai em outra janela.
+4. Volte com o mouse para o notebook e clique no botão de **tela cheia** (o quadradinho no canto direito, no alto) na tela do apresentador. Assim nenhum clique cai em outra janela.
 5. Clique em **Iniciar escuta** e confira se aparece **"Ouvindo"**.
 6. **Avise a turma** de que a aula está sendo transcrita para teste (LGPD).
 
@@ -68,14 +68,14 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 
 ### Depois da aula
 
-1. Abra a aba **Registro**. A sessão da aula estará no topo.
+1. Abra **Turma › Registro das aulas**. A sessão da aula estará no topo.
 2. Clique em **Exportar .txt**. É a transcrição, com as projeções marcadas no ponto em que aconteceram.
 3. Clique em **Exportar .csv (Excel)**. É a mesma informação em tabela, boa para contar.
 4. Os dois arquivos vão para a pasta **Downloads**.
 
 ### Material de revisão (com o seu plano do Claude)
 
-1. Na aba **Registro**, na aula desejada, clique em **Copiar pacote para o Claude**.
+1. Em **Turma › Registro das aulas**, na aula desejada, clique em **Copiar pacote para o Claude**.
    - O pacote tem só duas partes: a **transcrição** da aula (com a marca do horário em que cada artigo foi projetado) e o **texto integral dos dispositivos que você projetou**. As alternativas que apareceram mas não foram projetadas ficam de fora. Falas de teste e registros técnicos também.
 2. Abra o **claude.ai**, cole (**Ctrl + V**) e escreva o que você quer: um resumo para revisão, questões com gabarito, um esquema, um texto para os alunos…
 3. Prefere um arquivo? Use **Baixar pacote** e anexe o .txt no claude.ai.
@@ -115,7 +115,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 
 **Na aula:**
 1. No computador, abra o Vide e a projeção normalmente.
-2. Na tela da **Aula**, clique em **Celular** › **Gerar QR code**.
+2. Na tela da **Aula**, clique na pílula **Celular** (no alto) › **Gerar QR code**.
 3. No iPhone, abra a **Câmera**, aponte para o código e toque no link que aparece. O Vide abre no Safari, e o selo no alto mostra **"Computador conectado"**. No computador, o botão passa a dizer **"Celular conectado"**.
 4. No iPhone, toque em **Iniciar escuta** e permita o microfone. O microfone do computador para sozinho, para não ouvir em dobro.
 5. Pelo iPhone você pode:
@@ -135,12 +135,12 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
    - **Colar várias de uma vez:** cole as questões no formato mostrado na tela (enunciado, alternativas A a D e "Resposta: C"; sem alternativas, a questão é de verdadeiro ou falso, com "Resposta: V" ou "F"). "Tempo", "Explicação" e "Fundamento" (ex.: `485 VI`) são opcionais. Se pedir questões ao Claude ou ao Gemini, use **Copiar o modelo** e mande junto.
    - O Vide mostra quantas questões entendeu e aponta as que têm problema.
    - Dê um nome em **Criar um questionário com estas questões** para já montar o jogo.
-   - **Assuntos:** escreva os assuntos no campo **Assuntos** (valem para todas as questões coladas) ou numa linha "Assunto: sentença, recursos" dentro de cada questão. Na aba **Questões**, os assuntos aparecem como botões para filtrar o banco.
+   - **Assuntos:** escreva os assuntos no campo **Assuntos** (valem para todas as questões coladas) ou numa linha "Assunto: sentença, recursos" dentro de cada questão. Em **Atividades › Questões**, os assuntos aparecem como botões para filtrar o banco.
    - Ou use **Escrever uma questão** para fazer uma por vez.
 2. Em **Atividades › Questões** (barra lateral), a tela abre num **início** com os atalhos **Novo treino em casa**, **Adicionar questões** e **Novo questionário**. Os botões no alto levam às seções: **Questões** (editar e filtrar o banco), **Questionários**, **Treinos em casa** (links criados). Os **Resultados** dos jogos ficam em **Turma › Resultados**, e todos os links publicados, em **Atividades › Links da turma**.
 
 **Na aula:**
-1. Abra a projeção normalmente e clique em **Atividades** (no alto da tela da Aula).
+1. Abra a projeção normalmente e clique em **Atividades** (no alto, à direita, na tela da Aula). Abre uma galeria com quatro cartões (Jogo de perguntas, Forca, Consulta e Processo da turma). Clique em **Jogo de perguntas** e em **Continuar** (ou dê dois cliques no cartão). Para trocar de atividade, clique em **‹ trocar atividade**.
 2. Escolha como montar o jogo:
    - **Sortear por assunto:** digite parte do assunto no campo de busca (maiúsculas e acentos não importam; Enter escolhe o primeiro encontrado) ou clique nele na lista (ou em "Todos os assuntos") e quantas questões (5, 10, 15, 20 ou outro número). O Vide sorteia as questões, em ordem aleatória. Se houver menos questões do assunto do que o pedido, ele avisa e usa todas.
    - **Questionário pronto:** a sequência que você montou em Atividades › Questões.
@@ -188,7 +188,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 
 ## Forca (a turma toda, pelo celular)
 
-1. Em **Aula › Atividades**, clique em **Forca (a turma toda)**. A palavra é o conceito das questões "Adivinhe o conceito" (as outras ficam de fora).
+1. Em **Aula › Atividades**, clique no cartão **Forca** e em **Continuar**. A palavra é o conceito das questões "Adivinhe o conceito" (as outras ficam de fora).
 2. Escolha o assunto ou o questionário e o **tempo de cada votação** (sugerido: 10 segundos). Clique em **Abrir a sala**.
 3. Os alunos entram pelo QR code, como no jogo de perguntas. Em **Começar**, cada um vota numa letra no celular; a mais votada entra na palavra (se todos votarem antes, sai na hora).
 4. Quem souber a palavra toca em **Já sei a palavra** e digita. Palavra errada não custa à turma (a pessoa só espera 5 s).
@@ -199,7 +199,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 
 1. Em **Atividades › Casos › Adicionar casos**, escreva o tema e clique em **Copiar pedido para a IA**. Cole no Claude, copie a resposta e cole no campo **Casos**. Confira a prévia (personagem, balões, resposta) e clique em **Guardar**.
 2. Revise a resposta e o fundamento de cada caso (**Ver** e **Editar** na lista).
-3. Na aula, em **Atividades › Consulta (em grupo)**, sorteie por assunto ou escolha os casos e clique em **Começar a consulta**.
+3. Na aula, em **Atividades**, clique no cartão **Consulta** e em **Continuar**; sorteie por assunto ou escolha os casos e clique em **Começar a consulta**.
 4. As falas aparecem uma a uma e o cronômetro corre. **Pausar** e **+1 minuto** ajustam o tempo; **Ver a resposta (só na sua tela)** mostra a resposta só para você.
 5. No fim do tempo (ou ao clicar em **Mostrar a resposta**), o advogado ou o juiz responde. **Projetar fundamento** põe o artigo ao lado.
 6. Treino em casa: **Atividades › Casos › Treino em casa › Compartilhar casos para treino**.
