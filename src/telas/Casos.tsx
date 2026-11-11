@@ -1,4 +1,5 @@
 // Atividades › Casos: os casos do jogo "Consulta" (personagens com um problema concreto).
+import { SemVinculo } from './FaixaTurma';
 import { confirmar } from '../comum/avisos';
 import { useEffect, useMemo, useState } from 'react';
 import { adicionarCasos, assuntosDosCasos, excluirCaso, listarCasos, salvarCaso } from '../consulta/banco';
@@ -138,7 +139,7 @@ function ListaCasos({ casos, aoAdicionar }: { casos: Caso[]; aoAdicionar: () => 
           <li key={c.id} style={{ flexWrap: 'wrap' }}>
             <Figura id={figuraDoCaso(c)} expressao="neutro" className="mini" />
             <span className="texto-questao">
-              <strong>{c.nome}</strong>: {c.falas[c.falas.length - 1]?.texto}
+              <strong>{c.nome}</strong>: {c.falas[c.falas.length - 1]?.texto} <SemVinculo item={c} tipo="conteudo" />
               <span className="ajuda">
                 {' '}
                 · responde: {c.quemResponde} · {String(c.tempo).replace(".", ",")} min{c.fundamento ? ` · ${c.fundamento}` : ''}

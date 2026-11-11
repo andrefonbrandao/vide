@@ -6,6 +6,7 @@ import type { Questao, Questionario, ResultadoJogo } from '../jogo/tipos';
 import type { LinkTreino } from '../treino/tipos';
 import type { Caso } from '../consulta/tipos';
 import type { Processo } from '../processo/tipos';
+import type { Disciplina, Turma } from '../turmas/tipos';
 import { agoraISO } from './modelo';
 
 export class BancoVide extends Dexie {
@@ -24,6 +25,9 @@ export class BancoVide extends Dexie {
   casos!: Table<Caso, string>;
   /** Processos fictícios que a turma acompanha. */
   processos!: Table<Processo, string>;
+  /** Disciplinas e turmas do professor. */
+  disciplinas!: Table<Disciplina, string>;
+  turmas!: Table<Turma, string>;
 
   constructor(nome = 'vide') {
     super(nome);
@@ -63,6 +67,8 @@ export class BancoVide extends Dexie {
     this.version(7).stores({ casos: 'id, pasta, *etiquetas, atualizado_em, excluido_em' });
     // Versão 8: processos fictícios.
     this.version(8).stores({ processos: 'id, atualizado_em, excluido_em' });
+    // Versão 9: disciplinas e turmas.
+    this.version(9).stores({ disciplinas: 'id, atualizado_em, excluido_em', turmas: 'id, disciplinaId, atualizado_em, excluido_em' });
   }
 }
 

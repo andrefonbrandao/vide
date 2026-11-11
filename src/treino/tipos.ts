@@ -1,4 +1,5 @@
 // Treino em casa: grupo de questões publicado num link para os alunos treinarem sozinhos.
+import type { VinculoTurma } from '../turmas/tipos';
 import type { Sincronizavel } from '../dados/modelo';
 import type { QuestaoJogo } from '../jogo/tipos';
 import type { DadosCaso } from '../consulta/tipos';
@@ -38,7 +39,7 @@ export interface DadosTreino {
 }
 
 /** Um link criado pelo professor (guardado no navegador e no Drive). */
-export interface LinkTreino extends Sincronizavel {
+export interface LinkTreino extends Sincronizavel, VinculoTurma {
   /** O código do link (/t/<codigo>). */
   codigo: string;
   /** Senha que só o navegador do professor tem: permite apagar o link. */

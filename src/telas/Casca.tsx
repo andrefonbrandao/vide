@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { CamadaAvisos } from '../comum/avisos';
 import {
   IcAjustes,
+  IcTurmas,
   IcBusca,
   IcCasos,
   IcInicio,
@@ -32,6 +33,8 @@ import { Processos } from './Processos';
 import { AdicionarQuestoes, ListaQuestoes } from './Questoes';
 import { Registro } from './Registro';
 import { Pagina } from './Pagina';
+import { AvisoAula, MinhasTurmas, SeletorTurma } from './Turmas';
+import { useTurmaAtiva } from './FaixaTurma';
 
 interface ItemMenu {
   rota: Rota;
@@ -66,6 +69,7 @@ const GRUPOS: { titulo: string | null; itens: ItemMenu[] }[] = [
   {
     titulo: 'Turma',
     itens: [
+      { rota: 'turmas', rotulo: 'Minhas turmas', icone: <IcTurmas /> },
       { rota: 'resultados', rotulo: 'Resultados', icone: <IcResultados /> },
       { rota: 'registro', rotulo: 'Registro das aulas', icone: <IcRegistro /> },
     ],
@@ -149,6 +153,7 @@ function PaginaMateriais({ acao }: { acao: Acao | null }) {
     <Pagina
       caminho="Biblioteca"
       titulo="Materiais"
+      filtravel
       descricao="Slides e PDFs para projetar na aula."
       acoes={!adicionando && <BotaoAcao principal onClick={() => setAdicionando(true)}>Adicionar material</BotaoAcao>}
     >
@@ -173,6 +178,7 @@ function PaginaQuestoes({ acao }: { acao: Acao | null }) {
     <Pagina
       caminho="Atividades"
       titulo="Questões"
+      filtravel
       descricao="Questões e questionários para os jogos em sala e os treinos em casa."
       acoes={!adicionando && <BotaoAcao principal onClick={() => setAdicionando(true)}>Adicionar questões</BotaoAcao>}
     >
@@ -201,7 +207,7 @@ function PaginaCasos({ acao }: { acao: Acao | null }) {
     }
   });
   return (
-    <Pagina caminho="Atividades" titulo="Casos" descricao="Casos com personagens para o jogo Consulta e para o treino em casa." acoes={<BotaoAcao principal onClick={abrirAdicionar}>Adicionar casos</BotaoAcao>}>
+    <Pagina caminho="Atividades" titulo="Casos" filtravel descricao="Casos com personagens para o jogo Consulta e para o treino em casa." acoes={<BotaoAcao principal onClick={abrirAdicionar}>Adicionar casos</BotaoAcao>}>
       <Casos key={chave} />
     </Pagina>
   );
@@ -213,6 +219,7 @@ function PaginaProcessos({ acao }: { acao: Acao | null }) {
     <Pagina
       caminho="Atividades"
       titulo="Processos da turma"
+      filtravel
       descricao="Processos fictícios que a turma acompanha ao longo do semestre."
       acoes={
         <>
@@ -262,6 +269,7 @@ function BarraLateral({ rota, recolhida }: { rota: Rota; recolhida: boolean }) {
       <button className="lateral-logo" onClick={() => irPara('inicio')} aria-label="Início">
         <Logo altura={recolhida ? 30 : 28} soSimbolo={recolhida} />
       </button>
+      <SeletorTurma recolhido={recolhida} />
       <nav className="lateral-nav">
         {GRUPOS.map((g, i) => (
           <div key={i} className="lateral-grupo">
@@ -342,7 +350,7 @@ function BarraCelular({ rota }: { rota: Rota }) {
     ['aula', 'Aula', <IcProjecao key="a" />, ['aula']],
     ['materiais', 'Biblioteca', <IcPasta key="b" />, ['leis', 'materiais']],
     ['questoes', 'Atividades', <IcPerguntas key="q" />, ['questoes', 'casos', 'processos', 'links']],
-    ['registro', 'Turma', <IcRegistro key="t" />, ['resultados', 'registro']],
+    ['turmas', 'Turma', <IcTurmas key="t" />, ['turmas', 'resultados', 'registro']],
   ];
   return (
     <nav className="barra-celular" aria-label="Seções" data-ui>
@@ -374,12 +382,15 @@ export function Casca() {
     return () => window.removeEventListener('keydown', tecla);
   }, []);
 
-  const chave = `${rota}:${versao}`;
+  const { ativa, tudo } = useTurmaAtiva();
+  // Trocar de turma (ou "mostrar tudo") recarrega a página aberta.
+  const chave = `${rota}:${versao}:${ativa?.turmaId ?? ''}:${tudo}`;
   const a = acaoDaNavegacao(versao);
   return (
     <div className={`casca${naAula ? ' na-aula' : ''}`}>
       <BarraLateral rota={rota} recolhida={naAula} />
       <div className="casca-principal">
+        <AvisoAula />
         {!naAula && (
           <header className="casca-topo" data-ui>
             <a href="#inicio" className="topo-logo" onClick={(e) => (e.preventDefault(), irPara('inicio'))} aria-label="Início">
@@ -417,7 +428,7 @@ export function Casca() {
           {rota === 'processos' && <PaginaProcessos key={chave} acao={a} />}
           {rota === 'links' && <LinksTurma key={chave} />}
           {rota === 'resultados' && (
-            <Pagina key={chave} caminho="Turma" titulo="Resultados" descricao="Os números de cada jogo, sem nomes de alunos.">
+            <Pagina key={chave} caminho="Turma" titulo="Resultados" filtravel descricao="Os números de cada jogo, sem nomes de alunos.">
               <ListaQuestoes aoAdicionar={() => irPara('questoes', 'novas-questoes')} secaoFixa="resultados" />
             </Pagina>
           )}
@@ -427,6 +438,7 @@ export function Casca() {
             </Pagina>
           )}
           {rota === 'ajustes' && <Ajustes key={chave} />}
+          {rota === 'turmas' && <MinhasTurmas key={chave} />}
         </main>
       </div>
       <BarraCelular rota={rota} />

@@ -1,4 +1,5 @@
 // Guarda e lê questões, questionários e resultados no banco local do navegador.
+import { pertenceConteudo, pertenceTurma, vinculoConteudoNovo, vinculoTurmaNovo } from '../turmas/filtro';
 import { db } from '../dados/db';
 import { agoraISO, novoId } from '../dados/modelo';
 import type { QuestaoJogo, Questao, Questionario, ResultadoJogo, ResultadoPergunta } from './tipos';
@@ -14,24 +15,24 @@ export function avisarMudanca(): void {
 
 export async function listarQuestoes(): Promise<Questao[]> {
   const todas = await db.questoes.toArray();
-  return todas.filter((q) => !q.excluido_em).sort((a, b) => a.criado_em.localeCompare(b.criado_em));
+  return todas.filter((q) => !q.excluido_em && pertenceConteudo(q)).sort((a, b) => a.criado_em.localeCompare(b.criado_em));
 }
 
 export async function listarQuestionarios(): Promise<Questionario[]> {
   const todos = await db.questionarios.toArray();
-  return todos.filter((q) => !q.excluido_em).sort((a, b) => b.atualizado_em.localeCompare(a.atualizado_em));
+  return todos.filter((q) => !q.excluido_em && pertenceConteudo(q)).sort((a, b) => b.atualizado_em.localeCompare(a.atualizado_em));
 }
 
 export async function listarResultados(): Promise<ResultadoJogo[]> {
   const todos = await db.jogos.toArray();
-  return todos.filter((r) => !r.excluido_em).sort((a, b) => b.em.localeCompare(a.em));
+  return todos.filter((r) => !r.excluido_em && pertenceTurma(r)).sort((a, b) => b.em.localeCompare(a.em));
 }
 
 export async function salvarQuestao(
   dados: QuestaoJogo & { pasta: string; etiquetas: string[] },
   existente?: Questao,
 ): Promise<Questao> {
-  const q: Questao = existente ? { ...existente, ...dados, atualizado_em: agoraISO() } : { ...base(), ...dados };
+  const q: Questao = existente ? { ...existente, ...dados, atualizado_em: agoraISO() } : { ...base(), ...vinculoConteudoNovo(), ...dados };
   await db.questoes.put(q);
   avisarMudanca();
   return q;
@@ -45,6 +46,7 @@ export async function adicionarQuestoes(
   // Assuntos de cada questão (do texto colado) + os assuntos escolhidos para todas.
   const questoes = lista.map(({ assuntos = [], ...q }) => ({
     ...base(),
+    ...vinculoConteudoNovo(),
     ...q,
     pasta: extra.pasta,
     etiquetas: [...new Set([...extra.etiquetas, ...assuntos])],
@@ -53,7 +55,7 @@ export async function adicionarQuestoes(
   await db.transaction('rw', db.questoes, db.questionarios, async () => {
     await db.questoes.bulkAdd(questoes);
     if (extra.questionario?.trim()) {
-      questionario = { ...base(), nome: extra.questionario.trim(), questoes: questoes.map((q) => q.id) };
+      questionario = { ...base(), ...vinculoConteudoNovo(), nome: extra.questionario.trim(), questoes: questoes.map((q) => q.id) };
       await db.questionarios.add(questionario);
     }
   });
@@ -72,7 +74,7 @@ export async function excluirQuestao(id: string): Promise<void> {
 export async function salvarQuestionario(nome: string, questoes: string[], existente?: Questionario): Promise<Questionario> {
   const q: Questionario = existente
     ? { ...existente, nome, questoes, atualizado_em: agoraISO() }
-    : { ...base(), nome, questoes };
+    : { ...base(), ...vinculoConteudoNovo(), nome, questoes };
   await db.questionarios.put(q);
   avisarMudanca();
   return q;
@@ -98,7 +100,7 @@ export async function guardarResultado(dados: {
   ranking: boolean;
   perguntas: ResultadoPergunta[];
 }): Promise<void> {
-  await db.jogos.add({ ...base(), em: agoraISO(), ...dados });
+  await db.jogos.add({ ...base(), ...vinculoTurmaNovo(), em: agoraISO(), ...dados });
   avisarMudanca();
 }
 

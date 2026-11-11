@@ -1,4 +1,5 @@
 // Processo fictício: o professor monta, a turma acompanha pelo link ao longo do semestre.
+import type { VinculoTurma } from '../turmas/tipos';
 import type { Sincronizavel } from '../dados/modelo';
 import type { BlocoArtigo } from '../treino/tipos';
 import type { Fala } from '../consulta/tipos';
@@ -111,7 +112,7 @@ export interface Publicacao {
 }
 
 /** Um processo da biblioteca do professor. */
-export interface Processo extends Sincronizavel {
+export interface Processo extends Sincronizavel, VinculoTurma {
   /** Nome interno (só o professor vê): "Turma 2027/1 — ação de cobrança". */
   titulo: string;
   capa: Capa;

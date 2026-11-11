@@ -1,4 +1,5 @@
 // Guarda e lê os casos do jogo "Consulta" no banco local do navegador.
+import { pertenceConteudo, vinculoConteudoNovo } from '../turmas/filtro';
 import { db } from '../dados/db';
 import { agoraISO, novoId } from '../dados/modelo';
 import type { CasoLido } from './importar';
@@ -15,12 +16,13 @@ function base() {
 
 export async function listarCasos(): Promise<Caso[]> {
   const todos = await db.casos.toArray();
-  return todos.filter((c) => !c.excluido_em).sort((a, b) => b.criado_em.localeCompare(a.criado_em) || a.nome.localeCompare(b.nome));
+  return todos.filter((c) => !c.excluido_em && pertenceConteudo(c)).sort((a, b) => b.criado_em.localeCompare(a.criado_em) || a.nome.localeCompare(b.nome));
 }
 
 export async function adicionarCasos(lista: CasoLido[], extra: { pasta: string; etiquetas: string[] }): Promise<Caso[]> {
   const casos: Caso[] = lista.map(({ assuntos, ...c }) => ({
     ...base(),
+    ...vinculoConteudoNovo(),
     ...c,
     pasta: extra.pasta,
     etiquetas: [...new Set([...extra.etiquetas, ...assuntos])],

@@ -1,5 +1,6 @@
 // Leitura e desenho do material (PDF ou imagem) num <canvas>.
 // O PDF é desenhado pelo pdf.js, carregado só quando é usado (o app abre mais rápido).
+import { pertenceConteudo, vinculoConteudoNovo } from '../turmas/filtro';
 import { db } from '../dados/db';
 import type { Material } from '../dados/modelo';
 import { agoraISO, novoId } from '../dados/modelo';
@@ -132,6 +133,7 @@ export async function importarMaterial(arquivo: File, org: { pasta?: string; eti
     criado_em: agora,
     atualizado_em: agora,
     excluido_em: null,
+    ...vinculoConteudoNovo(),
     nome: arquivo.name.replace(/\.[^.]+$/, ''),
     tipo,
     mime: arquivo.type || (tipo === 'pdf' ? 'application/pdf' : 'image/*'),
@@ -148,7 +150,7 @@ export async function importarMaterial(arquivo: File, org: { pasta?: string; eti
 
 export async function listarMateriais(): Promise<Material[]> {
   const todos = await db.materiais.toArray();
-  return todos.filter((m) => !m.excluido_em).sort((a, b) => b.criado_em.localeCompare(a.criado_em));
+  return todos.filter((m) => !m.excluido_em && pertenceConteudo(m)).sort((a, b) => b.criado_em.localeCompare(a.criado_em));
 }
 
 /** Muda nome, pasta e etiquetas de um material. */

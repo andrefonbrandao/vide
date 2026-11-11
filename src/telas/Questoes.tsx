@@ -1,5 +1,6 @@
 // Atividades › Questões: banco de questões, questionários (sequências para a aula),
 // importação por texto e resultados dos jogos (só números, sem nomes de alunos).
+import { SemVinculo } from './FaixaTurma';
 import { Figura } from './ConsultaTela';
 import { confirmar } from '../comum/avisos';
 import { useEffect, useMemo, useState } from 'react';
@@ -648,7 +649,7 @@ export function ListaQuestoes({ aoAdicionar, secaoFixa }: { aoAdicionar: () => v
               {questionarios.map((qz) => (
                 <li key={qz.id}>
                   <span className="texto-questao">
-                    <strong>{qz.nome}</strong>{' '}
+                    <strong>{qz.nome}</strong> <SemVinculo item={qz} tipo="conteudo" />{' '}
                     <span className="ajuda">
                       · {qz.questoes.filter((id) => questoes.some((q) => q.id === id)).length} questões
                     </span>
@@ -724,7 +725,7 @@ export function ListaQuestoes({ aoAdicionar, secaoFixa }: { aoAdicionar: () => v
             {filtradas.map((q) => (
               <li key={q.id} className="cartao">
                 <p className="texto-questao">
-                  <strong>{q.tipo === 'conceito' ? `Conceito: ${q.enunciado}` : q.enunciado}</strong>
+                  <strong>{q.tipo === 'conceito' ? `Conceito: ${q.enunciado}` : q.enunciado}</strong> <SemVinculo item={q} tipo="conteudo" />
                 </p>
                 <p className="ajuda" style={{ margin: 0 }}>
                   {q.tipo === 'conceito'

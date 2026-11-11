@@ -1,6 +1,7 @@
 // Cópia de um processo para um novo semestre: tudo anda junto no calendário.
 // A data de autuação passa a ser a nova data de início; eventos e liberações são
 // deslocados pelo mesmo número de dias. O que estava liberado vira "aparece na data do evento".
+import { vinculoTurmaNovo } from '../turmas/filtro';
 import { agoraISO, novoId } from '../dados/modelo';
 import { gerarNumero } from './numero';
 import type { Evento, Processo } from './tipos';
@@ -46,5 +47,7 @@ export function copiarProcesso(p: Processo, titulo: string, inicio: string): Pro
     partes: p.partes.map((x) => ({ ...x, id: novoId() })),
     eventos,
     publicacao: null,
+    // A cópia é para o semestre novo: fica na turma ativa (ou sem turma).
+    turmaId: vinculoTurmaNovo().turmaId ?? null,
   };
 }

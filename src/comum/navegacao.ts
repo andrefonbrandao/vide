@@ -2,9 +2,9 @@
 // para o botão "Voltar" do navegador funcionar e cada página ter um endereço.
 import { useEffect, useState } from 'react';
 
-export type Rota = 'inicio' | 'aula' | 'leis' | 'materiais' | 'questoes' | 'casos' | 'processos' | 'links' | 'resultados' | 'registro' | 'ajustes';
+export type Rota = 'inicio' | 'aula' | 'leis' | 'materiais' | 'questoes' | 'casos' | 'processos' | 'links' | 'resultados' | 'registro' | 'ajustes' | 'turmas';
 
-const ROTAS: Rota[] = ['inicio', 'aula', 'leis', 'materiais', 'questoes', 'casos', 'processos', 'links', 'resultados', 'registro', 'ajustes'];
+const ROTAS: Rota[] = ['inicio', 'aula', 'leis', 'materiais', 'questoes', 'casos', 'processos', 'links', 'resultados', 'registro', 'ajustes', 'turmas'];
 
 /** Ações que uma página faz ao abrir (vindas do "+ Criar", da busca ou do Início). */
 export type Acao = 'nova-lei' | 'novo-material' | 'novas-questoes' | 'novo-treino' | 'novo-caso' | 'novo-processo' | 'colar-processo';

@@ -1,4 +1,5 @@
 // Jogo "Consulta": casos práticos contados por um personagem, resolvidos em grupo.
+import type { VinculoConteudo } from '../turmas/tipos';
 import type { Sincronizavel } from '../dados/modelo';
 import type { Expressao } from './personagens';
 
@@ -29,7 +30,7 @@ export interface DadosCaso {
 }
 
 /** Um caso do acervo. */
-export interface Caso extends Sincronizavel, DadosCaso {
+export interface Caso extends Sincronizavel, DadosCaso, VinculoConteudo {
   pasta: string;
   etiquetas: string[];
 }

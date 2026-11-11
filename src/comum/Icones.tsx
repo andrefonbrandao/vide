@@ -294,3 +294,11 @@ export const IcForca = (p: P) => (
     <path d="M15 11v5M15 13l-2.5 2M15 13l2.5 2" />
   </Svg>
 );
+
+export const IcTurmas = (p: P) => (
+  <Svg {...p}>
+    <rect x="3" y="5" width="18" height="16" rx="2" />
+    <path d="M3 10h18M8 3v4M16 3v4" />
+    <path d="M7.5 14.5h3M7.5 17.5h5" />
+  </Svg>
+);

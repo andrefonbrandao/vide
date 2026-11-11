@@ -229,6 +229,14 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 21. **Colaborativo, na aula**: com o processo aberto, clique em **Deliberação da turma**. Escreva o **próximo ato** (ex.: CONTESTAÇÃO) e anote o que a turma decidiu. O resultado das votações "E agora?" e os vícios mostrados entram sozinhos. Clique em **Copiar o pedido para a IA**, cole no Claude, copie a resposta e use **Colar a resposta da IA**: os novos eventos entram segurados no fim do processo. Quando liberar o novo ato, a turma vê, junto dele, "O que a turma decidiu antes deste ato". A mesma deliberação aparece na aba **Deliberação da turma** do editor.
 22. **Perguntas sobre o processo** (aba **Perguntas** do processo): escolha "sobre o processo até o evento N", quantas e os tipos, clique em **Copiar o pedido para a IA**, cole no Claude e cole a resposta no campo (ou escreva as perguntas no formato das Questões). **Guardar** liga as perguntas ao evento escolhido; na lista, dá para mudar o evento ("desde o início" ou "a partir do evento…") ou apagar. Na página da turma, a seção **Teste o que você sabe sobre o processo** mostra só as perguntas dos eventos já liberados; o aluno responde e confere sozinho (nada é enviado). No jogo em sala, na forca e no treino em casa, as perguntas aparecem no assunto **"processo: <nome do processo>"**.
 
+## Minhas turmas (disciplinas, turmas e o modo da turma)
+
+1. Em **Turma › Minhas turmas**, clique em **Nova disciplina**: nome (ex.: Direito Processual Civil I), sigla (PC1), cor e a **lei principal** (obrigatória; a lei precisa estar importada).
+2. Na disciplina, **Nova turma**: o período (2026.2), os **dias e horários** das aulas e, se quiser, o começo e o fim do semestre.
+3. **Entrar no modo da turma** (ou escolha a turma no seletor **Turma**, no alto da barra lateral). A lei principal da disciplina passa a valer na aula ("artigo 5" vira o art. 5º da lei dela).
+4. No modo da turma, Materiais, Questões, Casos, Processos, Links da turma e Resultados mostram só o que é da turma, mais o que ainda não tem disciplina (marcado **"sem disciplina"**); **mostrar tudo** na faixa do alto desliga o filtro. O que você criar no modo da turma já nasce ligado a ela: materiais, questões, questionários e casos à disciplina; processos, links de treino e resultados à turma.
+5. Abra o Vide no horário de uma aula (de 15 minutos antes até o fim): aparece **"Aula de … Entrar no modo da turma?"**. O aviso só aparece com o Vide aberto.
+
 ## Guardar o acervo no Google Drive (vários computadores)
 
 1. No alto do Vide, clique em **Google Drive** › **Entrar com o Google** e entre com a sua conta. Na primeira vez, o Google pede para autorizar o Vide a usar o Drive: autorize.

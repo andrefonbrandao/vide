@@ -12,6 +12,7 @@ import type { Questao, Questionario, ResultadoJogo } from '../jogo/tipos';
 import type { LinkTreino } from '../treino/tipos';
 import type { Caso } from '../consulta/tipos';
 import type { Processo } from '../processo/tipos';
+import type { Disciplina, Turma } from '../turmas/tipos';
 import type { ArmazemRemoto, ArquivoRemoto } from './remoto';
 
 export type MaterialMeta = Omit<Material, 'arquivo'>;
@@ -36,6 +37,9 @@ export interface DadosRemotos {
   casos?: Caso[];
   /** Processos fictícios (os PDFs anexados vão com os materiais). */
   processos?: Processo[];
+  /** Disciplinas e turmas. */
+  disciplinas?: Disciplina[];
+  turmas?: Turma[];
   materiais: MaterialMeta[];
   diplomas: Diploma[];
   sessoes: SessaoMeta[];
@@ -48,7 +52,7 @@ export interface ResumoSincronia {
   mudou: Set<'acervo' | 'materiais' | 'questoes' | 'registro'>;
 }
 
-const VAZIO: DadosRemotos = { formato: 'vide-dados@1', questoes: [], questionarios: [], jogos: [], treinos: [], casos: [], processos: [], materiais: [], diplomas: [], sessoes: [] };
+const VAZIO: DadosRemotos = { formato: 'vide-dados@1', questoes: [], questionarios: [], jogos: [], treinos: [], casos: [], processos: [], disciplinas: [], turmas: [], materiais: [], diplomas: [], sessoes: [] };
 
 interface ComData {
   id: string;
@@ -134,6 +138,14 @@ export async function sincronizar(banco: BancoVide, remoto: ArmazemRemoto, aviso
   const tr = mesclar(await banco.treinos.toArray(), rem.treinos ?? []);
   const cs = mesclar(await banco.casos.toArray(), rem.casos ?? []);
   const pc = mesclar(await banco.processos.toArray(), rem.processos ?? []);
+  const dc = mesclar(await banco.disciplinas.toArray(), rem.disciplinas ?? []);
+  const tm = mesclar(await banco.turmas.toArray(), rem.turmas ?? []);
+  if (dc.paraLocal.length + tm.paraLocal.length) {
+    if (dc.paraLocal.length) await banco.disciplinas.bulkPut(dc.paraLocal);
+    if (tm.paraLocal.length) await banco.turmas.bulkPut(tm.paraLocal);
+    resumo.mudou.add('questoes');
+    resumo.baixados.push('disciplinas e turmas');
+  }
   if (pc.paraLocal.length) {
     await banco.processos.bulkPut(pc.paraLocal);
     resumo.mudou.add('questoes');
@@ -329,6 +341,8 @@ export async function sincronizar(banco: BancoVide, remoto: ArmazemRemoto, aviso
     treinos: tr.resultado,
     casos: cs.resultado,
     processos: pc.resultado,
+    disciplinas: dc.resultado,
+    turmas: tm.resultado,
     materiais: [...materiaisFinal.values()],
     diplomas: [...diplomasFinal.values()],
     sessoes: [...sessoesFinal.values()],

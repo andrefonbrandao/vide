@@ -1,4 +1,5 @@
 // Guarda e lê os processos fictícios no banco local do navegador.
+import { pertenceTurma, vinculoTurmaNovo } from '../turmas/filtro';
 import { db } from '../dados/db';
 import { agoraISO, novoId } from '../dados/modelo';
 import { gerarNumero } from './numero';
@@ -10,7 +11,7 @@ export function avisarMudancaProcessos(): void {
 
 export async function listarProcessos(): Promise<Processo[]> {
   const todos = await db.processos.toArray();
-  return todos.filter((p) => !p.excluido_em).sort((a, b) => b.atualizado_em.localeCompare(a.atualizado_em));
+  return todos.filter((p) => !p.excluido_em && pertenceTurma(p)).sort((a, b) => b.atualizado_em.localeCompare(a.atualizado_em));
 }
 
 export async function lerProcesso(id: string): Promise<Processo | undefined> {
@@ -49,6 +50,7 @@ export function processoEmBranco(titulo: string): Processo {
     criado_em: agora,
     atualizado_em: agora,
     excluido_em: null,
+    ...vinculoTurmaNovo(),
     titulo: titulo.trim() || 'Processo da turma',
     capa: {
       numero: gerarNumero(),

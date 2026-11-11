@@ -1,6 +1,7 @@
 // Materiais do professor (PDFs, imagens) organizados em pastas e etiquetas.
 // - <ListaMateriais/> e <AdicionarMaterial/>: aba Acervo (organizar, apagar, carregar).
 // - <SeletorMaterial/>: botão da tela da aula, com busca, para escolher o material.
+import { SemVinculo } from './FaixaTurma';
 import { Figura } from './ConsultaTela';
 import { avisar, confirmar } from '../comum/avisos';
 import { Miniatura } from './Miniatura';
@@ -192,6 +193,7 @@ export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
           <span className="ajuda">
             {m.paginas} {m.paginas === 1 ? 'página' : 'páginas'} · {mb(m.tamanho)}
           </span>
+          <SemVinculo item={m} tipo="conteudo" />
           {mostrarPasta && (
             <button className="link-pasta" onClick={() => abrir(m.pasta ?? '')}>
               <IcPasta tamanho={14} /> {nomePasta(m.pasta ?? '')}

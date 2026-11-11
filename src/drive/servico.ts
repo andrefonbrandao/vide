@@ -163,6 +163,7 @@ class ServicoDrive {
         if (r.mudou.has('questoes')) {
           window.dispatchEvent(new Event('vide-questoes-mudou'));
           window.dispatchEvent(new Event('vide-processos-mudou'));
+          window.dispatchEvent(new Event('vide-turmas-mudou'));
         }
         if (r.mudou.has('registro')) window.dispatchEvent(new Event('vide-registro-mudou'));
         const partes = [r.baixados.length ? `recebido: ${r.baixados.join(', ')}` : '', r.enviados.length ? `enviado: ${r.enviados.join(', ')}` : '']

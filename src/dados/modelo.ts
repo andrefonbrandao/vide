@@ -3,6 +3,7 @@
 // Os nomes dos campos seguem o padrão do Postgres/Supabase (snake_case),
 // para que a sincronização futura copie os registros sem conversão.
 // Veja supabase/esquema.sql.
+import type { VinculoConteudo } from '../turmas/tipos';
 
 /** Tipos de item. O protótipo usa só "legislacao"; os outros já estão previstos. */
 export type TipoItem = 'legislacao' | 'precedente' | 'conceito' | 'imagem' | 'grafico';
@@ -91,7 +92,7 @@ export interface Diploma extends Sincronizavel {
 }
 
 /** Material do professor (slides em PDF ou imagem) para exibir durante a aula. */
-export interface Material extends Sincronizavel {
+export interface Material extends Sincronizavel, VinculoConteudo {
   nome: string;
   tipo: 'pdf' | 'imagem';
   mime: string;

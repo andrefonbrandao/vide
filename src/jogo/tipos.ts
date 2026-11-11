@@ -1,11 +1,12 @@
 // Questões, questionários e o jogo de perguntas (estilo quiz) do Vide.
+import type { VinculoConteudo, VinculoTurma } from '../turmas/tipos';
 import type { Sincronizavel } from '../dados/modelo';
 
 /** multipla e vf: alternativas; conceito: "Adivinhe o conceito" (dicas graduais e resposta digitada). */
 export type TipoQuestao = 'multipla' | 'vf' | 'conceito';
 
 /** Uma questão do acervo. */
-export interface Questao extends Sincronizavel {
+export interface Questao extends Sincronizavel, VinculoConteudo {
   tipo: TipoQuestao;
   enunciado: string;
   /** Na de verdadeiro/falso: ["Verdadeiro", "Falso"]. */
@@ -29,14 +30,14 @@ export interface Questao extends Sincronizavel {
 }
 
 /** Uma sequência de questões para usar numa aula. */
-export interface Questionario extends Sincronizavel {
+export interface Questionario extends Sincronizavel, VinculoConteudo {
   nome: string;
   /** Ids das questões, na ordem. */
   questoes: string[];
 }
 
 /** Números de um jogo, sem nenhum nome ou apelido de aluno. */
-export interface ResultadoJogo extends Sincronizavel {
+export interface ResultadoJogo extends Sincronizavel, VinculoTurma {
   questionario: string;
   em: string;
   participantes: number;

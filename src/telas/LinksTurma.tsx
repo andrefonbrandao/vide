@@ -80,7 +80,7 @@ export function LinksTurma() {
   }, []);
 
   return (
-    <Pagina caminho="Atividades" titulo="Links da turma" descricao="Tudo o que está publicado para os alunos: treinos em casa e processos, com link e QR code.">
+    <Pagina caminho="Atividades" titulo="Links da turma" filtravel descricao="Tudo o que está publicado para os alunos: treinos em casa e processos, com link e QR code.">
       {entradas === null ? (
         <p className="ajuda">Carregando…</p>
       ) : !entradas.length ? (

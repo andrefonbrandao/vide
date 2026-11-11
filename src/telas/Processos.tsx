@@ -1,5 +1,6 @@
 // Atividades › Processos: a biblioteca de processos fictícios e o editor de cada um
 // (capa, partes, eventos com as peças e a liberação para a turma).
+import { SemVinculo } from './FaixaTurma';
 import { avisar, confirmar } from '../comum/avisos';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { criarProcesso, excluirProcesso, lerProcesso, listarProcessos, novaParte, novoDocumento, novoEvento, salvarProcesso } from '../processo/banco';
@@ -1248,6 +1249,7 @@ export function Processos({ acao = null }: { acao?: 'novo-processo' | 'colar-pro
                     </span>
                     <div className="cartao-processo-rodape">
                       <span className={`selo ${p.publicacao ? 'verde' : ''}`}>{p.publicacao ? 'Publicado' : 'Não publicado'}</span>
+                      <SemVinculo item={p} tipo="turma" />
                       <span className="espaco" />
                       <button className="link-discreto" onClick={() => setCopiando(copiando === p.id ? null : p.id)} title="Copiar para um novo semestre, com as datas reprogramadas">
                         Copiar

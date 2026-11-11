@@ -1,4 +1,5 @@
 // Publica um grupo de questões num link de treino (Cloudflare) e guarda o link localmente.
+import { pertenceTurma, vinculoTurmaNovo } from '../turmas/filtro';
 import { resolver } from '../comum/legislacao';
 import { carregarIndice } from '../dados/db';
 import { db } from '../dados/db';
@@ -89,6 +90,7 @@ export async function criarLinkTreino(opcoes: {
     criado_em: agora,
     atualizado_em: agora,
     excluido_em: null,
+    ...vinculoTurmaNovo(),
     codigo: id,
     chave,
     titulo: dados.titulo,
@@ -106,7 +108,7 @@ export async function criarLinkTreino(opcoes: {
 
 export async function listarLinksTreino(): Promise<LinkTreino[]> {
   const todos = await db.treinos.toArray();
-  return todos.filter((l) => !l.excluido_em).sort((a, b) => b.criado_em.localeCompare(a.criado_em));
+  return todos.filter((l) => !l.excluido_em && pertenceTurma(l)).sort((a, b) => b.criado_em.localeCompare(a.criado_em));
 }
 
 /** Tira o link do ar (apaga a cópia no Cloudflare) e o marca como desativado aqui. */

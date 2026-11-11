@@ -1353,3 +1353,30 @@ button.pilula:hover { border-color: var(--tinta); }
 .proc-pergunta-alt.marcada-errada { background: #fbe3dc; border-color: #c4553e; opacity: 1; }
 .proc-pergunta-dicas { margin: 0 0 10px; padding-left: 20px; }
 .proc-pergunta-retorno { margin: 10px 0 0; font-size: 14px; }
+
+/* ---------- Minhas turmas e modo da turma ---------- */
+.selo-disciplina { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; padding: 2px 8px; border-radius: 8px; background: var(--cor, var(--tinta)); color: #fff; font-size: 12px; font-weight: 800; letter-spacing: 0.02em; white-space: nowrap; }
+.seletor-turma { margin: 0 12px 10px; padding: 8px 10px; border-radius: 12px; background: #fff; border: 1px solid var(--linha); box-shadow: inset 4px 0 0 var(--cor); display: flex; flex-direction: column; gap: 2px; }
+.seletor-turma label { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta-2); }
+.seletor-turma select { border: 0; background: transparent; font: inherit; font-weight: 800; color: var(--tinta); padding: 0; cursor: pointer; width: 100%; }
+.seletor-turma-mini { margin: 0 auto 8px; display: grid; place-items: center; width: 40px; height: 28px; border-radius: 8px; border: 0; background: var(--cor); color: #fff; font-size: 10px; font-weight: 800; cursor: pointer; overflow: hidden; }
+.aviso-aula { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 20px; background: #fff; border-bottom: 1px solid var(--linha); box-shadow: inset 5px 0 0 var(--cor); font-size: 15px; }
+.aviso-aula > span:nth-child(2) { flex: 1; min-width: 220px; }
+.faixa-turma { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 14px; padding: 8px 12px; border-radius: 10px; background: #fff; border: 1px solid var(--linha); box-shadow: inset 4px 0 0 var(--cor); font-size: 14px; }
+.faixa-turma.tudo { background: var(--papel); }
+.selo.sem-vinculo { background: #f3ecd6; color: #5b4a12; margin-left: 4px; vertical-align: middle; }
+.turmas-proxima { margin: 0 0 14px; font-size: 15px; }
+.lista-disciplinas { display: flex; flex-direction: column; gap: 14px; }
+.disciplina { box-shadow: inset 5px 0 0 var(--cor); }
+.disciplina-cab { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.disciplina-titulo { flex: 1; min-width: 200px; display: flex; flex-direction: column; }
+.disciplina-titulo h2 { margin: 0; font-size: 18px; }
+.lista-turmas { list-style: none; margin: 12px 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.turma { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 10px; background: var(--papel); }
+.turma.ativa { border: 2px solid var(--cor); background: #fff; }
+.turma.arquivada { opacity: 0.6; }
+.turma-texto { flex: 1; min-width: 180px; display: flex; flex-direction: column; }
+.form-turma { margin-bottom: 14px; }
+.form-turma h3 { margin-top: 0; }
+.cor-bolinha { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--linha); cursor: pointer; }
+.cor-bolinha.atual { box-shadow: 0 0 0 3px var(--tinta); }
