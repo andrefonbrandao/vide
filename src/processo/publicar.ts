@@ -34,7 +34,16 @@ export function dadosParaPublicar(p: Processo): DadosProcesso {
         .map(({ materialId, ...d }) => (d.tipo === 'pdf' ? { ...d, texto: '', arquivo: materialId } : d)),
     })),
     publicadoEm: agoraISO(),
+    ...(p.glossario?.some((t) => t.termo.trim() && t.explicacao.trim()) ? { glossario: p.glossario.filter((t) => t.termo.trim() && t.explicacao.trim()) } : {}),
   };
+}
+
+/** Junta o caso do "cliente em cena" (lido da Consulta deste computador). */
+export async function comCliente(dados: DadosProcesso, p: Pick<Processo, 'cliente'>): Promise<DadosProcesso> {
+  if (!p.cliente) return dados;
+  const c = await db.casos.get(p.cliente.casoId);
+  if (!c || c.excluido_em) return dados;
+  return { ...dados, cliente: { nome: c.nome, personagem: p.cliente.personagem, falas: c.falas } };
 }
 
 /** Junta, em cada peça escrita, o texto dos artigos que ela cita (do acervo deste computador). */
@@ -92,7 +101,7 @@ async function enviar(url: string, metodo: string, chave: string, corpo?: string
 
 /** Cria o link (primeira vez) ou atualiza o que os alunos veem. */
 export async function publicarProcesso(p: Processo): Promise<Publicacao> {
-  const corpo = JSON.stringify(await comArtigos(dadosParaPublicar(p)));
+  const corpo = JSON.stringify(await comCliente(await comArtigos(dadosParaPublicar(p)), p));
   let pub: Publicacao;
   if (p.publicacao) {
     pub = p.publicacao;

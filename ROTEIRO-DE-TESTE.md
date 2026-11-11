@@ -216,6 +216,11 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 8. No semestre seguinte: **Copiar** o processo, com a nova data de início; as datas andam juntas.
 9. Para cadastrar mais rápido: **Colar processo** (em Atividades › Processos). Preencha o tema e clique em **Copiar pedido para a IA**; cole no Claude, copie a resposta e cole em **Processo em texto**. Confira a prévia e clique em **Criar o processo**.
 10. Dentro do processo: **Colar eventos** (em Eventos) acrescenta atos escritos fora do Vide; **Copiar como texto** copia o processo inteiro (para revisar no Word ou pedir à IA que continue).
+11. **Mapa do procedimento**: a página da turma mostra as fases (petição inicial › citação › contestação e réplica › saneamento › instrução › sentença › recurso › cumprimento) com "o processo está aqui". O Vide adivinha a fase pela descrição; para corrigir, abra o evento e mude **Fase no mapa do procedimento**.
+12. **Prazos**: no evento (ex.: o despacho que manda citar), marque **Este evento abre um prazo** e preencha, por exemplo, "15 dias úteis para o réu contestar". O Vide mostra quando vence (sem feriados; dias úteis = segunda a sexta; o dia do começo fica de fora). Com **"Quando vence?"** marcado, a data fica escondida: o aluno digita a data e clica em **Conferir**.
+13. **Glossário**: termos como "juntada", "conclusos para despacho" e "aviso de recebimento" ficam sublinhados na página da turma; tocando, aparece a explicação. Na aba **Glossário** do processo você acrescenta termos seus.
+14. **Cliente em cena**: na aba **Cliente em cena**, escolha um caso da Consulta. A página da turma começa com o cliente contando o problema (sem a resposta).
+15. No texto colado, as linhas "Fase: citação" e "Prazo: 15 dias úteis para o réu contestar" (logo abaixo de "Evento:") já preenchem esses campos; acrescente "(quando vence?)" no fim do prazo para o desafio.
 
 ## Guardar o acervo no Google Drive (vários computadores)
 

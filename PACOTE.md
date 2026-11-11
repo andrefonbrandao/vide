@@ -17,6 +17,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 | # | Ideia | Situação |
 |---|-------|----------|
+| 1 | Processo fictício, fase 2a: **mapa do procedimento** na página da turma ("o processo está aqui", fase sugerida pela descrição ou escolhida no evento); **prazos correndo** (o evento abre um prazo em dias úteis ou corridos, sem feriados; vencimento e dias que faltam; desafio **"Quando vence?"**, em que o aluno faz a conta e confere); **glossário** (termos dos eventos sublinhados com a explicação; o Vide traz uma lista e o professor acrescenta os seus); **cliente em cena** (um caso da Consulta abre a página da turma, com o cliente contando o problema); "Fase:" e "Prazo:" no processo em texto e no pedido para a IA | Pronta |
 
 ## Pacotes anteriores
 

@@ -1228,3 +1228,58 @@ button.pilula:hover { border-color: var(--tinta); }
   .casca-conteudo { padding-bottom: 150px; }
   .vazio-guia-figura { width: 84px; }
 }
+
+/* ---------- Processo, fase 2: cliente, mapa, prazos e glossário ---------- */
+.proc-cliente summary { cursor: pointer; list-style: none; }
+.proc-cliente summary::-webkit-details-marker { display: none; }
+.proc-cliente summary::after { content: ' ▾'; color: var(--tinta-2); }
+.proc-cliente:not([open]) summary::after { content: ' ▸'; }
+.proc-cliente-corpo { display: flex; gap: 16px; align-items: flex-start; padding: 14px; flex-wrap: wrap; }
+.proc-cliente-corpo .treino-caso-pessoa { width: 110px; flex: none; }
+.proc-cliente-corpo .treino-caso-baloes { flex: 1; min-width: 220px; }
+
+.proc-mapa { list-style: none; margin: 0; padding: 14px 10px 6px; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 0; counter-reset: fase; }
+.proc-mapa-fase { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 0 2px; }
+.proc-mapa-fase::before { content: ''; position: absolute; top: 14px; left: -50%; width: 100%; height: 3px; background: var(--linha); z-index: 0; }
+.proc-mapa-fase:first-child::before { display: none; }
+.proc-mapa-fase.feita::before, .proc-mapa-fase.atual::before { background: var(--tinta); }
+.proc-mapa-ponto { position: relative; z-index: 1; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; background: var(--papel); border: 2px solid var(--linha); color: var(--tinta-2); }
+.proc-mapa-fase.feita .proc-mapa-ponto { background: var(--tinta); border-color: var(--tinta); color: #fff; }
+.proc-mapa-fase.atual .proc-mapa-ponto { background: var(--destaque); border-color: var(--destaque); color: #1e3a34; box-shadow: 0 0 0 5px rgba(232, 115, 90, 0.25); }
+.proc-mapa-nome { font-size: 12.5px; font-weight: 700; line-height: 1.2; }
+.proc-mapa-fase.futura .proc-mapa-nome { color: var(--tinta-2); font-weight: 600; }
+.proc-mapa-aqui { font-size: 11px; font-weight: 800; color: #9a3d27; background: #fbe3dc; border-radius: 99px; padding: 1px 7px; }
+.proc-mapa-n { font-size: 11px; color: var(--tinta-2); }
+.proc-mapa-legenda { margin: 0; padding: 8px 14px 12px; font-size: 14px; color: var(--tinta-2); }
+
+.proc-prazos { list-style: none; margin: 0; padding: 0; }
+.proc-prazo { padding: 10px 14px; border-top: 1px solid var(--linha); display: flex; flex-direction: column; gap: 6px; }
+.proc-prazo:first-child { border-top: 0; }
+.proc-prazo-cab { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.proc-prazo-venc { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.proc-prazo-sit { font-size: 12px; font-weight: 800; border-radius: 99px; padding: 2px 9px; background: #dcebe2; color: #2f6b4f; }
+.proc-prazo-sit.hoje { background: #fbe3dc; color: #9a3d27; }
+.proc-prazo-sit.vencido { background: var(--linha); color: var(--tinta); }
+.proc-prazo-desafio { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.proc-prazo-desafio label { font-weight: 800; }
+.proc-prazo-dica { flex-basis: 100%; font-size: 14px; color: #9a3d27; }
+.proc-prazo-certo { color: #2f6b4f; font-weight: 800; }
+
+.proc-termo-caixa { position: relative; }
+.proc-termo { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: help; text-decoration: underline dotted var(--destaque); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.proc-termo-dica {
+  position: absolute; left: 0; top: calc(100% + 6px); z-index: 30; width: min(320px, 80vw); background: var(--tinta); color: #fff;
+  border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 500; line-height: 1.4; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2); text-transform: none; letter-spacing: 0; white-space: normal;
+}
+.proc-termo-dica strong { display: block; margin-bottom: 2px; }
+.proc-termo-dica strong::first-letter, .proc-glossario dt::first-letter { text-transform: uppercase; }
+.proc-glossario { margin: 0; padding: 6px 14px 12px; display: grid; gap: 8px; }
+.proc-glossario dt { font-weight: 800; }
+.proc-glossario dd { margin: 0; color: var(--tinta-2); font-size: 14px; }
+@media (max-width: 760px) {
+  .proc-mapa { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 12px 14px; }
+  .proc-mapa-fase { flex-direction: row; text-align: left; gap: 10px; }
+  .proc-mapa-fase::before { top: -10px; left: 14px; width: 3px; height: 12px; }
+  .proc-mapa-ponto { width: 26px; height: 26px; flex: none; }
+}
+.proc-caixa:has(.proc-termo-dica) { overflow: visible; }

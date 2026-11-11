@@ -3,6 +3,8 @@
 import { novoId } from '../dados/modelo';
 import { gerarNumero, numeroValido } from './numero';
 import { prefixoSigla } from './siglas';
+import { FASES, type FaseId } from './fases';
+import { lerPrazo, prazoParaTexto } from './prazos';
 import type { Advogado, Capa, Documento, Evento, Liberacao, Parte, Polo, Processo } from './tipos';
 
 export interface ProcessoLido {
@@ -43,6 +45,8 @@ A autora pagou por uma geladeira que nunca foi entregue.
 - a condenação da ré a devolver R$ 3.500,00.
 
 Evento: 05/03/2027 14:00 | DESPACHO | JUIZ | aparece em 09/03/2027 08:00
+Fase: citação
+Prazo: 15 dias úteis para o réu contestar
 Documento: DESPADEC1 | Despacho
 Cite-se a ré para contestar no prazo legal (art. 335 do CPC).
 
@@ -120,6 +124,13 @@ const RE_CHAVE = /^\s*([A-Za-zÀ-ÿ() .º]+?)\s*:\s*(.*)$/;
 const RE_EVENTO = /^\s*evento\s*\d*\s*:\s*(.*)$/i;
 const RE_DOCUMENTO = /^\s*documento\s*:\s*(.*)$/i;
 
+/** "citação", "Contestação e réplica", "saneamento" -> a fase do mapa. */
+function lerFase(s: string): FaseId | null {
+  const t = semAcento(s.trim());
+  if (!t) return null;
+  return FASES.find((f) => f.id === t || semAcento(f.nome) === t || semAcento(f.nome).startsWith(t) || t.startsWith(f.id))?.id ?? null;
+}
+
 /** Lê o processo (ou só eventos) em texto. Nada é guardado aqui: só a leitura. */
 export function lerProcessoTexto(texto: string): ProcessoLido {
   const lido: ProcessoLido = { titulo: '', capa: {}, partes: [], eventos: [], avisos: [], pdfsPendentes: 0 };
@@ -187,6 +198,20 @@ export function lerProcessoTexto(texto: string): ProcessoLido {
     }
     if (!linha.trim()) return;
     if (evento) {
+      const pz = /^\s*prazo\s*:\s*(.*)$/i.exec(linha);
+      if (pz) {
+        const prazo = lerPrazo(pz[1]);
+        if (prazo) (evento as Evento).prazo = prazo;
+        else lido.avisos.push(`Linha ${nl}: prazo não entendido ("${pz[1].trim()}"). Use, por exemplo, "15 dias úteis para o réu contestar".`);
+        return;
+      }
+      const fs = /^\s*fase\s*:\s*(.*)$/i.exec(linha);
+      if (fs) {
+        const f = lerFase(fs[1]);
+        if (f) (evento as Evento).fase = f;
+        else lido.avisos.push(`Linha ${nl}: fase não entendida ("${fs[1].trim()}").`);
+        return;
+      }
       lido.avisos.push(`Linha ${nl}: texto fora de um "Documento" foi ignorado ("${linha.trim().slice(0, 50)}").`);
       return;
     }
@@ -264,6 +289,8 @@ export function processoParaTexto(p: Processo, opcoes: { soEventos?: boolean } =
   for (const e of p.eventos) {
     const lib = e.liberacao.modo === 'agora' ? 'liberado' : e.liberacao.modo === 'segurar' ? 'segurado' : `aparece em ${dataBR(e.liberacao.em)}`;
     l.push(`Evento: ${dataBR(e.data)} | ${e.descricao} | ${e.usuario} | ${lib}`);
+    if (e.fase) l.push(`Fase: ${FASES.find((f) => f.id === e.fase)?.nome ?? e.fase}`);
+    if (e.prazo) l.push(`Prazo: ${prazoParaTexto(e.prazo)}`);
     for (const d of e.documentos) {
       l.push(`Documento: ${d.sigla} | ${d.titulo}${d.tipo === 'pdf' ? ' (PDF)' : ''}`);
       if (d.tipo === 'texto' && d.texto.trim()) l.push(d.texto.trim());
@@ -299,5 +326,6 @@ Regras:
 - No texto das peças use: "# " para o título da peça, "## " para subtítulos (DOS FATOS, DO DIREITO, DOS PEDIDOS), "> " para citação de lei, "- " para itens de lista, **negrito** e _itálico_. Linha em branco separa parágrafos.
 - Cite os artigos do CPC por extenso no texto ("art. 319 do CPC", "art. 335"). Use só artigos que existem e que se aplicam; os prazos e datas devem ser coerentes com o CPC (dias úteis).
 - Peças realistas, mas curtas: de 1 a 4 parágrafos por seção, para caberem na leitura em aula.
+- Logo abaixo da linha "Evento:", quando couber: "Fase:" (petição inicial, citação, contestação e réplica, saneamento, instrução, sentença, recurso ou cumprimento) e "Prazo:" para o evento que abre um prazo (ex.: "Prazo: 15 dias úteis para o réu contestar"), contado da data do evento.
 - Para documentos que não são texto (procuração, comprovantes, fotos), escreva só a linha "Documento: SIGLA | Título (PDF)", sem texto.`;
 }

@@ -1,6 +1,10 @@
 // Processo fictício: o professor monta, a turma acompanha pelo link ao longo do semestre.
 import type { Sincronizavel } from '../dados/modelo';
 import type { BlocoArtigo } from '../treino/tipos';
+import type { Fala } from '../consulta/tipos';
+import type { FaseId } from './fases';
+import type { Termo } from './glossario';
+import type { Prazo } from './prazos';
 
 export type Polo = 'ativo' | 'passivo' | 'outro';
 
@@ -53,6 +57,24 @@ export interface Evento {
   usuario: string;
   documentos: Documento[];
   liberacao: Liberacao;
+  /** Fase no mapa do procedimento (vazio = a sugerida pela descrição). */
+  fase?: FaseId | null;
+  /** Prazo que este evento abre (contado da data do evento). */
+  prazo?: Prazo | null;
+}
+
+/** "Cliente em cena": o caso da Consulta que abre o processo (o cliente conta o problema). */
+export interface ClienteProcesso {
+  casoId: string;
+  /** O personagem sorteado uma vez e guardado (sempre o mesmo rosto). */
+  personagem: string;
+}
+
+/** O cliente como vai para o link. */
+export interface ClientePublicado {
+  nome: string;
+  personagem: string;
+  falas: Fala[];
 }
 
 export interface Capa {
@@ -84,6 +106,9 @@ export interface Processo extends Sincronizavel {
   partes: Parte[];
   eventos: Evento[];
   publicacao?: Publicacao | null;
+  /** Termos próprios do glossário (somam-se aos do Vide). */
+  glossario?: Termo[];
+  cliente?: ClienteProcesso | null;
 }
 
 /** Evento como vai para o link: com a liberação já em milissegundos (null = segurado). */
@@ -99,6 +124,8 @@ export interface DadosProcesso {
   partes: Parte[];
   eventos: EventoPublicado[];
   publicadoEm: string;
+  glossario?: Termo[];
+  cliente?: ClientePublicado | null;
 }
 
 export function urlDoProcesso(codigo: string): string {

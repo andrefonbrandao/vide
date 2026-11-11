@@ -54,12 +54,20 @@ import { gerarNumero } from '../processo/numero';
 import { db } from '../dados/db';
 import type { Material } from '../dados/modelo';
 import { importarMaterial, listarMateriais } from '../material/documento';
-import { comArtigos, dadosParaPublicar, desativarProcesso, liberaEm, MAX_PDF, publicarProcesso } from '../processo/publicar';
+import { comArtigos, comCliente, dadosParaPublicar, desativarProcesso, liberaEm, MAX_PDF, publicarProcesso } from '../processo/publicar';
 import { urlDoProcesso, type DadosProcesso, type Documento, type Evento, type Parte, type Processo } from '../processo/tipos';
 import { LinkEQr } from './CompartilharTreino';
 import { buscarNoAcervo, PdfDaPeca, TextoPeca, VisaoProcesso } from './ProcessoAluno';
 import { ColarEventos, ColarProcesso, CopiarComoTexto } from './ProcessoTexto';
 import { Figura } from './ConsultaTela';
+import { ClienteEmCena } from './ProcessoExtras';
+import { irPara } from '../comum/navegacao';
+import { listarCasos } from '../consulta/banco';
+import { sortearConsulente } from '../consulta/personagens';
+import type { Caso } from '../consulta/tipos';
+import { FASES, faseSugerida, type FaseId } from '../processo/fases';
+import { GLOSSARIO_PADRAO, type Termo } from '../processo/glossario';
+import { vencimento } from '../processo/prazos';
 
 
 
@@ -383,6 +391,49 @@ function EditorEvento({
           )}
         </div>
       </div>
+      <div className="grade-2">
+        <div className="campo">
+          <label htmlFor={`fase-${e.id}`}>Fase no mapa do procedimento</label>
+          <select id={`fase-${e.id}`} className="seletor" value={e.fase ?? ''} onChange={(ev) => aoMudar({ ...e, fase: (ev.target.value || null) as FaseId | null })}>
+            <option value="">Automática ({FASES.find((f) => f.id === faseSugerida(e.descricao))?.nome ?? 'continua a anterior'})</option>
+            {FASES.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="campo">
+          <label className="caixa-marcar" style={{ marginTop: 0 }}>
+            <input
+              type="checkbox"
+              checked={!!e.prazo}
+              onChange={(ev) => aoMudar({ ...e, prazo: ev.target.checked ? { dias: 15, tipo: 'uteis', para: sugestaoPrazo(e.descricao) } : null })}
+            />
+            Este evento abre um prazo
+          </label>
+          {e.prazo && (
+            <div className="proc-prazo-editor">
+              <div className="linha-opcoes">
+                <input type="number" min={1} max={365} aria-label="Quantos dias" value={e.prazo.dias} onChange={(ev) => aoMudar({ ...e, prazo: { ...e.prazo!, dias: Math.max(1, Math.min(365, Number(ev.target.value) || 1)) } })} style={{ width: 80 }} />
+                <select className="seletor" aria-label="Tipo de contagem" value={e.prazo.tipo} onChange={(ev) => aoMudar({ ...e, prazo: { ...e.prazo!, tipo: ev.target.value as 'uteis' | 'corridos' } })}>
+                  <option value="uteis">dias úteis</option>
+                  <option value="corridos">dias corridos</option>
+                </select>
+                <span>para</span>
+                <input type="text" aria-label="Para quê" placeholder="o réu contestar" value={e.prazo.para} onChange={(ev) => aoMudar({ ...e, prazo: { ...e.prazo!, para: ev.target.value } })} style={{ flex: 1, minWidth: 160 }} />
+              </div>
+              <label className="caixa-marcar">
+                <input type="checkbox" checked={!!e.prazo.desafio} onChange={(ev) => aoMudar({ ...e, prazo: { ...e.prazo!, desafio: ev.target.checked || undefined } })} />
+                "Quando vence?": esconder a data para a turma fazer a conta
+              </label>
+              <span className="ajuda" style={{ margin: 0 }}>
+                Contado da data deste evento, sem feriados: vence em <strong>{dataBR(vencimento(e.data, e.prazo.dias, e.prazo.tipo))}</strong>.
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
       <div className="campo">
         <label>Documentos</label>
         {e.documentos.map((d) => (
@@ -407,6 +458,113 @@ function EditorEvento({
           Apagar evento
         </button>
       </div>
+    </div>
+  );
+}
+
+function dataBR(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : iso;
+}
+
+/** "CITAÇÃO" -> "o réu contestar" (só uma sugestão para o campo). */
+function sugestaoPrazo(descricao: string): string {
+  const t = descricao.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  if (/cita|aviso de recebimento/.test(t)) return 'o réu contestar';
+  if (/contesta/.test(t)) return 'o autor apresentar réplica';
+  if (/sentenc/.test(t)) return 'apelar';
+  if (/apelac/.test(t)) return 'apresentar contrarrazões';
+  if (/saneamento/.test(t)) return 'pedir esclarecimentos ou ajustes';
+  return '';
+}
+
+/** Cliente em cena: um caso da Consulta abre o processo. */
+function EditorCliente({ p, aoMudar }: { p: Processo; aoMudar: (c: Processo['cliente']) => void }) {
+  const [casos, setCasos] = useState<Caso[] | null>(null);
+  useEffect(() => void listarCasos().then(setCasos), []);
+  if (!casos) return <p className="ajuda">Carregando…</p>;
+  const atual = p.cliente ? casos.find((c) => c.id === p.cliente!.casoId) : undefined;
+  if (!casos.length)
+    return (
+      <div className="vazio-guia">
+        <Figura id="m3" expressao="duvida" className="vazio-guia-figura" />
+        <div>
+          <h2>Nenhum caso na Consulta ainda</h2>
+          <p className="ajuda">O processo pode começar com o cliente contando o problema, como no jogo Consulta. Cadastre o caso primeiro.</p>
+          <button className="botao escuro" onClick={() => irPara('casos', 'novo-caso')}>
+            Novo caso
+          </button>
+        </div>
+      </div>
+    );
+  return (
+    <div className="cartao">
+      <p className="ajuda" style={{ marginTop: 0 }}>
+        Escolha um caso da <strong>Consulta</strong>: na página da turma, antes dos autos, aparece o cliente contando o problema (só as falas dele; a resposta fica de fora).
+      </p>
+      <div className="campo">
+        <label htmlFor="cliente-caso">Caso</label>
+        <select
+          id="cliente-caso"
+          className="seletor"
+          value={p.cliente?.casoId ?? ''}
+          onChange={(ev) => {
+            const c = casos.find((x) => x.id === ev.target.value);
+            aoMudar(c ? { casoId: c.id, personagem: sortearConsulente(c.pessoa).id } : null);
+          }}
+        >
+          <option value="">Nenhum (o processo começa direto nos autos)</option>
+          {casos.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.nome}: “{(c.falas[c.falas.length - 1]?.texto ?? '').slice(0, 70)}”
+            </option>
+          ))}
+        </select>
+      </div>
+      {p.cliente && !atual && <p className="aviso">O caso escolhido foi apagado da Consulta. Escolha outro.</p>}
+      {p.cliente && atual && (
+        <>
+          <ClienteEmCena cliente={{ nome: atual.nome, personagem: p.cliente.personagem, falas: atual.falas }} />
+          <button className="botao pequeno" onClick={() => aoMudar({ ...p.cliente!, personagem: sortearConsulente(atual.pessoa).id })}>
+            Sortear outro rosto
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Termos próprios do glossário (somam-se aos que já vêm no Vide). */
+function EditorGlossario({ termos, aoMudar }: { termos: Termo[]; aoMudar: (t: Termo[]) => void }) {
+  return (
+    <div className="cartao">
+      <p className="ajuda" style={{ marginTop: 0 }}>
+        Na página da turma, os termos das descrições dos eventos ficam sublinhados: tocando, aparece a explicação. O Vide já traz {GLOSSARIO_PADRAO.length} termos; acrescente os seus (ou
+        reescreva um que já existe, usando o mesmo termo).
+      </p>
+      {termos.map((t, i) => (
+        <div key={i} className="linha-opcoes proc-termo-editor">
+          <input type="text" aria-label="Termo" placeholder="termo, ex.: carga dos autos" value={t.termo} onChange={(ev) => aoMudar(termos.map((x, j) => (j === i ? { ...x, termo: ev.target.value } : x)))} style={{ width: 220 }} />
+          <input type="text" aria-label="Explicação" placeholder="explicação curta" value={t.explicacao} onChange={(ev) => aoMudar(termos.map((x, j) => (j === i ? { ...x, explicacao: ev.target.value } : x)))} style={{ flex: 1, minWidth: 220 }} />
+          <button type="button" className="botao pequeno" onClick={() => aoMudar(termos.filter((_, j) => j !== i))}>
+            Tirar
+          </button>
+        </div>
+      ))}
+      <button type="button" className="botao pequeno com-icone" onClick={() => aoMudar([...termos, { termo: '', explicacao: '' }])}>
+        + Termo
+      </button>
+      <details className="ajuda-dobravel" style={{ marginTop: 12 }}>
+        <summary>Termos que já vêm no Vide ({GLOSSARIO_PADRAO.length})</summary>
+        <dl className="proc-glossario">
+          {GLOSSARIO_PADRAO.map((t) => (
+            <div key={t.termo}>
+              <dt>{t.termo}</dt>
+              <dd>{t.explicacao}</dd>
+            </div>
+          ))}
+        </dl>
+      </details>
     </div>
   );
 }
@@ -480,7 +638,7 @@ function EditorPartes({ partes, aoMudar }: { partes: Parte[]; aoMudar: (p: Parte
   );
 }
 
-type Aba = 'capa' | 'partes' | 'eventos' | 'previa';
+type Aba = 'capa' | 'partes' | 'cliente' | 'eventos' | 'glossario' | 'previa';
 
 function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) {
   const [p, setP] = useState<Processo | null>(null);
@@ -554,7 +712,9 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
   useEffect(() => {
     if (aba !== 'previa' || !dados) return;
     let vivo = true;
-    void comArtigos(dados).then((d) => vivo && setPrevia(d));
+    void comArtigos(dados)
+      .then((d) => comCliente(d, p ?? {}))
+      .then((d) => vivo && setPrevia(d));
     return () => {
       vivo = false;
     };
@@ -650,7 +810,9 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
           [
             ['capa', 'Capa'],
             ['partes', 'Partes'],
+            ['cliente', p.cliente ? 'Cliente em cena ✓' : 'Cliente em cena'],
             ['eventos', `Eventos (${p.eventos.length})`],
+            ['glossario', p.glossario?.length ? `Glossário (${p.glossario.length})` : 'Glossário'],
             ['previa', 'Ver como a turma vê'],
           ] as [Aba, string][]
         ).map(([a, r]) => (
@@ -722,6 +884,8 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
       )}
 
       {aba === 'partes' && <EditorPartes partes={p.partes} aoMudar={(partes) => mudar({ ...p, partes })} />}
+      {aba === 'cliente' && <EditorCliente p={p} aoMudar={(cliente) => mudar({ ...p, cliente })} />}
+      {aba === 'glossario' && <EditorGlossario termos={p.glossario ?? []} aoMudar={(glossario) => mudar({ ...p, glossario })} />}
 
       {aba === 'eventos' && (
         <>

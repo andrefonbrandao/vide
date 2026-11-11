@@ -10,6 +10,8 @@ import { acharCitacoes, chaveCitacao } from '../processo/citacoes';
 import { liberado } from '../processo/liberacao';
 import { lerTexto, type Trecho } from '../processo/texto';
 import type { ArtigoCitado, DadosProcesso, Documento, EventoPublicado, Parte } from '../processo/tipos';
+import { glossarioCompleto } from '../processo/glossario';
+import { ClienteEmCena, ComTermos, Glossario, MapaProcedimento, Prazos } from './ProcessoExtras';
 
 /** Como buscar o PDF de uma peça (no link: pelo serviço; na prévia do professor: no acervo local). */
 export type BuscarArquivo = (arquivo: string) => Promise<Blob>;
@@ -274,6 +276,10 @@ export function VisaoProcesso({
   const [agora] = useState(Date.now());
   const { capa } = dados;
   const eventos = [...dados.eventos].sort((a, b) => b.numero - a.numero);
+  const termos = glossarioCompleto(dados.glossario);
+  // O mapa e os prazos seguem o que a turma já vê (na prévia, só os liberados contam para o mapa).
+  const emOrdem = [...dados.eventos].sort((a, b) => a.numero - b.numero);
+  const vistos = previa ? emOrdem.filter((e) => !('libera' in e) || liberado(e as EventoPublicado, agora)) : emOrdem;
   if (lendo) return <Peca dados={dados} evento={lendo.e} doc={lendo.d} aoFechar={() => setLendo(null)} buscar={buscar} />;
   const qtdNovos = novos ? dados.eventos.filter((e) => novos.has(e.id)).length : 0;
   const campos: [string, string][] = [
@@ -296,6 +302,9 @@ export function VisaoProcesso({
           <strong>{qtdNovos}</strong> {qtdNovos === 1 ? 'novidade' : 'novidades'} desde a sua última visita
         </p>
       )}
+      {dados.cliente && dados.cliente.falas.length > 0 && <ClienteEmCena cliente={dados.cliente} />}
+      {vistos.length > 0 && <MapaProcedimento eventos={vistos} />}
+      <Prazos eventos={previa ? emOrdem : vistos} previa={previa} />
       <section className="proc-caixa">
         <h2 className="proc-caixa-titulo">Capa do processo</h2>
         <dl className="proc-capa">
@@ -345,7 +354,7 @@ export function VisaoProcesso({
                       {dataBR(e.data)}
                     </td>
                     <td data-rotulo="Descrição">
-                      {e.descricao || '—'}
+                      {e.descricao ? <ComTermos texto={e.descricao} termos={termos} /> : '—'}
                       {novo && <span className="proc-selo">novo</span>}
                       {naoLiberado && (
                         <span className="proc-selo futuro">
@@ -374,6 +383,7 @@ export function VisaoProcesso({
           </table>
         )}
       </section>
+      <Glossario textos={vistos.map((e) => e.descricao)} proprios={dados.glossario} />
     </div>
   );
 }
