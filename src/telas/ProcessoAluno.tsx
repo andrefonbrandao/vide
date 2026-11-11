@@ -12,7 +12,7 @@ import { lerTexto, type Trecho } from '../processo/texto';
 import { achados, mapaVicios } from '../processo/vicios';
 import type { ArtigoCitado, DadosProcesso, Documento, EventoPublicado, Parte } from '../processo/tipos';
 import { glossarioCompleto } from '../processo/glossario';
-import { BaixarAutos, ClienteEmCena, ComTermos, Glossario, MapaProcedimento, PerguntasDoProcesso, Prazos } from './ProcessoExtras';
+import { abrirPerguntasDoEvento, BaixarAutos, ClienteEmCena, ComTermos, Glossario, MapaProcedimento, PerguntasDoProcesso, Prazos } from './ProcessoExtras';
 
 /** Como buscar o PDF de uma peça (no link: pelo serviço; na prévia do professor: no acervo local). */
 export type BuscarArquivo = (arquivo: string) => Promise<Blob>;
@@ -478,6 +478,11 @@ export function VisaoProcesso({
                     </td>
                     <td data-rotulo="Descrição">
                       {e.descricao ? <ComTermos texto={e.descricao} termos={termos} /> : '—'}
+                      {!controlado && e.perguntas && e.perguntas.length > 0 && (!previa || !naoLiberado) && (
+                        <button type="button" className="proc-atalho-perguntas" onClick={() => abrirPerguntasDoEvento(e.id)}>
+                          {e.perguntas.length} {e.perguntas.length === 1 ? 'pergunta' : 'perguntas'}
+                        </button>
+                      )}
                       {e.deliberacao && e.deliberacao.length > 0 && (
                         <details className="proc-deliberacao">
                           <summary>O que a turma decidiu antes deste ato</summary>

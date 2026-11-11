@@ -306,8 +306,13 @@ function UmaPergunta({ q, numero, resposta, aoResponder }: { q: PerguntaPublicad
   );
 }
 
+/** Abre o quadro de perguntas de um evento (atalho na tabela de eventos). */
+export function abrirPerguntasDoEvento(eventoId: string): void {
+  window.dispatchEvent(new CustomEvent('vide-abrir-perguntas', { detail: eventoId }));
+}
+
 export function PerguntasDoProcesso({ eventos, numero }: { eventos: EventoPublicado[]; numero: string }) {
-  const lista = eventos.flatMap((e) => e.perguntas ?? []);
+  const grupos = [...eventos].sort((a, b) => a.numero - b.numero).filter((e) => e.perguntas?.length);
   const chave = `vide.perguntas.${numero}`;
   const [respostas, setRespostas] = useState<Record<string, Resposta>>(() => {
     try {
@@ -316,9 +321,18 @@ export function PerguntasDoProcesso({ eventos, numero }: { eventos: EventoPublic
       return {};
     }
   });
-  if (!lista.length) return null;
-  const responder = (id: string, r: Resposta) => {
-    const novo = { ...respostas, [id]: r };
+  const [aberto, setAberto] = useState<string | null>(null);
+  const caixa = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const abrir = (e: Event) => {
+      setAberto(String((e as CustomEvent<string>).detail));
+      window.setTimeout(() => caixa.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    };
+    window.addEventListener('vide-abrir-perguntas', abrir);
+    return () => window.removeEventListener('vide-abrir-perguntas', abrir);
+  }, []);
+  if (!grupos.length) return null;
+  const gravar = (novo: Record<string, Resposta>) => {
     setRespostas(novo);
     try {
       localStorage.setItem(chave, JSON.stringify(novo));
@@ -326,35 +340,79 @@ export function PerguntasDoProcesso({ eventos, numero }: { eventos: EventoPublic
       /* ignore */
     }
   };
-  const feitas = lista.filter((q) => respostas[q.id]);
+  const todas = grupos.flatMap((e) => e.perguntas!);
+  const feitas = todas.filter((q) => respostas[q.id]);
   const certas = feitas.filter((q) => respostas[q.id].acertou).length;
+  const ultimo = grupos[grupos.length - 1].id;
+  const atual = grupos.find((e) => e.id === aberto);
   return (
-    <section className="proc-caixa">
+    <section className="proc-caixa" ref={caixa}>
       <h2 className="proc-caixa-titulo">Teste o que você sabe sobre o processo</h2>
       <p className="proc-perguntas-placar">
-        {feitas.length ? `Você acertou ${certas} de ${feitas.length} (${lista.length} ${lista.length === 1 ? 'pergunta' : 'perguntas'} até aqui).` : `${lista.length} ${lista.length === 1 ? 'pergunta' : 'perguntas'} sobre o que já aconteceu no processo. Ninguém vê as suas respostas.`}
-        {feitas.length > 0 && (
-          <button
-            type="button"
-            className="link-discreto"
-            onClick={() => {
-              setRespostas({});
-              try {
-                localStorage.removeItem(chave);
-              } catch {
-                /* ignore */
-              }
-            }}
-          >
-            recomeçar
-          </button>
-        )}
+        {feitas.length
+          ? `Você acertou ${certas} de ${feitas.length} respondidas (${todas.length} ${todas.length === 1 ? 'pergunta' : 'perguntas'} até aqui).`
+          : 'Escolha um evento para responder às perguntas sobre ele. Ninguém vê as suas respostas.'}
       </p>
-      <ol className="proc-perguntas">
-        {lista.map((q, i) => (
-          <UmaPergunta key={q.id} q={q} numero={i + 1} resposta={respostas[q.id]} aoResponder={(r) => responder(q.id, r)} />
-        ))}
-      </ol>
+      <div className="proc-quadros" role="list">
+        {grupos.map((e) => {
+          const qs = e.perguntas!;
+          const f = qs.filter((q) => respostas[q.id]);
+          const c = f.filter((q) => respostas[q.id].acertou).length;
+          const concluido = f.length === qs.length;
+          return (
+            <button
+              key={e.id}
+              type="button"
+              role="listitem"
+              className={`proc-quadro${aberto === e.id ? ' aberto' : ''}${concluido ? ' concluido' : ''}`}
+              aria-expanded={aberto === e.id}
+              onClick={() => setAberto(aberto === e.id ? null : e.id)}
+            >
+              <span className="proc-quadro-num">Evento {e.numero}</span>
+              <strong className="proc-quadro-titulo">{e.descricao || 'Evento'}</strong>
+              <span className="proc-quadro-info">
+                {qs.length} {qs.length === 1 ? 'pergunta' : 'perguntas'}
+              </span>
+              <span className="barra-progresso">
+                <i style={{ width: `${(f.length / qs.length) * 100}%` }} />
+              </span>
+              <span className="proc-quadro-situacao">
+                {concluido ? `concluído ✓ · ${c} de ${qs.length} certas` : f.length ? `${f.length} de ${qs.length} feitas` : e.id === ultimo ? <span className="proc-selo">novo</span> : 'não começado'}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {atual && (
+        <div className="proc-quadro-perguntas">
+          <div className="proc-quadro-perguntas-cab">
+            <strong>
+              Evento {atual.numero} · {atual.descricao}
+            </strong>
+            {atual.perguntas!.some((q) => respostas[q.id]) && (
+              <button
+                type="button"
+                className="link-discreto"
+                onClick={() => {
+                  const novo = { ...respostas };
+                  for (const q of atual.perguntas!) delete novo[q.id];
+                  gravar(novo);
+                }}
+              >
+                recomeçar este evento
+              </button>
+            )}
+            <button type="button" className="link-discreto" onClick={() => setAberto(null)}>
+              fechar
+            </button>
+          </div>
+          <ol className="proc-perguntas">
+            {atual.perguntas!.map((q, i) => (
+              <UmaPergunta key={q.id} q={q} numero={i + 1} resposta={respostas[q.id]} aoResponder={(r) => gravar({ ...respostas, [q.id]: r })} />
+            ))}
+          </ol>
+        </div>
+      )}
     </section>
   );
 }

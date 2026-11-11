@@ -1388,3 +1388,20 @@ button.pilula:hover { border-color: var(--tinta); }
 .vincular-itens li { padding: 8px 12px; border-bottom: 1px solid var(--linha); }
 .vincular-itens li:last-child { border-bottom: 0; }
 .vincular-itens .selo { margin-left: 6px; }
+
+/* Perguntas do processo em quadros, um por evento */
+.proc-quadros { display: flex; gap: 10px; overflow-x: auto; padding: 10px 14px 12px; scroll-snap-type: x proximity; }
+.proc-quadro { flex: 0 0 190px; scroll-snap-align: start; display: flex; flex-direction: column; gap: 5px; text-align: left; font: inherit; color: var(--tinta); background: #fff; border: 1px solid var(--linha); border-radius: 12px; padding: 10px 12px; cursor: pointer; transition: box-shadow 0.12s, transform 0.12s; }
+.proc-quadro:hover { box-shadow: 0 6px 16px rgba(30, 58, 52, 0.1); transform: translateY(-1px); }
+.proc-quadro.aberto { border: 2px solid var(--tinta); }
+.proc-quadro.concluido { background: #eef6f1; border-color: #b9d6c4; }
+.proc-quadro.concluido.aberto { border-color: var(--tinta); }
+.proc-quadro-num { font-size: 12px; font-weight: 800; color: var(--tinta-2); letter-spacing: 0.04em; text-transform: uppercase; }
+.proc-quadro-titulo { font-size: 14px; line-height: 1.25; min-height: 2.5em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.proc-quadro-info, .proc-quadro-situacao { font-size: 13px; color: var(--tinta-2); }
+.proc-quadro-situacao .proc-selo { margin-left: 0; }
+.proc-quadro-perguntas { border-top: 1px solid var(--linha); }
+.proc-quadro-perguntas-cab { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; padding: 10px 14px 0; }
+.proc-quadro-perguntas-cab strong { flex: 1; min-width: 200px; }
+.proc-atalho-perguntas { display: inline-block; margin-left: 8px; font: inherit; font-size: 12px; font-weight: 800; color: #2f6b4f; background: #dcebe2; border: 0; border-radius: 99px; padding: 1px 9px; cursor: pointer; vertical-align: middle; }
+.proc-atalho-perguntas:hover { background: #c9e0d2; }
