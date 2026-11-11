@@ -19,6 +19,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | **Minhas turmas**, parte 1: disciplinas (nome, sigla, cor e **lei principal obrigatória**) e turmas (período, dias e horários, começo e fim do semestre, arquivar); **modo da turma** (seletor no alto da barra lateral): as listas mostram só o que é da turma e o que ainda não tem disciplina (marcado "sem disciplina"), com "mostrar tudo"; a lei principal da disciplina vale na aula; o que é criado no modo da turma já nasce ligado (conteúdo à disciplina; processos, links e resultados à turma); **aviso na hora da aula** (de 15 minutos antes até o fim, com o Vide aberto); disciplinas e turmas vão para o Google Drive | Pronta |
+| 2 | **Minhas turmas**, parte 2: **Recursos** de cada disciplina (ver e vincular em lote materiais, questões, questionários e casos, com atalhos por pasta e por assunto; escolher a turma de processos, links de treino e resultados); disciplina ao **organizar um material** e turma na **capa do processo**; o **registro de cada aula** guarda a turma (selo e filtro no Registro); **Início** com o nome da turma e a próxima aula | Pronta |
 
 ## Pacotes anteriores
 

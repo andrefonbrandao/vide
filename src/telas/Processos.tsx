@@ -1,5 +1,6 @@
 // Atividades › Processos: a biblioteca de processos fictícios e o editor de cada um
 // (capa, partes, eventos com as peças e a liberação para a turma).
+import { EscolherTurma } from './EscolherDisciplinas';
 import { SemVinculo } from './FaixaTurma';
 import { avisar, confirmar } from '../comum/avisos';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -975,6 +976,7 @@ function EditorProcesso({ id, aoVoltar }: { id: string; aoVoltar: () => void }) 
 
       {aba === 'capa' && (
         <div className="cartao">
+          <EscolherTurma valor={p.turmaId} aoMudar={(turmaId) => mudar({ ...p, turmaId })} />
           <div className="campo">
             <label>Jeito de conduzir</label>
             <div className="proc-modos" role="radiogroup" aria-label="Jeito de conduzir">

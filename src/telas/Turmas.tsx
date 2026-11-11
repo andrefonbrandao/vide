@@ -15,6 +15,7 @@ import { aulaAgora, proximaAula, rotuloHorario } from '../turmas/horarios';
 import { CORES, DIAS, type Disciplina, type Horario, type Turma } from '../turmas/tipos';
 import { Figura } from './ConsultaTela';
 import { Pagina } from './Pagina';
+import { RecursosDaDisciplina } from './VincularRecursos';
 
 export function useTurmas(): { disciplinas: Disciplina[]; turmas: Turma[]; carregado: boolean } {
   const [d, setD] = useState<{ disciplinas: Disciplina[]; turmas: Turma[]; carregado: boolean }>({ disciplinas: [], turmas: [], carregado: false });
@@ -189,6 +190,7 @@ export function MinhasTurmas() {
   const { ativa } = useTurmaAtiva();
   const [editando, setEditando] = useState<{ tipo: 'disciplina'; d?: Disciplina } | { tipo: 'turma'; d: Disciplina; t?: Turma } | null>(null);
   const [verArquivadas, setVerArquivadas] = useState(false);
+  const [recursos, setRecursos] = useState<string | null>(null);
   const prox = proximaAula(turmas, new Date());
   return (
     <Pagina
@@ -234,6 +236,9 @@ export function MinhasTurmas() {
                       Lei principal: {abreviacaoDe(d.leiPrincipal)}
                     </span>
                   </div>
+                  <button className={`botao pequeno${recursos === d.id ? ' escuro' : ''}`} onClick={() => setRecursos(recursos === d.id ? null : d.id)}>
+                    Recursos
+                  </button>
                   <button className="link-discreto" onClick={() => setEditando({ tipo: 'disciplina', d })}>
                     editar
                   </button>
@@ -248,6 +253,7 @@ export function MinhasTurmas() {
                     apagar
                   </button>
                 </div>
+                {recursos === d.id && <RecursosDaDisciplina d={d} turmas={turmas.filter((t) => t.disciplinaId === d.id)} aoFechar={() => setRecursos(null)} />}
                 <ul className="lista-turmas">
                   {dela.map((t) => {
                     const ehAtiva = ativa?.turmaId === t.id;

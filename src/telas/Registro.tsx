@@ -1,4 +1,7 @@
 // Registro de teste: lista as sessões e exporta em .txt e .csv.
+import { SemVinculo } from './FaixaTurma';
+import { useTurmas } from './Turmas';
+import { rotuloTurma } from '../turmas/banco';
 import { confirmar } from '../comum/avisos';
 import { Figura } from './ConsultaTela';
 import { useEffect, useState } from 'react';
@@ -49,6 +52,8 @@ export function Registro() {
   };
 
   const recarregar = async () => setSessoes(await listarSessoes());
+  const { disciplinas, turmas } = useTurmas();
+  const rotulos = new Map(turmas.map((t) => { const d = disciplinas.find((x) => x.id === t.disciplinaId); return [t.id, { rotulo: rotuloTurma(d, t), cor: d?.cor ?? '#1e3a34' }]; }));
   useEffect(() => {
     void recarregar();
     // Aulas que chegaram de outro computador (Google Drive).
@@ -108,6 +113,8 @@ export function Registro() {
                 {new Date(s.inicio).toLocaleString('pt-BR')} → {new Date(s.fim).toLocaleTimeString('pt-BR')}
               </strong>
               {s.id === atual && <span className="etiqueta">sessão atual</span>}
+              {s.turmaId && rotulos.get(s.turmaId) && <span className="selo-disciplina" style={{ ['--cor' as string]: rotulos.get(s.turmaId)!.cor }}>{rotulos.get(s.turmaId)!.rotulo}</span>}
+              <SemVinculo item={s} tipo="turma" />
               <span className="espaco" />
               <button className="botao pequeno escuro" onClick={() => void copiarPacote(s)} title="Transcrição + texto integral dos dispositivos projetados">
                 Copiar pacote para o Claude

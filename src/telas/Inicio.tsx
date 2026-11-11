@@ -1,5 +1,9 @@
 // Início: o painel de entrada do Vide. "Pronto para a aula?", continue de onde parou,
 // atalhos para criar e os links publicados para a turma.
+import { useTurmaAtiva } from './FaixaTurma';
+import { useTurmas } from './Turmas';
+import { rotuloTurma } from '../turmas/banco';
+import { proximaAula } from '../turmas/horarios';
 import { useEffect, useState, type ReactNode } from 'react';
 import { IcAjustes, IcCasos, IcLei, IcLink, IcPasta, IcPerguntas, IcPlay, IcProcesso, IcQr, IcRegistro, IcSeta } from '../comum/Icones';
 import { irPara, type Acao, type Rota } from '../comum/navegacao';
@@ -74,6 +78,8 @@ function LinhaAtalho({ icone, titulo, desc, rota, acao }: { icone: ReactNode; ti
 
 export function Inicio() {
   const [d, setD] = useState<Dados | null>(null);
+  const { disciplinas, turmas } = useTurmas();
+  const { ativa } = useTurmaAtiva();
   useEffect(() => {
     void Promise.all([listarDiplomas(), listarMateriais(), listarQuestoes(), listarQuestionarios(), listarProcessos(), listarLinksTreino(), listarSessoes()]).then(
       ([leis, materiais, questoes, questionarios, processos, treinos, sessoes]) =>
@@ -97,6 +103,14 @@ export function Inicio() {
     d.leis.length ? `Lei principal: ${abreviacaoDe(diplomaPrincipal())}` : 'Nenhuma lei importada ainda',
     `${d.materiais.length} ${d.materiais.length === 1 ? 'material' : 'materiais'}`,
     aguardando ? `processo "${aguardando.p.titulo}" com ${aguardando.faltam} ${aguardando.faltam === 1 ? 'evento' : 'eventos'} por liberar` : null,
+    (() => {
+      const lista = ativa ? turmas.filter((t) => t.id === ativa.turmaId) : turmas;
+      const p = proximaAula(lista, new Date());
+      if (!p) return null;
+      const disc = disciplinas.find((x) => x.id === p.turma.disciplinaId);
+      const hojeMesmo = p.comeca.toDateString() === new Date().toDateString();
+      return `próxima aula${ativa ? '' : ` (${rotuloTurma(disc, p.turma)})`}: ${hojeMesmo ? 'hoje' : p.comeca.toLocaleDateString('pt-BR', { weekday: 'long' })} às ${p.horario.inicio}`;
+    })(),
   ].filter(Boolean);
 
   return (
@@ -104,7 +118,7 @@ export function Inicio() {
       <section className="inicio-hero">
         <div className="inicio-hero-texto">
           <span className="inicio-data">{hoje}</span>
-          <h1>Pronto para a aula?</h1>
+          <h1>{ativa ? `Pronto para a aula de ${ativa.rotulo}?` : 'Pronto para a aula?'}</h1>
           <p>{resumo.join(' · ')}</p>
           <div className="linha-opcoes">
             <button className="botao primario com-icone" onClick={() => irPara('aula')}>

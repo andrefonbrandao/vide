@@ -1,5 +1,6 @@
 // Registro de teste: tudo o que acontece durante a aula, com horário.
 // Serve para medir os acertos depois (exportação em .txt e .csv).
+import { pertenceTurma, turmaAtiva } from '../turmas/filtro';
 import { db } from '../dados/db';
 import type { EventoRegistro } from '../dados/modelo';
 import { agoraISO, novoId } from '../dados/modelo';
@@ -60,7 +61,8 @@ export function inicioSessaoAtual(): number {
 }
 
 export function registrar(tipo: EventoRegistro['tipo'], texto: string, dados?: Record<string, unknown>): Promise<void> {
-  const ev: EventoRegistro = { sessao_id: sessaoAtual(), em: agoraISO(), tipo, texto, dados };
+  const t = turmaAtiva();
+  const ev: EventoRegistro = { sessao_id: sessaoAtual(), em: agoraISO(), tipo, texto, dados, ...(t ? { turma_id: t.turmaId } : {}) };
   return db.registro
     .add(ev)
     .then(() => undefined)
@@ -73,6 +75,8 @@ export interface ResumoSessao {
   fim: string;
   total: number;
   contagem: Partial<Record<EventoRegistro['tipo'], number>>;
+  /** A turma da aula (a última turma ativa registrada na sessão). */
+  turmaId?: string | null;
 }
 
 export async function listarSessoes(): Promise<ResumoSessao[]> {
@@ -85,10 +89,11 @@ export async function listarSessoes(): Promise<ResumoSessao[]> {
       mapa.set(e.sessao_id, s);
     }
     s.fim = e.em;
+    if (e.turma_id) s.turmaId = e.turma_id;
     s.total++;
     s.contagem[e.tipo] = (s.contagem[e.tipo] ?? 0) + 1;
   }
-  return [...mapa.values()].sort((a, b) => b.inicio.localeCompare(a.inicio));
+  return [...mapa.values()].filter((s) => pertenceTurma(s)).sort((a, b) => b.inicio.localeCompare(a.inicio));
 }
 
 export async function eventosDaSessao(id: string): Promise<EventoRegistro[]> {

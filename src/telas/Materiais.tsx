@@ -1,6 +1,7 @@
 // Materiais do professor (PDFs, imagens) organizados em pastas e etiquetas.
 // - <ListaMateriais/> e <AdicionarMaterial/>: aba Acervo (organizar, apagar, carregar).
 // - <SeletorMaterial/>: botão da tela da aula, com busca, para escolher o material.
+import { EscolherDisciplinas } from './EscolherDisciplinas';
 import { SemVinculo } from './FaixaTurma';
 import { Figura } from './ConsultaTela';
 import { avisar, confirmar } from '../comum/avisos';
@@ -518,12 +519,13 @@ function EditarMaterial({ m, aoFechar }: { m: Material; aoFechar: () => void }) 
   const [nome, setNome] = useState(m.nome);
   const [pasta, setPasta] = useState(m.pasta ?? '');
   const [etiquetas, setEtiquetas] = useState((m.etiquetas ?? []).join(', '));
+  const [disciplinas, setDisciplinas] = useState(m.disciplinas ?? []);
   return (
     <li className="item-mat editando">
       <form
         onSubmit={async (e) => {
           e.preventDefault();
-          await atualizarMaterial(m.id, { nome, pasta, etiquetas: [etiquetas] });
+          await atualizarMaterial(m.id, { nome, pasta, etiquetas: [etiquetas], disciplinas });
           aoFechar();
         }}
         className="form-mat"
@@ -540,6 +542,7 @@ function EditarMaterial({ m, aoFechar }: { m: Material; aoFechar: () => void }) 
           <label>Etiquetas (vírgula)</label>
           <input value={etiquetas} onChange={(e) => setEtiquetas(e.target.value)} />
         </div>
+        <EscolherDisciplinas valor={disciplinas} aoMudar={setDisciplinas} />
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <button className="botao pequeno primario" type="submit">Salvar</button>
           <button className="botao pequeno" type="button" onClick={aoFechar}>Cancelar</button>

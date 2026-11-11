@@ -1380,3 +1380,11 @@ button.pilula:hover { border-color: var(--tinta); }
 .form-turma h3 { margin-top: 0; }
 .cor-bolinha { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--linha); cursor: pointer; }
 .cor-bolinha.atual { box-shadow: 0 0 0 3px var(--tinta); }
+.recursos-disciplina { margin: 12px 0; background: #fff; box-shadow: inset 4px 0 0 var(--cor); }
+.recursos-disciplina .secoes-questoes { flex-wrap: wrap; align-items: center; }
+.vincular-lista { display: flex; flex-direction: column; gap: 8px; }
+.vincular-atalhos { align-items: center; }
+.vincular-itens { list-style: none; margin: 0; padding: 0; max-height: 420px; overflow: auto; border: 1px solid var(--linha); border-radius: 10px; }
+.vincular-itens li { padding: 8px 12px; border-bottom: 1px solid var(--linha); }
+.vincular-itens li:last-child { border-bottom: 0; }
+.vincular-itens .selo { margin-left: 6px; }

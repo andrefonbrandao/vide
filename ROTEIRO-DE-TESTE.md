@@ -236,6 +236,9 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 3. **Entrar no modo da turma** (ou escolha a turma no seletor **Turma**, no alto da barra lateral). A lei principal da disciplina passa a valer na aula ("artigo 5" vira o art. 5º da lei dela).
 4. No modo da turma, Materiais, Questões, Casos, Processos, Links da turma e Resultados mostram só o que é da turma, mais o que ainda não tem disciplina (marcado **"sem disciplina"**); **mostrar tudo** na faixa do alto desliga o filtro. O que você criar no modo da turma já nasce ligado a ela: materiais, questões, questionários e casos à disciplina; processos, links de treino e resultados à turma.
 5. Abra o Vide no horário de uma aula (de 15 minutos antes até o fim): aparece **"Aula de … Entrar no modo da turma?"**. O aviso só aparece com o Vide aberto.
+6. **Recursos** (botão em cada disciplina, em Minhas turmas): veja e marque o que é da disciplina — materiais, questões, questionários e casos — com atalhos **Ligar uma pasta inteira** e **Ligar um assunto inteiro**, a busca e os filtros "só os de…" e "só os sem disciplina". Em **Das turmas**, escolha a turma de cada processo, link de treino e resultado.
+7. Um material também pode ganhar a disciplina em **Organizar** (caixinhas com as siglas); o processo, a turma na aba **Capa**.
+8. O **Registro das aulas** mostra a turma de cada aula (selo colorido) e, no modo da turma, só as aulas dela. O **Início** mostra "Pronto para a aula de PC1 · 2026.2?" e a próxima aula.
 
 ## Guardar o acervo no Google Drive (vários computadores)
 

@@ -131,6 +131,8 @@ export interface EventoRegistro {
   /** Texto principal (fala, identificação do item etc.). */
   texto: string;
   /** Detalhes livres (trecho, origem do clique etc.). */
+  /** Turma ativa quando o evento aconteceu (modo da turma). */
+  turma_id?: string | null;
   dados?: Record<string, unknown>;
 }
 

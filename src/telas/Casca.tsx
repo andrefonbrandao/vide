@@ -433,7 +433,7 @@ export function Casca() {
             </Pagina>
           )}
           {rota === 'registro' && (
-            <Pagina key={chave} caminho="Turma" titulo="Registro das aulas" descricao="Cada aula vira uma sessão, com a transcrição e o que foi projetado.">
+            <Pagina key={chave} caminho="Turma" titulo="Registro das aulas" filtravel descricao="Cada aula vira uma sessão, com a transcrição e o que foi projetado.">
               <Registro />
             </Pagina>
           )}

@@ -154,7 +154,7 @@ export async function listarMateriais(): Promise<Material[]> {
 }
 
 /** Muda nome, pasta e etiquetas de um material. */
-export async function atualizarMaterial(id: string, dados: { nome?: string; pasta?: string; etiquetas?: string[] }): Promise<void> {
+export async function atualizarMaterial(id: string, dados: { nome?: string; pasta?: string; etiquetas?: string[]; disciplinas?: string[] }): Promise<void> {
   const m = await db.materiais.get(id);
   if (!m) return;
   await db.materiais.put({
@@ -162,6 +162,7 @@ export async function atualizarMaterial(id: string, dados: { nome?: string; past
     nome: dados.nome?.trim() || m.nome,
     pasta: dados.pasta !== undefined ? limparPasta(dados.pasta) : (m.pasta ?? ''),
     etiquetas: dados.etiquetas !== undefined ? limparEtiquetas(dados.etiquetas) : (m.etiquetas ?? []),
+    ...(dados.disciplinas !== undefined ? { disciplinas: dados.disciplinas } : {}),
     atualizado_em: agoraISO(),
   });
   window.dispatchEvent(new Event('vide-materiais-mudou'));
