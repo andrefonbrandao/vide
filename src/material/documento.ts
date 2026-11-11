@@ -196,3 +196,48 @@ export async function excluirMaterial(id: string): Promise<void> {
   abertos.delete(id);
   window.dispatchEvent(new Event('vide-materiais-mudou'));
 }
+
+// ---------- Miniaturas (capa dos cartões de material) ----------
+// A primeira página vira uma imagem pequena. Feita uma de cada vez, só quando o
+// cartão aparece na tela, e guardada na memória enquanto o Vide estiver aberto.
+const miniaturas = new Map<string, Promise<string>>();
+let filaMiniaturas: Promise<unknown> = Promise.resolve();
+const LARGURA_MINIATURA = 360;
+
+async function gerarMiniatura(m: Pick<Material, 'tipo' | 'arquivo'>): Promise<string> {
+  const canvas = document.createElement('canvas');
+  if (m.tipo === 'imagem') {
+    const bmp = await createImageBitmap(m.arquivo);
+    const esc = LARGURA_MINIATURA / bmp.width;
+    canvas.width = LARGURA_MINIATURA;
+    canvas.height = Math.max(1, Math.round(bmp.height * esc));
+    canvas.getContext('2d')!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    bmp.close();
+  } else {
+    const pdfjs = await carregarPdfJs();
+    const tarefa = pdfjs.getDocument({ data: new Uint8Array(await m.arquivo.arrayBuffer()) });
+    try {
+      const doc = await tarefa.promise;
+      const page = await doc.getPage(1);
+      const base = page.getViewport({ scale: 1 });
+      const viewport = page.getViewport({ scale: LARGURA_MINIATURA / base.width });
+      canvas.width = Math.round(viewport.width);
+      canvas.height = Math.round(viewport.height);
+      await page.render({ canvas, viewport }).promise;
+    } finally {
+      void tarefa.destroy();
+    }
+  }
+  return new Promise((ok) => canvas.toBlob((b) => ok(b ? URL.createObjectURL(b) : ''), 'image/jpeg', 0.82));
+}
+
+/** Endereço (blob:) da miniatura do material; '' se não deu para desenhar. */
+export function miniaturaDe(m: Pick<Material, 'id' | 'tipo' | 'arquivo'>): Promise<string> {
+  let p = miniaturas.get(m.id);
+  if (!p) {
+    p = filaMiniaturas.then(() => gerarMiniatura(m)).catch(() => '');
+    filaMiniaturas = p;
+    miniaturas.set(m.id, p);
+  }
+  return p;
+}

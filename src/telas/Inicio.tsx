@@ -10,13 +10,12 @@ import type { Diploma, Material } from '../dados/modelo';
 import { listarQuestionarios, listarQuestoes } from '../jogo/banco';
 import type { Questionario } from '../jogo/tipos';
 import { listarMateriais } from '../material/documento';
-import { liberado } from '../processo/liberacao';
 import { listarProcessos } from '../processo/banco';
-import { liberaEm } from '../processo/publicar';
 import type { Processo } from '../processo/tipos';
 import { listarLinksTreino } from '../treino/publicar';
 import type { LinkTreino } from '../treino/tipos';
 import { Figura } from './ConsultaTela';
+import { liberadosDe } from './Processos';
 
 interface Dados {
   leis: Diploma[];
@@ -38,10 +37,6 @@ function quandoFoi(iso: string): string {
   return d.toLocaleDateString('pt-BR');
 }
 
-function liberadosDe(p: Processo): number {
-  const agora = Date.now();
-  return p.eventos.filter((e) => liberado({ libera: liberaEm(e) }, agora)).length;
-}
 
 function abrirProcesso(id: string) {
   try {

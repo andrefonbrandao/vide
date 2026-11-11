@@ -1,6 +1,6 @@
 // Atividades › Processos: a biblioteca de processos fictícios e o editor de cada um
 // (capa, partes, eventos com as peças e a liberação para a turma).
-import { confirmar } from '../comum/avisos';
+import { avisar, confirmar } from '../comum/avisos';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { criarProcesso, excluirProcesso, lerProcesso, listarProcessos, novaParte, novoDocumento, novoEvento, salvarProcesso } from '../processo/banco';
 
@@ -47,13 +47,14 @@ function CopiarProcesso({ p, aoCriar, aoCancelar }: { p: Processo; aoCriar: (id:
     </form>
   );
 }
+import { liberado } from '../processo/liberacao';
 import { copiarProcesso } from '../processo/copiar';
 import { prefixoSigla, semSiglasRepetidas } from '../processo/siglas';
 import { gerarNumero } from '../processo/numero';
 import { db } from '../dados/db';
 import type { Material } from '../dados/modelo';
 import { importarMaterial, listarMateriais } from '../material/documento';
-import { comArtigos, dadosParaPublicar, desativarProcesso, MAX_PDF, publicarProcesso } from '../processo/publicar';
+import { comArtigos, dadosParaPublicar, desativarProcesso, liberaEm, MAX_PDF, publicarProcesso } from '../processo/publicar';
 import { urlDoProcesso, type DadosProcesso, type Documento, type Evento, type Parte, type Processo } from '../processo/tipos';
 import { LinkEQr } from './CompartilharTreino';
 import { buscarNoAcervo, PdfDaPeca, TextoPeca, VisaoProcesso } from './ProcessoAluno';
@@ -837,6 +838,7 @@ export function Processos({ acao = null }: { acao?: 'novo-processo' | 'colar-pro
             e.preventDefault();
             const p = await criarProcesso(novoTitulo || `Processo da turma ${new Date().getFullYear()}`);
             setNovoTitulo('');
+            setCriando(false);
             abrir(p.id);
           }}
         >
@@ -874,37 +876,82 @@ export function Processos({ acao = null }: { acao?: 'novo-processo' | 'colar-pro
           </div>
         </div>
       ) : (
-        <ul className="lista-ordem">
-          {lista.map((p) => (
-            <li key={p.id} style={{ flexWrap: 'wrap' }}>
-              <span className="texto-questao">
-                <strong>{p.titulo}</strong>{' '}
-                <span className="ajuda">
-                  · <span className="mono">{p.capa.numero}</span> · {p.eventos.length} {p.eventos.length === 1 ? 'evento' : 'eventos'} ·{' '}
-                  {p.publicacao ? 'publicado' : 'não publicado'}
-                </span>
-              </span>
-              <button className="botao pequeno escuro" onClick={() => abrir(p.id)}>
-                Abrir
+        <>
+          <ul className="grade-processos">
+            {lista.map((p) => {
+              const feitos = liberadosDe(p);
+              const autor = p.partes.find((x) => x.polo === 'ativo')?.nome;
+              const reu = p.partes.find((x) => x.polo === 'passivo')?.nome;
+              return (
+                <li key={p.id} className={`cartao-processo${copiando === p.id ? ' copiando' : ''}`}>
+                  <button type="button" className="cartao-processo-capa" onClick={() => abrir(p.id)} title="Abrir o processo">
+                    <span className="cartao-processo-figura">
+                      <Figura id={figuraDoProcesso(p.id)} expressao="neutro" />
+                    </span>
+                    <span className="cartao-processo-cab">
+                      <span className="mono">{p.capa.numero}</span>
+                      <strong>{autor || reu ? `${autor ?? '—'} × ${reu ?? '—'}` : 'Partes ainda não cadastradas'}</strong>
+                    </span>
+                  </button>
+                  <div className="cartao-processo-corpo">
+                    <button type="button" className="cartao-processo-titulo" onClick={() => abrir(p.id)}>
+                      {p.titulo}
+                    </button>
+                    <span className="ajuda">
+                      {p.eventos.length ? `${feitos} de ${p.eventos.length} ${p.eventos.length === 1 ? 'evento liberado' : 'eventos liberados'}` : 'nenhum evento ainda'}
+                    </span>
+                    <span className="barra-progresso">
+                      <i style={{ width: `${p.eventos.length ? (feitos / p.eventos.length) * 100 : 0}%` }} />
+                    </span>
+                    <div className="cartao-processo-rodape">
+                      <span className={`selo ${p.publicacao ? 'verde' : ''}`}>{p.publicacao ? 'Publicado' : 'Não publicado'}</span>
+                      <span className="espaco" />
+                      <button className="link-discreto" onClick={() => setCopiando(copiando === p.id ? null : p.id)} title="Copiar para um novo semestre, com as datas reprogramadas">
+                        Copiar
+                      </button>
+                      <button
+                        className="link-discreto"
+                        onClick={async () => {
+                          if (!(await confirmar({ titulo: `Apagar o processo "${p.titulo}"?`, texto: p.publicacao ? 'O link da turma também será desativado.' : undefined, botao: 'Apagar', perigo: true }))) return;
+                          if (p.publicacao) await desativarProcesso(p.publicacao).catch(() => undefined);
+                          await excluirProcesso(p.id);
+                          avisar('Processo apagado');
+                        }}
+                      >
+                        Apagar
+                      </button>
+                    </div>
+                    {copiando === p.id && <CopiarProcesso p={p} aoCriar={(id) => (setCopiando(null), abrir(id))} aoCancelar={() => setCopiando(null)} />}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="vazio-guia">
+            <Figura id="adv-m" expressao="feliz" className="vazio-guia-figura" />
+            <div>
+              <h2>Peça um processo pronto à IA</h2>
+              <p className="ajuda">Escreva o tema, copie o pedido, cole no Claude e traga a resposta. O Vide monta capa, partes, eventos e peças.</p>
+              <button className="botao escuro" onClick={() => setColando(true)}>
+                Colar processo (com o pedido para a IA)
               </button>
-              <button className={`botao pequeno${copiando === p.id ? ' escuro' : ''}`} onClick={() => setCopiando(copiando === p.id ? null : p.id)} title="Copiar para um novo semestre, com as datas reprogramadas">
-                Copiar
-              </button>
-              <button
-                className="botao pequeno"
-                onClick={async () => {
-                  if (!(await confirmar({ titulo: `Apagar o processo "${p.titulo}"?`, texto: p.publicacao ? 'O link da turma também será desativado.' : undefined, botao: 'Apagar', perigo: true }))) return;
-                  if (p.publicacao) await desativarProcesso(p.publicacao).catch(() => undefined);
-                  await excluirProcesso(p.id);
-                }}
-              >
-                Apagar
-              </button>
-              {copiando === p.id && <CopiarProcesso p={p} aoCriar={(id) => (setCopiando(null), abrir(id))} aoCancelar={() => setCopiando(null)} />}
-            </li>
-          ))}
-        </ul>
+            </div>
+          </div>
+        </>
       )}
     </>
   );
+}
+
+/** Quantos eventos a turma já vê (liberados até agora). */
+export function liberadosDe(p: Processo, agora = Date.now()): number {
+  return p.eventos.filter((e) => liberado({ libera: liberaEm(e) }, agora)).length;
+}
+
+/** Um juiz ou advogado fixo para cada processo (só para enfeitar o cartão). */
+function figuraDoProcesso(id: string): string {
+  const op = ['juiz-m', 'adv-h', 'juiz-h', 'adv-m'];
+  let n = 0;
+  for (const c of id) n = (n * 31 + c.charCodeAt(0)) >>> 0;
+  return op[n % op.length];
 }

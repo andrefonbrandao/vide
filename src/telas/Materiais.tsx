@@ -2,7 +2,8 @@
 // - <ListaMateriais/> e <AdicionarMaterial/>: aba Acervo (organizar, apagar, carregar).
 // - <SeletorMaterial/>: botão da tela da aula, com busca, para escolher o material.
 import { Figura } from './ConsultaTela';
-import { confirmar } from '../comum/avisos';
+import { avisar, confirmar } from '../comum/avisos';
+import { Miniatura } from './Miniatura';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Material } from '../dados/modelo';
 import { abrirDocumentoPorId, atualizarMaterial, excluirMaterial, importarMaterial, limparEtiquetas, listarMateriais, type Documento } from '../material/documento';
@@ -179,14 +180,17 @@ export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
     editando === m.id ? (
       <EditarMaterial key={m.id} m={m} aoFechar={() => setEditando(null)} />
     ) : (
-      <li key={m.id} className="item-mat">
-        <IcDocumento tamanho={20} />
-        <div className="item-mat-info">
+      <li key={m.id} className="cartao-mat">
+        <button className="cartao-mat-capa" onClick={() => setPrevia(m.id)} title="Ver o conteúdo">
+          <Miniatura m={m} />
+          <span className="cartao-mat-tipo">{m.tipo === 'pdf' ? 'PDF' : 'Imagem'}</span>
+        </button>
+        <div className="cartao-mat-info">
           <button className="nome-mat" onClick={() => setPrevia(m.id)} title="Ver o conteúdo">
             {m.nome}
-          </button>{' '}
+          </button>
           <span className="ajuda">
-            {m.tipo === 'pdf' ? 'PDF' : 'imagem'} · {m.paginas} {m.paginas === 1 ? 'página' : 'páginas'} · {mb(m.tamanho)}
+            {m.paginas} {m.paginas === 1 ? 'página' : 'páginas'} · {mb(m.tamanho)}
           </span>
           {mostrarPasta && (
             <button className="link-pasta" onClick={() => abrir(m.pasta ?? '')}>
@@ -195,17 +199,21 @@ export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
           )}
           <Etiquetas lista={m.etiquetas ?? []} ativa={etiqueta} aoEscolher={(e) => setEtiqueta(etiqueta === e ? null : e)} />
         </div>
-        <button className="botao pequeno" onClick={() => setPrevia(m.id)}>Ver</button>
-        <button className="botao pequeno" onClick={() => setEditando(m.id)}>Organizar</button>
-        <button
-          className="botao pequeno"
-          onClick={async () => {
-            if (!(await confirmar({ titulo: `Apagar "${m.nome}" dos materiais?`, botao: 'Apagar', perigo: true }))) return;
-            await excluirMaterial(m.id);
-          }}
-        >
-          Apagar
-        </button>
+        <div className="cartao-mat-acoes">
+          <button className="link-discreto" onClick={() => setEditando(m.id)}>
+            Organizar
+          </button>
+          <button
+            className="link-discreto"
+            onClick={async () => {
+              if (!(await confirmar({ titulo: `Apagar "${m.nome}" dos materiais?`, botao: 'Apagar', perigo: true }))) return;
+              await excluirMaterial(m.id);
+              avisar('Material apagado');
+            }}
+          >
+            Apagar
+          </button>
+        </div>
       </li>
     );
 
@@ -219,7 +227,6 @@ export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
           aoFechar={() => setPrevia(null)}
         />
       )}
-      <h2>Materiais</h2>
       <datalist id="pastas-mat">
         {pastas.map((p) => (
           <option key={p} value={p} />
@@ -236,7 +243,7 @@ export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
                 Limpar a busca
               </button>
             </p>
-            <ul className="lista-mat">{grupos.flatMap((g) => g.itens.map((m) => item(m, true)))}</ul>
+            <ul className="grade-mat">{grupos.flatMap((g) => g.itens.map((m) => item(m, true)))}</ul>
           </>
         ) : (
           <>
@@ -283,7 +290,7 @@ export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
                 ))}
               </div>
             )}
-            {conteudo.itens.length > 0 && <ul className="lista-mat">{conteudo.itens.map((m) => item(m))}</ul>}
+            {conteudo.itens.length > 0 && <ul className="grade-mat">{conteudo.itens.map((m) => item(m))}</ul>}
             {!conteudo.subpastas.length && !conteudo.itens.length && <p className="ajuda">Esta pasta está vazia.</p>}
           </>
         )}

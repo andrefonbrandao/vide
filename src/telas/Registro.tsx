@@ -1,5 +1,6 @@
 // Registro de teste: lista as sessões e exporta em .txt e .csv.
 import { confirmar } from '../comum/avisos';
+import { Figura } from './ConsultaTela';
 import { useEffect, useState } from 'react';
 import type { EventoRegistro } from '../dados/modelo';
 import { controlador } from './controlador';
@@ -89,7 +90,15 @@ export function Registro() {
         </button>
       </p>
 
-      {sessoes.length === 0 && <p className="ajuda">Nenhum registro ainda.</p>}
+      {sessoes.length === 0 && (
+        <div className="vazio-guia">
+          <Figura id="h6" expressao="neutro" className="vazio-guia-figura" />
+          <div>
+            <h2>Nenhuma aula registrada ainda</h2>
+            <p className="ajuda">Quando você der uma aula no Vide, ela aparece aqui: o que foi dito, o que foi projetado e as marcas de "Registrar momento".</p>
+          </div>
+        </div>
+      )}
       {sessoes.map((s) => {
         const c = s.contagem;
         return (

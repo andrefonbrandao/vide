@@ -23,6 +23,7 @@ import { SecaoLeis, SecaoTestes } from './Acervo';
 import { Aula } from './Aula';
 import { Busca } from './Busca';
 import { Casos } from './Casos';
+import { Figura } from './ConsultaTela';
 import { Inicio } from './Inicio';
 import { LinksTurma } from './LinksTurma';
 import { AdicionarMaterial, ListaMateriais } from './Materiais';
@@ -302,6 +303,39 @@ function BarraLateral({ rota, recolhida }: { rota: Rota; recolhida: boolean }) {
 }
 
 /** Barra de baixo no celular. */
+/** No celular, a barra lateral some: estas abas levam às outras páginas do mesmo grupo. */
+function AbasGrupo({ rota }: { rota: Rota }) {
+  const grupo = GRUPOS.find((g) => g.titulo && g.itens.some((i) => i.rota === rota));
+  if (!grupo) return null;
+  return (
+    <nav className="abas-grupo" aria-label={grupo.titulo ?? ''} data-ui>
+      {grupo.itens.map((i) => (
+        <a key={i.rota} href={`#${i.rota}`} aria-current={i.rota === rota ? 'page' : undefined} onClick={(e) => (e.preventDefault(), irPara(i.rota))}>
+          {i.rotulo}
+        </a>
+      ))}
+    </nav>
+  );
+}
+
+/** A aula é conduzida no computador; no celular, explica como usá-lo como controle. */
+function AulaNoCelular() {
+  return (
+    <div className="pagina aula-no-celular">
+      <div className="vazio-guia">
+        <Figura id="juiz-m" expressao="feliz" className="vazio-guia-figura" />
+        <div>
+          <h2>A aula é conduzida no computador</h2>
+          <p className="ajuda">
+            Abra o Vide no computador ligado ao projetor. Lá, na <strong>Aula</strong>, toque em <strong>Celular</strong> › <strong>Gerar QR code</strong> e leia o QR
+            com a câmera deste celular: ele vira microfone e controle remoto.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BarraCelular({ rota }: { rota: Rota }) {
   const itens: [Rota, string, ReactNode, Rota[]][] = [
     ['inicio', 'Início', <IcInicio key="i" />, ['inicio']],
@@ -348,12 +382,18 @@ export function Casca() {
       <div className="casca-principal">
         {!naAula && (
           <header className="casca-topo" data-ui>
+            <a href="#inicio" className="topo-logo" onClick={(e) => (e.preventDefault(), irPara('inicio'))} aria-label="Início">
+              <Logo altura={24} />
+            </a>
             <button className="busca-gatilho" onClick={() => setBuscando(true)}>
               <IcBusca tamanho={18} />
               <span>Buscar artigo, material, questão, caso, processo…</span>
               <kbd>Ctrl K</kbd>
             </button>
             <span className="espaco" />
+            <a href="#ajustes" className="topo-ajustes" onClick={(e) => (e.preventDefault(), irPara('ajustes'))} aria-label="Ajustes">
+              <IcAjustes />
+            </a>
             <div className="criar-caixa">
               <button className="botao-criar" onClick={() => setCriar(!criar)} aria-expanded={criar}>
                 <IcMais tamanho={18} /> Criar
@@ -364,9 +404,11 @@ export function Casca() {
         )}
         <main className={`casca-conteudo${naAula ? ' aula-conteudo' : ''}`}>
           {/* A aula continua montada (e ouvindo) mesmo em outra página. */}
-          <div style={{ display: naAula ? 'block' : 'none', height: '100%' }}>
+          <div className="aula-caixa" style={{ display: naAula ? 'block' : 'none', height: '100%' }}>
             <Aula ativa={naAula} />
           </div>
+          {naAula && <AulaNoCelular />}
+          {!naAula && <AbasGrupo rota={rota} />}
           {rota === 'inicio' && <Inicio key={chave} />}
           {rota === 'leis' && <PaginaLeis key={chave} acao={a} />}
           {rota === 'materiais' && <PaginaMateriais key={chave} acao={a} />}
@@ -387,7 +429,7 @@ export function Casca() {
           {rota === 'ajustes' && <Ajustes key={chave} />}
         </main>
       </div>
-      {!naAula && <BarraCelular rota={rota} />}
+      <BarraCelular rota={rota} />
       {buscando && <Busca aoFechar={() => setBuscando(false)} />}
       <CamadaAvisos />
     </div>

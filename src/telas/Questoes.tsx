@@ -560,6 +560,18 @@ export function ListaQuestoes({ aoAdicionar, secaoFixa }: { aoAdicionar: () => v
     return (
       <>
         {nav}
+        {vazio && (
+          <div className="vazio-guia">
+            <Figura id="h3" expressao="duvida" className="vazio-guia-figura" />
+            <div>
+              <h2>Nenhuma questão ainda</h2>
+              <p className="ajuda">Escreva uma questão ou cole várias de uma vez (inclusive as que uma IA preparar). Depois elas servem para o jogo em sala, a forca e o treino em casa.</p>
+              <button className="botao escuro" onClick={aoAdicionar}>
+                Adicionar questões
+              </button>
+            </div>
+          </div>
+        )}
         <h2>O que você quer fazer?</h2>
         <div className="atalhos-questoes">
           <button
@@ -589,7 +601,6 @@ export function ListaQuestoes({ aoAdicionar, secaoFixa }: { aoAdicionar: () => v
             <span>Montar uma sequência de questões para um jogo em sala ou um treino.</span>
           </button>
         </div>
-        {vazio && <p className="ajuda">Comece adicionando questões: os outros atalhos ficam disponíveis depois.</p>}
         <p className="ajuda">
           Para um <strong>jogo em sala</strong> (os alunos respondendo pelo celular), vá na <strong>Aula</strong> e clique em <strong>Atividades</strong>.
         </p>
@@ -624,7 +635,15 @@ export function ListaQuestoes({ aoAdicionar, secaoFixa }: { aoAdicionar: () => v
       ) : (
         <>
           <div className="cartao">
-            {!questionarios.length && <p className="ajuda">Nenhum questionário ainda.</p>}
+            {!questionarios.length && (
+              <div className="vazio-guia sem-borda">
+                <Figura id="m2" expressao="neutro" className="vazio-guia-figura" />
+                <div>
+                  <h2>Nenhum questionário ainda</h2>
+                  <p className="ajuda">Junte questões numa sequência fixa para um jogo em sala ou um treino. {questoes.length ? '' : 'Primeiro, adicione questões.'}</p>
+                </div>
+              </div>
+            )}
             <ul className="lista-ordem">
               {questionarios.map((qz) => (
                 <li key={qz.id}>
