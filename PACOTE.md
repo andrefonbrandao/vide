@@ -13,11 +13,12 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 10** aberto em 2026-11-10, a partir da versão 0.25.0 (já publicada).
+**Pacote 10** aberto em 2026-11-10, a partir da versão 0.25.0. **Fechado e publicado como versão 0.26.0.**
+O próximo pacote recomeça esta seção a partir da versão publicada.
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| 1 | Processo em texto: **Colar processo** (capa, partes, eventos e peças num formato de texto, com prévia e avisos; documentos "(PDF)" ficam com "falta anexar o PDF"); **Colar eventos** num processo existente (siglas repetidas renumeradas); **Copiar como texto** (o processo inteiro no mesmo formato, para revisar ou pedir à IA que continue); **pedido pronto para a IA** (tema, até que fase, quantos eventos, data de início e defeitos para plantar) | Pronta |
+| 1 | Processo em texto: **Colar processo** (capa, partes, eventos e peças num formato de texto, com prévia e avisos; documentos "(PDF)" ficam com "falta anexar o PDF"); **Colar eventos** num processo existente (siglas repetidas renumeradas); **Copiar como texto** (o processo inteiro no mesmo formato, para revisar ou pedir à IA que continue); **pedido pronto para a IA** (tema, até que fase, quantos eventos, data de início e defeitos para plantar) | Publicada (0.26.0) |
 
 ## Pacotes anteriores
 
