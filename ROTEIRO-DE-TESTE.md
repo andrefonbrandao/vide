@@ -81,6 +81,8 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 3. Prefere um arquivo? Use **Baixar pacote** e anexe o .txt no claude.ai.
 4. Lembre-se: a transcrição é automática e pode ter erros. Revise o material antes de entregá-lo aos alunos.
 
+**Rapidez da sugestão:** o Vide sugere o artigo enquanto você fala. Se o número é a última coisa da frase ("vejam o artigo 485" e pausa), ele espera só uma pausa curta (cerca de 0,6 s) e já sugere; se você continuar ("…inciso sexto"), a sugestão é refinada. Quando a frase termina num "do"/"da" ("artigo quinto da…"), ele ainda espera a lei. No **Registro das aulas**, cada aula mostra quantas sugestões houve e a **espera média** do Vide (o tempo do reconhecedor de voz do Google não entra nessa conta).
+
 ## Usar seus slides ou PDFs junto com os artigos
 
 **Preparar (em casa):**

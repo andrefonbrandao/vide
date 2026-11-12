@@ -46,6 +46,9 @@ export interface Candidato {
   contexto: boolean;
   /** Trecho de fala (resultado do reconhecedor) que gerou o candidato. */
   trechoId: string;
+  /** Sugerido na pausa (o texto provisório parou de mudar): pode ser trocado se a fala continuar
+   *  a mesma citação. Guarda a palavra em que a citação começa. */
+  pausa?: number;
 }
 
 export interface FalaFinal {
@@ -134,6 +137,8 @@ const REPETIDO_MS = 30_000;
 const REFINO_MS = 20_000;
 const INTERACAO_MS = 4_000;
 const PALAVRAS_CAUDA = 8;
+/** Texto provisório parado por este tempo = o professor fez uma pausa: o número no fim já vale. */
+const PAUSA_MS = 600;
 
 let seq = 1;
 
@@ -170,6 +175,9 @@ export class ControladorAula {
   private canal: { enviar: (m: Mensagem) => void; fechar: () => void };
   private cauda = '';
   private ultimaInteracao = 0;
+  private timerPausa = 0;
+  /** Quando cada referência apareceu pela primeira vez no texto (para medir a espera até a sugestão). */
+  private pendenteDesde = new Map<string, number>();
   private ultimoPong = 0;
   private ultimoPedidoRecarga = 0;
   private sala: ConexaoSala<MsgDoComputador | MsgDoCelular, EnvioDoComputador> | null = null;
@@ -177,6 +185,12 @@ export class ControladorAula {
   private comandosFeitos = new Set<string>();
 
   constructor() {
+    // Testes automáticos (só com "?teste" no endereço): simulam a fala sem microfone.
+    try {
+      if (new URLSearchParams(location.search).has('teste')) (window as unknown as { __videTeste?: unknown }).__videTeste = { parcial: (t: string, k: string) => this.aoParcial(t, k), final: (t: string, k: string) => this.aoFinal(t, k, 1) };
+    } catch {
+      /* ignore */
+    }
     this.voz = new Reconhecedor({
       onParcial: (t, k) => this.aoParcial(t, k),
       onFinal: (t, k, c) => this.aoFinal(t, k, c),
@@ -551,11 +565,18 @@ export class ControladorAula {
 
   private aoParcial(texto: string, chave: string) {
     this.mudar({ parcial: texto });
+    window.clearTimeout(this.timerPausa);
     if (!texto) return;
     this.processar(texto, chave, 'parcial');
+    // Se o texto provisório não mudar por um instante, o professor fez uma pausa:
+    // o artigo dito no fim da frase já é sugerido, sem esperar o texto definitivo.
+    this.timerPausa = window.setTimeout(() => {
+      if (this.estado.parcial === texto) this.processar(texto, chave, 'parcial', true);
+    }, PAUSA_MS);
   }
 
   private aoFinal(texto: string, chave: string, confianca: number) {
+    window.clearTimeout(this.timerPausa);
     registrar('fala', texto, { confianca: confianca >= 0 ? Number(confianca.toFixed(2)) : 'provisório', trecho: chave });
     const finais = [...this.estado.finais, { id: seq++, em: Date.now(), texto }].slice(-120);
     this.mudar({ finais, parcial: '' });
@@ -569,13 +590,19 @@ export class ControladorAula {
     this.aoFinal(texto, `sim:${seq}`, 1);
   }
 
-  private processar(texto: string, chave: string, origem: 'parcial' | 'final') {
+  private processar(texto: string, chave: string, origem: 'parcial' | 'final', naPausa = false) {
     // Comandos de voz
     for (const c of detectarComandos(texto)) this.comandoVoz(c, chave, texto);
 
     // Referências: inclui o fim da fala anterior ("inciso sexto do" | "485").
     const comCauda = this.cauda ? `${this.cauda} ${texto}` : texto;
-    const r = this.detector.detectar(comCauda, Date.now(), { parcial: origem === 'parcial' });
+    const r = this.detector.detectar(comCauda, Date.now(), { parcial: origem === 'parcial', aceitarFim: naPausa });
+    const agora = Date.now();
+    for (const p of r.pendentes) {
+      const k = chaveReferencia(p);
+      if (!this.pendenteDesde.has(k)) this.pendenteDesde.set(k, agora);
+    }
+    for (const [k, t] of this.pendenteDesde) if (agora - t > 30_000) this.pendenteDesde.delete(k);
     // Onde começa o texto novo (em palavras normalizadas). Calculado pelo fim, porque
     // uma expressão pode atravessar a emenda ("artigo segundo do código" | "de processo civil").
     const inicioNovo = this.cauda ? r.palavras.length - this.detector.palavrasDe(texto).length : 0;
@@ -590,7 +617,7 @@ export class ControladorAula {
     }
     for (const ref of r.referencias) {
       if (ref.fim <= inicioNovo) continue; // já tratado na fala anterior
-      this.aoDetectar(ref, origem, chave);
+      this.aoDetectar(ref, origem, chave, naPausa);
     }
   }
 
@@ -627,7 +654,7 @@ export class ControladorAula {
     this.mudar({ detectados });
   }
 
-  private aoDetectar(refDita: Referencia, origem: 'parcial' | 'final', trechoId: string) {
+  private aoDetectar(refDita: Referencia, origem: 'parcial' | 'final', trechoId: string, naPausa = false) {
     const id = `c${seq++}`;
     let ref = refDita;
     let res = resolver(ref, this.indice, id);
@@ -643,7 +670,16 @@ export class ControladorAula {
     const chave = chaveReferencia(ref);
     const agora = Date.now();
     const lista = this.estado.candidatos;
-    const dadosLog = { chave, trecho: ref.trecho, origem, contexto: ref.contexto, lei_dita: ref.explicito };
+    const desde = this.pendenteDesde.get(chave) ?? this.pendenteDesde.get(chaveReferencia(refDita));
+    const dadosLog = {
+      chave,
+      trecho: ref.trecho,
+      origem: naPausa ? 'pausa' : origem,
+      contexto: ref.contexto,
+      lei_dita: ref.explicito,
+      // Quanto o Vide esperou desde que o artigo apareceu no texto até sugerir (0 = na hora).
+      espera_ms: desde ? agora - desde : 0,
+    };
 
     // Repetido há pouco: ignora.
     const igual = lista.find((c) => c.chave === chave);
@@ -675,12 +711,16 @@ export class ControladorAula {
       origem,
       contexto: ref.contexto,
       trechoId,
+      ...(naPausa ? { pausa: ref.inicio } : {}),
     };
 
     // Mais específico que um recente ("485" -> "485, VI"): substitui.
     const menos = lista.find((c) => chave.startsWith(c.chave + ':') && agora - c.criadoEm < REFINO_MS);
     let situacao: Detectado['situacao'] = 'novo';
-    let nova = lista.filter((c) => c !== igual && c !== menos);
+    // Sugerido na pausa e a fala continuou com outro número ("artigo quatrocentos" … "e oitenta e cinco"): sai.
+    const daPausa = (c: Candidato) =>
+      c.pausa !== undefined && c.pausa === ref.inicio && c.trechoId === trechoId && c.chave !== chave && !chave.startsWith(c.chave + ':') && c.id !== this.estado.projetado?.id;
+    let nova = lista.filter((c) => c !== igual && c !== menos && !daPausa(c));
     if (menos) situacao = 'refinado';
     else if (igual) situacao = 'repetido';
     nova = [novo, ...nova].slice(0, MAX_CANDIDATOS);
@@ -690,6 +730,7 @@ export class ControladorAula {
     if (!interagiu || !selecionadoId || selecionadoId === menos?.id || selecionadoId === igual?.id) selecionadoId = novo.id;
     if (!nova.some((c) => c.id === selecionadoId)) selecionadoId = nova[0]?.id ?? null;
 
+    this.pendenteDesde.delete(chave);
     registrar('detectado', res.titulo, { ...dadosLog, acao: situacao, aviso: res.aviso ?? undefined });
     this.anotar(res.titulo, situacao);
     this.mudar({ candidatos: nova, selecionadoId });

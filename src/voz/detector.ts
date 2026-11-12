@@ -39,6 +39,8 @@ export interface ResultadoDeteccao {
   /** Referências descartadas porque eram de uma lei fora do catálogo ("art. 7º da CLT"). */
   outros: { trecho: string; diploma: string; fim: number; art: number | null }[];
   palavras: string[];
+  /** Texto provisório: referências que apareceram, mas ainda esperam (o número pode continuar). */
+  pendentes: Referencia[];
 }
 
 const CONECTORES = new Set(['do', 'da', 'de', 'dos', 'das', 'no', 'na', 'nos', 'nas', 'o', 'a', 'os', 'as', 'deste', 'desse', 'em', 'ao']);
@@ -142,25 +144,32 @@ export class Detector {
    *   só vale se já houver alguma palavra depois dela que não seja "do", "da"...
    *   Assim "o artigo 5º da" espera a palavra seguinte ("Constituição"?) e
    *   "o artigo 4" espera para ver se não vira "48" ou "489".
+   * @param opcoes.aceitarFim o texto provisório parou de mudar (o professor fez uma pausa):
+   *   a referência que termina na última palavra já vale ("o artigo 485" + pausa). Se o que
+   *   sobra no fim é um "do", "da"… ("o artigo 5º da"), continua esperando a lei.
    */
-  detectar(texto: string, agora = Date.now(), opcoes: { parcial?: boolean } = {}): ResultadoDeteccao {
+  detectar(texto: string, agora = Date.now(), opcoes: { parcial?: boolean; aceitarFim?: boolean } = {}): ResultadoDeteccao {
     const palavras = this.normalizar(texto);
     const referencias: Referencia[] = [];
     const outros: ResultadoDeteccao['outros'] = [];
+    const pendentes: Referencia[] = [];
 
     let i = 0;
     while (i < palavras.length) {
       const r = this.tentar(palavras, i, agora);
       if (!r) { i++; continue; }
-      const incompleto = opcoes.parcial && pularConectores(palavras, r.fim, Infinity) >= palavras.length;
+      const noFim = pularConectores(palavras, r.fim, Infinity) >= palavras.length;
+      const soConectoresDepois = r.fim < palavras.length;
+      const incompleto = !!opcoes.parcial && noFim && !(opcoes.aceitarFim && !soConectoresDepois);
       if (r.tipo === 'outro') outros.push({ trecho: r.trecho, diploma: r.diploma, fim: r.fim, art: r.art });
       else if (!incompleto) referencias.push(...r.refs);
+      else pendentes.push(...r.refs);
       i = Math.max(r.fim, i + 1);
     }
     for (const r of referencias) {
       if (!r.contexto) this.ultimoArtigo = { diploma: r.diploma, art: r.art, sufixo: r.sufixo, par: r.par, em: agora };
     }
-    return { referencias, outros, palavras };
+    return { referencias, outros, palavras, pendentes };
   }
 
   /** Esquece o contexto (ex.: ao pausar a escuta). */

@@ -77,6 +77,9 @@ export interface ResumoSessao {
   contagem: Partial<Record<EventoRegistro['tipo'], number>>;
   /** A turma da aula (a última turma ativa registrada na sessão). */
   turmaId?: string | null;
+  /** Sugestões de artigo na aula e a espera média do Vide (ms) entre ouvir o artigo e sugerir. */
+  sugestoes?: number;
+  esperaMediaMs?: number;
 }
 
 export async function listarSessoes(): Promise<ResumoSessao[]> {
@@ -90,6 +93,12 @@ export async function listarSessoes(): Promise<ResumoSessao[]> {
     }
     s.fim = e.em;
     if (e.turma_id) s.turmaId = e.turma_id;
+    const espera = (e.dados as { espera_ms?: unknown } | undefined)?.espera_ms;
+    if (e.tipo === 'detectado' && typeof espera === 'number') {
+      const n = (s.sugestoes ?? 0) + 1;
+      s.esperaMediaMs = ((s.esperaMediaMs ?? 0) * (n - 1) + espera) / n;
+      s.sugestoes = n;
+    }
     s.total++;
     s.contagem[e.tipo] = (s.contagem[e.tipo] ?? 0) + 1;
   }

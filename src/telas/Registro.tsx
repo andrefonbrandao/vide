@@ -115,6 +115,11 @@ export function Registro() {
               {s.id === atual && <span className="etiqueta">sessão atual</span>}
               {s.turmaId && rotulos.get(s.turmaId) && <span className="selo-disciplina" style={{ ['--cor' as string]: rotulos.get(s.turmaId)!.cor }}>{rotulos.get(s.turmaId)!.rotulo}</span>}
               <SemVinculo item={s} tipo="turma" />
+              {s.sugestoes ? (
+                <span className="ajuda" style={{ margin: 0 }} title="Tempo que o Vide esperou, em média, entre o artigo aparecer no texto da fala e a sugestão (não inclui o tempo do reconhecedor de voz do Google)">
+                  {s.sugestoes} {s.sugestoes === 1 ? 'sugestão' : 'sugestões'} · espera média {((s.esperaMediaMs ?? 0) / 1000).toFixed(1).replace('.', ',')} s
+                </span>
+              ) : null}
               <span className="espaco" />
               <button className="botao pequeno escuro" onClick={() => void copiarPacote(s)} title="Transcrição + texto integral dos dispositivos projetados">
                 Copiar pacote para o Claude

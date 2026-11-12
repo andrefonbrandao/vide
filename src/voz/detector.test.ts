@@ -156,6 +156,18 @@ describe('detector', () => {
     expect(p('o artigo 489 essa sentença')).toEqual(['cpc:489']);
   });
 
+  it('texto provisório parado (pausa): aceita o número no fim, mas não o "da" pendurado', () => {
+    const d = new Detector();
+    const pausa = (t: string) => d.detectar(t, 1000, { parcial: true, aceitarFim: true }).referencias.map(chaveReferencia);
+    expect(pausa('vejam o artigo 485')).toEqual(['cpc:485']);
+    expect(pausa('o inciso sexto do artigo 485')).toEqual(['cpc:485:i6']);
+    expect(pausa('lá no artigo 5º da')).toEqual([]);
+    expect(pausa('o artigo segundo do')).toEqual([]);
+    const r = new Detector().detectar('vejam o artigo 485', 1000, { parcial: true });
+    expect(r.referencias).toEqual([]);
+    expect(r.pendentes.map(chaveReferencia)).toEqual(['cpc:485']);
+  });
+
   it('texto provisório incompleto não muda o contexto ("artigo 4" que vira "489")', () => {
     const d = new Detector();
     d.detectar('parágrafo primeiro do artigo 489 que', 1000, { parcial: true });

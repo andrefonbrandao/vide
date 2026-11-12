@@ -14,16 +14,21 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 16** aberto em 2026-11-11, a partir da versão 0.31.0. **Fechado e publicado como versão 0.32.0.**
-O próximo pacote recomeça esta seção a partir da versão publicada.
+**Pacote 17** aberto em 2026-11-12, a partir da versão 0.32.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | **Sugestão mais rápida na aula:** quando o artigo é a última coisa dita, o Vide sugere depois de uma pausa curta (0,6 s), sem esperar o texto definitivo do reconhecedor (que pode levar de 1 a 3 s); se a fala continua a mesma citação ("quatrocentos… e oitenta e seis", "…inciso sexto"), a sugestão é trocada ou refinada; "do"/"da" no fim continua esperando a lei. **Medição:** cada sugestão registra a espera do Vide, e o Registro das aulas mostra a média de cada aula | Pronta |
+
+## Pacotes anteriores
+
+### Pacote 16 (publicado como 0.32.0 em 2026-11-12)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | Perguntas sobre o processo em **quadros por evento** na página da turma: lado a lado, cada um com o evento, quantas perguntas e o progresso do aluno ("2 de 4 feitas", "concluído ✓", "novo" no mais recente); ao tocar, abrem só as perguntas daquele evento (com "recomeçar este evento"); atalho "N perguntas" na tabela de eventos | Publicada (0.32.0) |
 | 2 | **Só esta turma** para materiais e questionários (avaliações aplicadas, planos de aula): aparecem só na turma escolhida, não nas outras turmas da mesma disciplina; ao adicionar no modo da turma, escolha "toda a disciplina" ou "só a turma", com a **pasta da turma sugerida sozinha** (ex.: "PC1 · 2026.2/Avaliações"); selo "só PC1 · 2026.2"; mudar em Organizar, no editor do questionário ou em Recursos › Materiais/Questionários da turma | Publicada (0.32.0) |
 | 3 | Selo do personagem juiz: **balança em equilíbrio** no lugar do martelo (que não se usa nos tribunais brasileiros) | Publicada (0.32.0) |
-
-## Pacotes anteriores
 
 ### Pacote 15 (publicado como 0.31.0 em 2026-11-11)
 
