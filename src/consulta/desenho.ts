@@ -152,12 +152,22 @@ function roupa(p: Personagem): string {
   }
 }
 
-/** Insígnia de quem responde: martelo (juiz) ou pasta (advogado). */
+/** Insígnia de quem responde: balança em equilíbrio (juiz) ou pasta (advogado). */
 function insignia(p: Personagem): string {
   if (p.papel === 'consulente') return '';
+  const balanca =
+    `<g stroke="${TRACO}" stroke-width="1.8" stroke-linecap="round" fill="none">` +
+    `<path d="M160 187 V204.5"/>` + // haste
+    `<path d="M150 190 H170"/>` + // travessão, na horizontal (equilíbrio)
+    `<path d="M150 190 L147.2 197.5 M150 190 L152.8 197.5 M170 190 L167.2 197.5 M170 190 L172.8 197.5"/>` + // cordões
+    `</g>` +
+    `<path d="M146.3 197.5 h7.4 q-3.7 4.4 -7.4 0 Z" fill="${TRACO}"/>` + // prato esquerdo
+    `<path d="M166.3 197.5 h7.4 q-3.7 4.4 -7.4 0 Z" fill="${TRACO}"/>` + // prato direito
+    `<circle cx="160" cy="186.6" r="1.9" fill="${TRACO}"/>` +
+    `<rect x="154" y="204" width="12" height="2.8" rx="1.3" fill="${TRACO}"/>`; // base
   const icone =
     p.papel === 'juiz'
-      ? `<g transform="translate(160 194) rotate(-35)"><rect x="-8" y="-5" width="16" height="7" rx="2" fill="${TRACO}"/><rect x="-1.4" y="2" width="2.8" height="11" rx="1.2" fill="${TRACO}"/></g><rect x="152" y="203" width="16" height="3" rx="1.5" fill="${TRACO}"/>`
+      ? balanca
       : `<rect x="151" y="189" width="18" height="13" rx="2.5" fill="${TRACO}"/><path d="M156 189 v-3 h8 v3" stroke="${TRACO}" stroke-width="2" fill="none"/><rect x="151" y="194" width="18" height="2" fill="${BRANCO}" opacity="0.5"/>`;
   return `<circle cx="160" cy="196" r="16" fill="${BRANCO}" stroke="${TRACO}" stroke-width="2"/>` + icone;
 }
