@@ -14,11 +14,12 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 17** aberto em 2026-11-12, a partir da versão 0.32.0 (já publicada).
+**Pacote 17** aberto em 2026-11-12, a partir da versão 0.32.0. **Fechado e publicado como versão 0.33.0.**
+O próximo pacote recomeça esta seção a partir da versão publicada.
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| 1 | **Sugestão mais rápida na aula:** quando o artigo é a última coisa dita, o Vide sugere depois de uma pausa curta (0,6 s), sem esperar o texto definitivo do reconhecedor (que pode levar de 1 a 3 s); se a fala continua a mesma citação ("quatrocentos… e oitenta e seis", "…inciso sexto"), a sugestão é trocada ou refinada; "do"/"da" no fim continua esperando a lei. **Medição:** cada sugestão registra a espera do Vide, e o Registro das aulas mostra a média de cada aula | Pronta |
+| 1 | **Sugestão mais rápida na aula:** quando o artigo é a última coisa dita, o Vide sugere depois de uma pausa curta (0,6 s), sem esperar o texto definitivo do reconhecedor (que pode levar de 1 a 3 s); se a fala continua a mesma citação ("quatrocentos… e oitenta e seis", "…inciso sexto"), a sugestão é trocada ou refinada; "do"/"da" no fim continua esperando a lei. **Medição:** cada sugestão registra a espera do Vide, e o Registro das aulas mostra a média de cada aula | Publicada (0.33.0) |
 
 ## Pacotes anteriores
 
