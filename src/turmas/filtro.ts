@@ -65,6 +65,7 @@ export function filtroAtual(): TurmaAtiva | null {
 /** Conteúdo: é da disciplina, ou ainda não tem disciplina ("sem disciplina" aparece em todas). */
 export function pertenceConteudo(item: VinculoConteudo, f: TurmaAtiva | null = filtroAtual()): boolean {
   if (!f) return true;
+  if (item.turmaId) return item.turmaId === f.turmaId;
   return !item.disciplinas?.length || item.disciplinas.includes(f.disciplinaId);
 }
 
@@ -75,9 +76,10 @@ export function pertenceTurma(item: VinculoTurma, f: TurmaAtiva | null = filtroA
 }
 
 /** O vínculo que um recurso novo recebe (o que é criado no modo da turma já nasce ligado). */
-export function vinculoConteudoNovo(): VinculoConteudo {
+export function vinculoConteudoNovo(soTurma = false): VinculoConteudo {
   const t = turmaAtiva();
-  return t ? { disciplinas: [t.disciplinaId] } : {};
+  if (!t) return {};
+  return soTurma ? { disciplinas: [t.disciplinaId], turmaId: t.turmaId } : { disciplinas: [t.disciplinaId] };
 }
 
 export function vinculoTurmaNovo(): VinculoTurma {

@@ -71,10 +71,10 @@ export async function excluirQuestao(id: string): Promise<void> {
   avisarMudanca();
 }
 
-export async function salvarQuestionario(nome: string, questoes: string[], existente?: Questionario): Promise<Questionario> {
+export async function salvarQuestionario(nome: string, questoes: string[], existente?: Questionario, soTurma?: boolean): Promise<Questionario> {
   const q: Questionario = existente
-    ? { ...existente, nome, questoes, atualizado_em: agoraISO() }
-    : { ...base(), ...vinculoConteudoNovo(), nome, questoes };
+    ? { ...existente, nome, questoes, ...(soTurma === undefined ? {} : soTurma ? vinculoConteudoNovo(true) : { turmaId: null }), atualizado_em: agoraISO() }
+    : { ...base(), ...vinculoConteudoNovo(soTurma), nome, questoes };
   await db.questionarios.put(q);
   avisarMudanca();
   return q;

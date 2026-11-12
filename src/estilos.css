@@ -1405,3 +1405,4 @@ button.pilula:hover { border-color: var(--tinta); }
 .proc-quadro-perguntas-cab strong { flex: 1; min-width: 200px; }
 .proc-atalho-perguntas { display: inline-block; margin-left: 8px; font: inherit; font-size: 12px; font-weight: 800; color: #2f6b4f; background: #dcebe2; border: 0; border-radius: 99px; padding: 1px 9px; cursor: pointer; vertical-align: middle; }
 .proc-atalho-perguntas:hover { background: #c9e0d2; }
+.selo-so-turma { margin-left: 4px; font-size: 11px; vertical-align: middle; }

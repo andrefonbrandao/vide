@@ -8,25 +8,16 @@ import { irPara } from '../comum/navegacao';
 import { listarDiplomas } from '../dados/db';
 import { abreviacaoDe } from '../dados/diplomas';
 import type { Diploma } from '../dados/modelo';
-import { entrarNaTurma, excluirDisciplina, excluirTurma, listarDisciplinas, listarTurmas, rotuloTurma, salvarDisciplina, salvarTurma } from '../turmas/banco';
+import { entrarNaTurma, excluirDisciplina, excluirTurma, rotuloTurma, salvarDisciplina, salvarTurma } from '../turmas/banco';
 import { definirTurmaAtiva, turmaAtiva } from '../turmas/filtro';
 import { useTurmaAtiva } from './FaixaTurma';
 import { aulaAgora, proximaAula, rotuloHorario } from '../turmas/horarios';
 import { CORES, DIAS, type Disciplina, type Horario, type Turma } from '../turmas/tipos';
 import { Figura } from './ConsultaTela';
 import { Pagina } from './Pagina';
+import { useTurmas } from './TurmasDados';
+export { SeloTurma, useTurmas } from './TurmasDados';
 import { RecursosDaDisciplina } from './VincularRecursos';
-
-export function useTurmas(): { disciplinas: Disciplina[]; turmas: Turma[]; carregado: boolean } {
-  const [d, setD] = useState<{ disciplinas: Disciplina[]; turmas: Turma[]; carregado: boolean }>({ disciplinas: [], turmas: [], carregado: false });
-  useEffect(() => {
-    const carregar = () => void Promise.all([listarDisciplinas(), listarTurmas()]).then(([disciplinas, turmas]) => setD({ disciplinas, turmas, carregado: true }));
-    carregar();
-    window.addEventListener('vide-turmas-mudou', carregar);
-    return () => window.removeEventListener('vide-turmas-mudou', carregar);
-  }, []);
-  return d;
-}
 
 // ---------- Formulários ----------
 
@@ -404,4 +395,5 @@ export function AvisoAula() {
     </div>
   );
 }
+
 

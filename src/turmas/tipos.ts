@@ -36,6 +36,8 @@ export interface Turma extends Sincronizavel {
 /** O que liga um recurso de conteúdo (material, questão, questionário, caso) às disciplinas. */
 export interface VinculoConteudo {
   disciplinas?: string[];
+  /** "Só esta turma" (materiais e questionários): aparece só nela, não nas outras turmas da disciplina. */
+  turmaId?: string | null;
 }
 
 /** O que liga um recurso do semestre (processo, link de treino, resultado) à turma. */

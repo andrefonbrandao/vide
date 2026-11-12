@@ -239,6 +239,7 @@ O objetivo é responder a uma pergunta: **o reconhecimento de voz funciona bem o
 6. **Recursos** (botão em cada disciplina, em Minhas turmas): veja e marque o que é da disciplina — materiais, questões, questionários e casos — com atalhos **Ligar uma pasta inteira** e **Ligar um assunto inteiro**, a busca e os filtros "só os de…" e "só os sem disciplina". Em **Das turmas**, escolha a turma de cada processo, link de treino e resultado.
 7. Um material também pode ganhar a disciplina em **Organizar** (caixinhas com as siglas); o processo, a turma na aba **Capa**.
 8. O **Registro das aulas** mostra a turma de cada aula (selo colorido) e, no modo da turma, só as aulas dela. O **Início** mostra "Pronto para a aula de PC1 · 2026.2?" e a próxima aula.
+9. **Só esta turma** (avaliações aplicadas, planos de aula): no modo da turma, ao **Adicionar material**, escolha **Vale para › só a turma**; a pasta da turma (ex.: *PC1 · 2026.2*) é sugerida sozinha, e dá para acrescentar uma subpasta (*PC1 · 2026.2/Avaliações*). O material aparece só nessa turma, com o selo "só PC1 · 2026.2"; nas outras turmas da disciplina, não. O mesmo vale para o questionário (caixinha **Só da turma**, ao criar ou editar). Para mudar depois: **Organizar** (campo "Só desta turma") ou **Minhas turmas › Recursos › Materiais da turma / Questionários da turma**.
 
 ## Guardar o acervo no Google Drive (vários computadores)
 

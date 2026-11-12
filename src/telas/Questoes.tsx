@@ -1,5 +1,7 @@
 // Atividades › Questões: banco de questões, questionários (sequências para a aula),
 // importação por texto e resultados dos jogos (só números, sem nomes de alunos).
+import { SeloTurma } from './TurmasDados';
+import { turmaAtiva } from '../turmas/filtro';
 import { SemVinculo } from './FaixaTurma';
 import { Figura } from './ConsultaTela';
 import { confirmar } from '../comum/avisos';
@@ -420,6 +422,8 @@ export function AdicionarQuestoes({ aoVer }: { aoVer: () => void }) {
 
 function EditorQuestionario({ inicial, questoes, aoFechar }: { inicial?: Questionario; questoes: Questao[]; aoFechar: () => void }) {
   const [nome, setNome] = useState(inicial?.nome ?? '');
+  const ativa = turmaAtiva();
+  const [soTurma, setSoTurma] = useState(!!inicial?.turmaId && inicial.turmaId === ativa?.turmaId);
   const [ids, setIds] = useState<string[]>(inicial?.questoes.filter((id) => questoes.some((q) => q.id === id)) ?? []);
   const [busca, setBusca] = useState('');
   const porId = new Map(questoes.map((q) => [q.id, q]));
@@ -440,6 +444,12 @@ function EditorQuestionario({ inicial, questoes, aoFechar }: { inicial?: Questio
         <label htmlFor="nome-questionario">Nome do questionário</label>
         <input id="nome-questionario" type="text" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="ex.: Revisão — Recursos" />
       </div>
+      {ativa && (
+        <label className="caixa-marcar">
+          <input type="checkbox" checked={soTurma} onChange={(e) => setSoTurma(e.target.checked)} />
+          Só da turma {ativa.rotulo} (ex.: a prova aplicada nesta turma); sem marcar, vale para toda a disciplina
+        </label>
+      )}
       <h3>Questões, na ordem ({ids.length})</h3>
       {!ids.length && <p className="ajuda">Adicione questões da lista abaixo.</p>}
       <ol className="lista-ordem">
@@ -477,7 +487,7 @@ function EditorQuestionario({ inicial, questoes, aoFechar }: { inicial?: Questio
           className="botao primario"
           disabled={!nome.trim()}
           onClick={async () => {
-            await salvarQuestionario(nome.trim(), ids, inicial);
+            await salvarQuestionario(nome.trim(), ids, inicial, ativa ? soTurma : undefined);
             aoFechar();
           }}
         >
@@ -649,7 +659,7 @@ export function ListaQuestoes({ aoAdicionar, secaoFixa }: { aoAdicionar: () => v
               {questionarios.map((qz) => (
                 <li key={qz.id}>
                   <span className="texto-questao">
-                    <strong>{qz.nome}</strong> <SemVinculo item={qz} tipo="conteudo" />{' '}
+                    <strong>{qz.nome}</strong> <SemVinculo item={qz} tipo="conteudo" /> <SeloTurma turmaId={qz.turmaId} />{' '}
                     <span className="ajuda">
                       · {qz.questoes.filter((id) => questoes.some((q) => q.id === id)).length} questões
                     </span>

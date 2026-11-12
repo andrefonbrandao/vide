@@ -6,6 +6,7 @@ import { db } from '../dados/db';
 import { agoraISO } from '../dados/modelo';
 import { rotuloTurma } from '../turmas/banco';
 import type { Disciplina, Turma } from '../turmas/tipos';
+import { SeloTurma } from './TurmasDados';
 
 type TipoConteudo = 'materiais' | 'questoes' | 'questionarios' | 'casos';
 type TipoTurma = 'processos' | 'treinos' | 'jogos';
@@ -160,6 +161,7 @@ function ListaConteudo({ tipo, d }: { tipo: TipoConteudo; d: Disciplina }) {
                   {x.detalhe && <span className="ajuda" style={{ margin: 0 }}> · {x.detalhe}</span>}
                   {!x.disciplinas.length && <span className="selo sem-vinculo">sem disciplina</span>}
                   {x.disciplinas.some((y) => y !== d.id) && <span className="selo">também em outra disciplina</span>}
+                  <SeloTurma turmaId={x.turmaId} />
                 </span>
               </label>
             </li>
@@ -170,18 +172,20 @@ function ListaConteudo({ tipo, d }: { tipo: TipoConteudo; d: Disciplina }) {
   );
 }
 
-function ListaTurma({ tipo, d, turmas }: { tipo: TipoTurma; d: Disciplina; turmas: Turma[] }) {
+function ListaTurma({ tipo, d, turmas }: { tipo: TipoTurma | TipoConteudo; d: Disciplina; turmas: Turma[] }) {
+  const conteudo = tipo === 'materiais' || tipo === 'questionarios';
   const [itens, setItens] = useState<ItemLista[] | null>(null);
   const carregar = () => void ler(tipo).then(setItens);
   useEffect(carregar, [tipo]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!itens) return <p className="ajuda">Carregando…</p>;
   const daDisciplina = new Set(turmas.map((t) => t.id));
-  // Mostra os desta disciplina e os sem turma (os de outras disciplinas ficam lá).
-  const vis = itens.filter((x) => !x.turmaId || daDisciplina.has(x.turmaId));
+  // Do semestre: os desta disciplina e os sem turma. Conteúdo: o que já é da disciplina (ou de uma turma dela).
+  const vis = conteudo ? itens.filter((x) => x.disciplinas.includes(d.id) || (x.turmaId && daDisciplina.has(x.turmaId))) : itens.filter((x) => !x.turmaId || daDisciplina.has(x.turmaId));
   return !vis.length ? (
-    <p className="ajuda">Nada aqui.</p>
+    <p className="ajuda">{conteudo ? `Nada ligado a ${d.sigla} ainda (use a aba da disciplina primeiro).` : 'Nada aqui.'}</p>
   ) : (
     <ul className="vincular-itens" data-rolavel>
+      {conteudo && <li className="ajuda" style={{ margin: 0 }}>Escolha uma turma para o que é exclusivo dela (avaliações aplicadas, planos de aula). O resto vale para toda a disciplina.</li>}
       {vis.map((x) => (
         <li key={x.id} className="linha-opcoes">
           <span style={{ flex: 1, minWidth: 200 }}>
@@ -194,11 +198,11 @@ function ListaTurma({ tipo, d, turmas }: { tipo: TipoTurma; d: Disciplina; turma
             value={x.turmaId ?? ''}
             onChange={async (e) => {
               const turmaId = e.target.value || null; // lido já: depois a tela volta o campo ao valor antigo
-              await gravar(tipo, [x.id], () => ({ turmaId }));
+              await gravar(tipo, [x.id], (y) => (conteudo ? { turmaId, disciplinas: [...new Set([...(y.disciplinas ?? []), d.id])] } : { turmaId }));
               carregar();
             }}
           >
-            <option value="">sem turma</option>
+            <option value="">{conteudo ? `toda a disciplina ${d.sigla}` : 'sem turma'}</option>
             {turmas.map((t) => (
               <option key={t.id} value={t.id}>
                 {rotuloTurma(d, t)}
@@ -212,7 +216,7 @@ function ListaTurma({ tipo, d, turmas }: { tipo: TipoTurma; d: Disciplina; turma
 }
 
 export function RecursosDaDisciplina({ d, turmas, aoFechar }: { d: Disciplina; turmas: Turma[]; aoFechar: () => void }) {
-  const [aba, setAba] = useState<TipoConteudo | TipoTurma>('materiais');
+  const [aba, setAba] = useState<TipoConteudo | TipoTurma | 'materiais-turma' | 'questionarios-turma'>('materiais');
   const conteudo: TipoConteudo[] = ['materiais', 'questoes', 'questionarios', 'casos'];
   const daTurma: TipoTurma[] = ['processos', 'treinos', 'jogos'];
   return (
@@ -239,13 +243,22 @@ export function RecursosDaDisciplina({ d, turmas, aoFechar }: { d: Disciplina; t
         <span className="ajuda" style={{ margin: '0 0 0 8px' }}>
           Das turmas:
         </span>
+        {(['materiais-turma', 'questionarios-turma'] as const).map((t) => (
+          <button key={t} className={`botao pequeno${aba === t ? ' escuro' : ''}`} onClick={() => setAba(t)} disabled={!turmas.length}>
+            {t === 'materiais-turma' ? 'Materiais da turma' : 'Questionários da turma'}
+          </button>
+        ))}
         {daTurma.map((t) => (
           <button key={t} className={`botao pequeno${aba === t ? ' escuro' : ''}`} onClick={() => setAba(t)} disabled={!turmas.length}>
             {NOMES[t]}
           </button>
         ))}
       </nav>
-      {(conteudo as string[]).includes(aba) ? <ListaConteudo key={aba} tipo={aba as TipoConteudo} d={d} /> : <ListaTurma key={aba} tipo={aba as TipoTurma} d={d} turmas={turmas} />}
+      {(conteudo as string[]).includes(aba) ? (
+        <ListaConteudo key={aba} tipo={aba as TipoConteudo} d={d} />
+      ) : (
+        <ListaTurma key={aba} tipo={aba === 'materiais-turma' ? 'materiais' : aba === 'questionarios-turma' ? 'questionarios' : (aba as TipoTurma)} d={d} turmas={turmas} />
+      )}
     </div>
   );
 }

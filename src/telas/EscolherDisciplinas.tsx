@@ -24,15 +24,15 @@ export function EscolherDisciplinas({ valor, aoMudar }: { valor: string[]; aoMud
   );
 }
 
-export function EscolherTurma({ valor, aoMudar }: { valor: string | null | undefined; aoMudar: (id: string | null) => void }) {
+export function EscolherTurma({ valor, aoMudar, rotulo = 'Turma', vazio = 'sem turma', ajuda }: { valor: string | null | undefined; aoMudar: (id: string | null) => void; rotulo?: string; vazio?: string; ajuda?: string }) {
   const [dados, setDados] = useState<{ d: Disciplina[]; t: Turma[] } | null>(null);
   useEffect(() => void Promise.all([listarDisciplinas(), listarTurmas()]).then(([d, t]) => setDados({ d, t })), []);
   if (!dados?.t.length) return null;
   return (
     <div className="campo">
-      <label htmlFor="escolher-turma">Turma</label>
+      <label htmlFor="escolher-turma">{rotulo}</label>
       <select id="escolher-turma" className="seletor" value={valor ?? ''} onChange={(e) => aoMudar(e.target.value || null)}>
-        <option value="">sem turma</option>
+        <option value="">{vazio}</option>
         {dados.t.map((t) => (
           <option key={t.id} value={t.id}>
             {rotuloTurma(dados.d.find((x) => x.id === t.disciplinaId), t)}
@@ -40,6 +40,7 @@ export function EscolherTurma({ valor, aoMudar }: { valor: string | null | undef
           </option>
         ))}
       </select>
+      {ajuda && <span className="ajuda" style={{ margin: 0 }}>{ajuda}</span>}
     </div>
   );
 }

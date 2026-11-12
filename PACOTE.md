@@ -19,6 +19,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | Perguntas sobre o processo em **quadros por evento** na página da turma: lado a lado, cada um com o evento, quantas perguntas e o progresso do aluno ("2 de 4 feitas", "concluído ✓", "novo" no mais recente); ao tocar, abrem só as perguntas daquele evento (com "recomeçar este evento"); atalho "N perguntas" na tabela de eventos | Pronta |
+| 2 | **Só esta turma** para materiais e questionários (avaliações aplicadas, planos de aula): aparecem só na turma escolhida, não nas outras turmas da mesma disciplina; ao adicionar no modo da turma, escolha "toda a disciplina" ou "só a turma", com a **pasta da turma sugerida sozinha** (ex.: "PC1 · 2026.2/Avaliações"); selo "só PC1 · 2026.2"; mudar em Organizar, no editor do questionário ou em Recursos › Materiais/Questionários da turma | Pronta |
 
 ## Pacotes anteriores
 

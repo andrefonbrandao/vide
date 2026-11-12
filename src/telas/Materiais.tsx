@@ -1,7 +1,9 @@
 // Materiais do professor (PDFs, imagens) organizados em pastas e etiquetas.
 // - <ListaMateriais/> e <AdicionarMaterial/>: aba Acervo (organizar, apagar, carregar).
 // - <SeletorMaterial/>: botão da tela da aula, com busca, para escolher o material.
-import { EscolherDisciplinas } from './EscolherDisciplinas';
+import { EscolherDisciplinas, EscolherTurma } from './EscolherDisciplinas';
+import { SeloTurma } from './TurmasDados';
+import { turmaAtiva } from '../turmas/filtro';
 import { SemVinculo } from './FaixaTurma';
 import { Figura } from './ConsultaTela';
 import { avisar, confirmar } from '../comum/avisos';
@@ -195,6 +197,7 @@ export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
             {m.paginas} {m.paginas === 1 ? 'página' : 'páginas'} · {mb(m.tamanho)}
           </span>
           <SemVinculo item={m} tipo="conteudo" />
+          <SeloTurma turmaId={m.turmaId} />
           {mostrarPasta && (
             <button className="link-pasta" onClick={() => abrir(m.pasta ?? '')}>
               <IcPasta tamanho={14} /> {nomePasta(m.pasta ?? '')}
@@ -306,6 +309,14 @@ export function ListaMateriais({ aoAdicionar }: { aoAdicionar: () => void }) {
 export function AdicionarMaterial({ aoVer }: { aoVer: () => void }) {
   const lista = useMateriais();
   const [pasta, setPasta] = useState(lerLocal(CHAVE_ULTIMA_PASTA, ''));
+  const ativa = turmaAtiva();
+  const [soTurma, setSoTurmaEstado] = useState(false);
+  // "Só esta turma": a pasta da turma é sugerida sozinha (dá para acrescentar subpastas: "/Avaliações").
+  const setSoTurma = (sim: boolean) => {
+    setSoTurmaEstado(sim);
+    if (sim && ativa && !pasta.startsWith(ativa.rotulo)) setPasta(ativa.rotulo);
+    if (!sim && ativa && pasta.startsWith(ativa.rotulo)) setPasta('');
+  };
   const [etiquetasNovas, setEtiquetasNovas] = useState('');
   const [msg, setMsg] = useState<string | null>(null);
   const [concluido, setConcluido] = useState(false);
@@ -322,7 +333,7 @@ export function AdicionarMaterial({ aoVer }: { aoVer: () => void }) {
     for (const f of Array.from(arquivos)) {
       setMsg(`Carregando "${f.name}"…`);
       try {
-        const m = await importarMaterial(f, { pasta, etiquetas });
+        const m = await importarMaterial(f, { pasta, etiquetas, soTurma });
         ok.push(m.nome);
       } catch (err) {
         falhas.push(`${f.name} (${(err as Error).message})`);
@@ -350,6 +361,22 @@ export function AdicionarMaterial({ aoVer }: { aoVer: () => void }) {
             <option key={p} value={p} />
           ))}
         </datalist>
+        {ativa && (
+          <div className="campo">
+            <label>Vale para</label>
+            <div className="linha-opcoes" role="radiogroup" aria-label="Vale para">
+              <label className="caixa-marcar" style={{ marginTop: 0 }}>
+                <input type="radio" name="alcance" checked={!soTurma} onChange={() => setSoTurma(false)} />
+                toda a disciplina <span className="selo-disciplina" style={{ ['--cor' as string]: ativa.cor }}>{ativa.rotulo.split(' · ')[0]}</span>
+              </label>
+              <label className="caixa-marcar" style={{ marginTop: 0 }}>
+                <input type="radio" name="alcance" checked={soTurma} onChange={() => setSoTurma(true)} />
+                só a turma <strong>{ativa.rotulo}</strong> (avaliações, planos de aula)
+              </label>
+            </div>
+            {soTurma && <span className="ajuda" style={{ margin: 0 }}>Vai para a pasta da turma. Para separar, acrescente uma subpasta: <em>{ativa.rotulo}/Avaliações</em>.</span>}
+          </div>
+        )}
         <div className="grade-2">
           <div className="campo">
             <label htmlFor="mat-pasta">1. Pasta</label>
@@ -520,12 +547,13 @@ function EditarMaterial({ m, aoFechar }: { m: Material; aoFechar: () => void }) 
   const [pasta, setPasta] = useState(m.pasta ?? '');
   const [etiquetas, setEtiquetas] = useState((m.etiquetas ?? []).join(', '));
   const [disciplinas, setDisciplinas] = useState(m.disciplinas ?? []);
+  const [turmaId, setTurmaId] = useState<string | null>(m.turmaId ?? null);
   return (
     <li className="item-mat editando">
       <form
         onSubmit={async (e) => {
           e.preventDefault();
-          await atualizarMaterial(m.id, { nome, pasta, etiquetas: [etiquetas], disciplinas });
+          await atualizarMaterial(m.id, { nome, pasta, etiquetas: [etiquetas], disciplinas, turmaId });
           aoFechar();
         }}
         className="form-mat"
@@ -543,6 +571,7 @@ function EditarMaterial({ m, aoFechar }: { m: Material; aoFechar: () => void }) 
           <input value={etiquetas} onChange={(e) => setEtiquetas(e.target.value)} />
         </div>
         <EscolherDisciplinas valor={disciplinas} aoMudar={setDisciplinas} />
+        <EscolherTurma valor={turmaId} aoMudar={setTurmaId} rotulo="Só desta turma" vazio="não: vale para toda a disciplina" ajuda="Avaliações aplicadas e planos de aula: aparecem só na turma escolhida." />
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <button className="botao pequeno primario" type="submit">Salvar</button>
           <button className="botao pequeno" type="button" onClick={aoFechar}>Cancelar</button>

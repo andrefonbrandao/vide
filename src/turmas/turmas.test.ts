@@ -42,3 +42,15 @@ describe('filtro da turma', () => {
     expect(pertenceTurma({ turmaId: null }, f)).toBe(true);
   });
 });
+
+describe('só esta turma', () => {
+  const f1 = { turmaId: 't1', disciplinaId: 'd1', rotulo: 'PC1 · 2026.2', cor: '#000' };
+  const f2 = { turmaId: 't2', disciplinaId: 'd1', rotulo: 'PC1 · 2027.1', cor: '#000' };
+  it('o material da turma aparece só nela (não nas outras turmas da disciplina)', () => {
+    const prova = { disciplinas: ['d1'], turmaId: 't1' };
+    expect(pertenceConteudo(prova, f1)).toBe(true);
+    expect(pertenceConteudo(prova, f2)).toBe(false);
+    expect(pertenceConteudo(prova, null)).toBe(true);
+    expect(pertenceConteudo({ disciplinas: ['d1'] }, f2)).toBe(true);
+  });
+});

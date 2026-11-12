@@ -121,7 +121,7 @@ export function tipoDoArquivo(arquivo: File): Material['tipo'] | null {
 }
 
 /** Guarda um PDF ou imagem no acervo de materiais. */
-export async function importarMaterial(arquivo: File, org: { pasta?: string; etiquetas?: string[] } = {}): Promise<Material> {
+export async function importarMaterial(arquivo: File, org: { pasta?: string; etiquetas?: string[]; soTurma?: boolean } = {}): Promise<Material> {
   const tipo = tipoDoArquivo(arquivo);
   if (!tipo) throw new Error('Formato não aceito. Use PDF, PNG, JPG ou WebP.');
   const id = novoId();
@@ -133,7 +133,7 @@ export async function importarMaterial(arquivo: File, org: { pasta?: string; eti
     criado_em: agora,
     atualizado_em: agora,
     excluido_em: null,
-    ...vinculoConteudoNovo(),
+    ...vinculoConteudoNovo(org.soTurma),
     nome: arquivo.name.replace(/\.[^.]+$/, ''),
     tipo,
     mime: arquivo.type || (tipo === 'pdf' ? 'application/pdf' : 'image/*'),
@@ -154,15 +154,21 @@ export async function listarMateriais(): Promise<Material[]> {
 }
 
 /** Muda nome, pasta e etiquetas de um material. */
-export async function atualizarMaterial(id: string, dados: { nome?: string; pasta?: string; etiquetas?: string[]; disciplinas?: string[] }): Promise<void> {
+export async function atualizarMaterial(id: string, dados: { nome?: string; pasta?: string; etiquetas?: string[]; disciplinas?: string[]; turmaId?: string | null }): Promise<void> {
   const m = await db.materiais.get(id);
   if (!m) return;
+  if (dados.turmaId) {
+    // "Só esta turma" também liga o material à disciplina da turma.
+    const t = await db.turmas.get(dados.turmaId);
+    if (t) dados = { ...dados, disciplinas: [...new Set([...(dados.disciplinas ?? m.disciplinas ?? []), t.disciplinaId])] };
+  }
   await db.materiais.put({
     ...m,
     nome: dados.nome?.trim() || m.nome,
     pasta: dados.pasta !== undefined ? limparPasta(dados.pasta) : (m.pasta ?? ''),
     etiquetas: dados.etiquetas !== undefined ? limparEtiquetas(dados.etiquetas) : (m.etiquetas ?? []),
     ...(dados.disciplinas !== undefined ? { disciplinas: dados.disciplinas } : {}),
+    ...(dados.turmaId !== undefined ? { turmaId: dados.turmaId } : {}),
     atualizado_em: agoraISO(),
   });
   window.dispatchEvent(new Event('vide-materiais-mudou'));
