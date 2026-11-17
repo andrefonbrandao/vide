@@ -3,7 +3,7 @@
 // Texto sempre em #1E3A34 sobre #EEF0EA (ou o inverso no destaque); nunca em laranja.
 import { useEffect, useRef, useState } from 'react';
 import { abrirCanal, type LayoutArtigo, type Mensagem, type TelaJogo } from '../comum/canal';
-import { JogoTela } from './JogoTela';
+import { JogoTela, QR } from './JogoTela';
 import { ConsultaTela } from './ConsultaTela';
 import { buscarNoAcervo, VisaoProcesso } from './ProcessoAluno';
 import type { TelaProcesso } from '../processo/aula';
@@ -287,6 +287,7 @@ export function Projecao() {
           <div className="proj-processo" ref={processoRef}>
             <VisaoProcesso dados={processo.dados} buscar={buscarNoAcervo} lendoControlado={processo.lendo} mostrarVicios={processo.vicios ? true : 'esconder'} />
           </div>
+          {processo.url && processo.qr !== 'oculto' && <QrDoProcesso url={processo.url} grande={processo.qr === 'grande'} />}
         </div>
       )}
       {consulta && !jogo && (
@@ -321,6 +322,20 @@ export function Projecao() {
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+/** QR flutuante do link da turma, para os alunos abrirem o processo no celular ou no notebook. */
+function QrDoProcesso({ url, grande }: { url: string; grande: boolean }) {
+  const curto = url.replace(/^https?:\/\//, '');
+  return (
+    <div className={grande ? 'proc-qr-fundo' : undefined}>
+      <div className={`proc-qr${grande ? ' grande' : ''}`}>
+        <QR url={url} />
+        <p className="proc-qr-rotulo">{grande ? 'Acompanhe o processo no celular ou no notebook' : 'No celular ou notebook'}</p>
+        <p className="proc-qr-endereco">{curto}</p>
+      </div>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { lerProcesso, salvarProcesso } from './banco';
 import { liberado, paraAluno } from './liberacao';
 import { comArtigos, comCliente, dadosParaPublicar, liberaEm, publicarProcesso } from './publicar';
 import { comPonto, modoDe } from './deliberacao';
-import type { DadosProcesso, Evento, Processo } from './tipos';
+import { urlDoProcesso, type DadosProcesso, type Evento, type Processo } from './tipos';
 
 export interface LeituraProcesso {
   eventoId: string;
@@ -22,7 +22,13 @@ export interface TelaProcesso {
   fracao: number;
   /** Caça aos vícios: o professor mostra os vícios plantados na projeção. */
   vicios?: boolean;
+  /** Link da turma (se o processo já foi publicado), para o QR flutuante na projeção. */
+  url?: string | null;
+  /** QR na projeção: no canto, grande no meio ou escondido. */
+  qr?: ModoQr;
 }
+
+export type ModoQr = 'canto' | 'grande' | 'oculto';
 
 export interface EstadoAulaProcesso {
   ativo: boolean;
@@ -56,7 +62,14 @@ class AulaProcesso {
 
   private async montar(p: Processo, lendo: LeituraProcesso | null, fracao: number, vicios = false): Promise<TelaProcesso> {
     const dados = paraAluno(await comCliente(await comArtigos(dadosParaPublicar(p, { comVicios: vicios })), p), Date.now());
-    return { dados, lendo, fracao, vicios };
+    return { dados, lendo, fracao, vicios, url: p.publicacao ? urlDoProcesso(p.publicacao.codigo) : null, qr: this.estado.tela?.qr ?? 'canto' };
+  }
+
+  /** QR do link da turma na projeção: no canto, grande ou escondido. */
+  mostrarQr(qr: ModoQr): void {
+    const t = this.estado.tela;
+    if (!t) return;
+    this.mudar({ tela: { ...t, qr } });
   }
 
   /** Grava uma mudança no processo aberto (ex.: a deliberação da turma) e refaz a projeção. */
@@ -130,7 +143,9 @@ class AulaProcesso {
     try {
       const pub = await publicarProcesso(novo);
       const salvo = await salvarProcesso({ ...novo, publicacao: pub });
-      this.mudar({ processo: salvo, aviso: 'Liberado. A turma já vê no link.' }, false);
+      const t2 = this.estado.tela;
+      // O código do link não muda ao republicar; mantém o QR atualizado mesmo assim.
+      this.mudar({ processo: salvo, aviso: 'Liberado. A turma já vê no link.', ...(t2 ? { tela: { ...t2, url: urlDoProcesso(pub.codigo) } } : {}) }, !!t2 && t2.url !== urlDoProcesso(pub.codigo));
     } catch (e) {
       this.mudar({ aviso: `Liberado na projeção, mas o link não foi atualizado: ${(e as Error).message}` }, false);
     }

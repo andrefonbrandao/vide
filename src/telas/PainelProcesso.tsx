@@ -159,6 +159,22 @@ export function PainelProcesso() {
             Deliberação da turma{deliberacaoAberta(processo)?.pontos.length ? ` (${deliberacaoAberta(processo)!.pontos.length})` : ''}
           </button>
         )}
+        {tela.url ? (
+          <>
+            <button className="botao" onClick={() => a.mostrarQr(tela.qr === 'oculto' ? 'canto' : 'oculto')} title="QR do link da turma no canto da projeção">
+              {tela.qr === 'oculto' ? 'Mostrar o QR' : 'Esconder o QR'}
+            </button>
+            {tela.qr !== 'oculto' && (
+              <button className={`botao${tela.qr === 'grande' ? ' escuro' : ''}`} onClick={() => a.mostrarQr(tela.qr === 'grande' ? 'canto' : 'grande')} title="QR grande no meio da projeção, para a turma escanear de longe">
+                {tela.qr === 'grande' ? 'QR no canto' : 'Ampliar o QR'}
+              </button>
+            )}
+          </>
+        ) : (
+          <span className="ajuda" style={{ margin: 0 }} title="Em Atividades › Processos, na capa do processo">
+            Sem QR: o processo ainda não tem link para a turma.
+          </span>
+        )}
         {tela.lendo && (
           <button className="botao" onClick={() => a.ler(null)}>
             Voltar ao processo

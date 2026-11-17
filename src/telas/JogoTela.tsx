@@ -90,7 +90,7 @@ function Cronometro({ inicio, prazo }: { inicio: number; prazo: number }) {
   );
 }
 
-function QR({ url }: { url: string }) {
+export function QR({ url }: { url: string }) {
   const svg = useMemo(() => {
     const qr = qrcode(0, 'M');
     qr.addData(url);

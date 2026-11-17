@@ -919,6 +919,13 @@ ol.lista-ordem li::before { counter-increment: q; content: counter(q) '.'; font-
 .proj-processo { position: absolute; inset: 0; overflow: hidden; background: var(--fundo); zoom: 1.35; }
 .proj-processo .proc-doc { pointer-events: none; }
 .proj-processo .proc-leitura-topo button { display: none; }
+.proc-qr { position: absolute; right: 2vmin; bottom: 2vmin; z-index: 4; width: 19vmin; padding: 1.2vmin 1.2vmin 1vmin; background: var(--fundo); color: var(--tinta); border-radius: 1.4vmin; box-shadow: 0 0.6vmin 2.4vmin rgba(0, 0, 0, 0.28); text-align: center; }
+.proc-qr-rotulo { margin: 0.6vmin 0 0; font-size: 1.7vmin; font-weight: 800; }
+.proc-qr-endereco { margin: 0.2vmin 0 0; font-size: 1.25vmin; color: var(--tinta-2); word-break: break-all; }
+.proc-qr-fundo { position: absolute; inset: 0; z-index: 4; display: flex; align-items: center; justify-content: center; background: rgba(30, 58, 52, 0.55); }
+.proc-qr.grande { position: static; width: 58vmin; padding: 3vmin 3vmin 2.4vmin; border-radius: 2.4vmin; }
+.proc-qr.grande .proc-qr-rotulo { font-size: 3vmin; margin-top: 1.4vmin; }
+.proc-qr.grande .proc-qr-endereco { font-size: 2.3vmin; }
 .proc-colar { display: flex; flex-direction: column; gap: 12px; }
 .proc-colar textarea { width: 100%; font-size: 13px; }
 .proc-avisos { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }

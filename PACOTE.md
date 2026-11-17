@@ -14,13 +14,19 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 18** aberto em 2026-11-17, a partir da versão 0.33.0 (já publicada). **Fechado e publicado como versão 0.34.0.**
+**Pacote 19** aberto em 2026-11-17, a partir da versão 0.34.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | **QR do processo na projeção:** com o processo aberto na aula (tela do eproc), um QR flutuante no canto da projeção leva a turma ao link do processo no celular ou no notebook, com o endereço escrito embaixo; no painel, "Ampliar o QR" (grande no meio, para escanear de longe), "QR no canto" e "Esconder o QR"; sem link publicado, o painel avisa que não há QR | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 18 (publicado como 0.34.0 em 2026-11-17)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | **Processos no Google Drive:** criar ou editar um processo (e também casos, disciplinas e turmas) agora avisa o Drive na hora, como já acontecia com as questões e os materiais; antes, só subia na verificação de 2 em 2 minutos e se perdia se a aba fosse fechada antes. O resumo do Drive diz o que foi enviado ("enviado: processos") | Publicada (0.34.0) |
-
-## Pacotes anteriores
 
 ### Pacote 17 (publicado como 0.33.0 em 2026-11-12)
 
