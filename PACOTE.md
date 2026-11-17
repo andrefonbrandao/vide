@@ -14,14 +14,19 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 17** aberto em 2026-11-12, a partir da versão 0.32.0. **Fechado e publicado como versão 0.33.0.**
-O próximo pacote recomeça esta seção a partir da versão publicada.
+**Pacote 18** aberto em 2026-11-17, a partir da versão 0.33.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | **Processos no Google Drive:** criar ou editar um processo (e também casos, disciplinas e turmas) agora avisa o Drive na hora, como já acontecia com as questões e os materiais; antes, só subia na verificação de 2 em 2 minutos e se perdia se a aba fosse fechada antes. O resumo do Drive diz o que foi enviado ("enviado: processos") | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 17 (publicado como 0.33.0 em 2026-11-12)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | **Sugestão mais rápida na aula:** quando o artigo é a última coisa dita, o Vide sugere depois de uma pausa curta (0,6 s), sem esperar o texto definitivo do reconhecedor (que pode levar de 1 a 3 s); se a fala continua a mesma citação ("quatrocentos… e oitenta e seis", "…inciso sexto"), a sugestão é trocada ou refinada; "do"/"da" no fim continua esperando a lei. **Medição:** cada sugestão registra a espera do Vide, e o Registro das aulas mostra a média de cada aula | Publicada (0.33.0) |
-
-## Pacotes anteriores
 
 ### Pacote 16 (publicado como 0.32.0 em 2026-11-12)
 

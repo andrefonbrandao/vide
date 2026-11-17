@@ -358,9 +358,15 @@ export async function sincronizar(banco: BancoVide, remoto: ArmazemRemoto, aviso
   if (!arqDados || ordenar(novo) !== ordenar(rem)) {
     if (arqDados) await remoto.atualizar(arqDados.id, json(novo));
     else await remoto.criar('Vide - dados.json', { vide: 'dados' }, json(novo));
-    if (q.remotoDesatualizado || qz.remotoDesatualizado || jg.remotoDesatualizado || tr.remotoDesatualizado || cs.remotoDesatualizado || pc.remotoDesatualizado || mat.remotoDesatualizado || dip.remotoDesatualizado) {
-      resumo.enviados.push('dados');
-    }
+    const partes = [
+      q.remotoDesatualizado || qz.remotoDesatualizado || jg.remotoDesatualizado ? 'questões' : '',
+      pc.remotoDesatualizado ? 'processos' : '',
+      cs.remotoDesatualizado ? 'casos' : '',
+      dc.remotoDesatualizado || tm.remotoDesatualizado ? 'disciplinas e turmas' : '',
+      tr.remotoDesatualizado ? 'links de treino' : '',
+      mat.remotoDesatualizado || dip.remotoDesatualizado ? 'dados do acervo' : '',
+    ].filter(Boolean);
+    if (partes.length) resumo.enviados.push(partes.join(', '));
   }
   aviso('');
   return resumo;

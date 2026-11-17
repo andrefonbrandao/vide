@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import { BancoVide } from '../dados/db';
 import type { Diploma, Item, Material } from '../dados/modelo';
 import type { Questao } from '../jogo/tipos';
+import { processoEmBranco } from '../processo/banco';
 import { ArmazemMemoria } from './remoto';
 import { mesclar, sincronizar } from './sincronia';
 
@@ -125,5 +126,17 @@ describe('dois computadores e o Drive', () => {
     await sincronizar(pc1, drive);
     expect(await pc1.registro.where('sessao_id').equals('s1').count()).toBe(0);
     expect((await drive.listar()).some((a) => a.props.vide === 'aula')).toBe(false);
+  });
+  test('processos: criar num computador, editar no outro', async () => {
+    const p = { ...processoEmBranco('Ação de cobrança'), atualizado_em: iso(1) };
+    await pc1.processos.put(p);
+    const r1 = await sincronizar(pc1, drive);
+    expect(r1.enviados.join(' ')).toContain('processos');
+    await sincronizar(pc2, drive);
+    expect((await pc2.processos.get(p.id))?.titulo).toBe('Ação de cobrança');
+    await pc2.processos.put({ ...(await pc2.processos.get(p.id))!, titulo: 'Ação de cobrança (2)', atualizado_em: iso(10) });
+    await sincronizar(pc2, drive);
+    await sincronizar(pc1, drive);
+    expect((await pc1.processos.get(p.id))?.titulo).toBe('Ação de cobrança (2)');
   });
 });
