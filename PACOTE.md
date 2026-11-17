@@ -14,11 +14,11 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 18** aberto em 2026-11-17, a partir da versão 0.33.0 (já publicada).
+**Pacote 18** aberto em 2026-11-17, a partir da versão 0.33.0 (já publicada). **Fechado e publicado como versão 0.34.0.**
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| 1 | **Processos no Google Drive:** criar ou editar um processo (e também casos, disciplinas e turmas) agora avisa o Drive na hora, como já acontecia com as questões e os materiais; antes, só subia na verificação de 2 em 2 minutos e se perdia se a aba fosse fechada antes. O resumo do Drive diz o que foi enviado ("enviado: processos") | No pacote |
+| 1 | **Processos no Google Drive:** criar ou editar um processo (e também casos, disciplinas e turmas) agora avisa o Drive na hora, como já acontecia com as questões e os materiais; antes, só subia na verificação de 2 em 2 minutos e se perdia se a aba fosse fechada antes. O resumo do Drive diz o que foi enviado ("enviado: processos") | Publicada (0.34.0) |
 
 ## Pacotes anteriores
 
