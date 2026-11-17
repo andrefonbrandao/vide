@@ -14,11 +14,11 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 19** aberto em 2026-11-17, a partir da versão 0.34.0 (já publicada).
+**Pacote 19** aberto em 2026-11-17, a partir da versão 0.34.0 (já publicada). **Fechado e publicado como versão 0.35.0.**
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| 1 | **QR do processo na projeção:** com o processo aberto na aula (tela do eproc), um QR flutuante no canto da projeção leva a turma ao link do processo no celular ou no notebook, com o endereço escrito embaixo; no painel, "Ampliar o QR" (grande no meio, para escanear de longe), "QR no canto" e "Esconder o QR"; sem link publicado, o painel avisa que não há QR | No pacote |
+| 1 | **QR do processo na projeção:** com o processo aberto na aula (tela do eproc), um QR flutuante no canto da projeção leva a turma ao link do processo no celular ou no notebook, com o endereço escrito embaixo; no painel, "Ampliar o QR" (grande no meio, para escanear de longe), "QR no canto" e "Esconder o QR"; sem link publicado, o painel avisa que não há QR | Publicada (0.35.0) |
 
 ## Pacotes anteriores
 
