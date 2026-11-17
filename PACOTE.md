@@ -14,13 +14,19 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 19** aberto em 2026-11-17, a partir da versão 0.34.0 (já publicada). **Fechado e publicado como versão 0.35.0.**
+**Pacote 20** aberto em 2026-11-17, a partir da versão 0.35.0 (já publicada). Ao fechar: **teste de peso**.
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | **Correção: projeção abrindo e fechando sem parar.** Quando a aba principal estava aberta desde antes de uma publicação e a janela de projeção já vinha com a versão nova, a aba principal pedia à projeção que se recarregasse a cada 15 s, sem fim. Agora só pede quando a projeção é a mais antiga; quando a projeção é a mais nova, a tela da aula avisa: "recarregue esta página (F5)" | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 19 (publicado como 0.35.0 em 2026-11-17)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | **QR do processo na projeção:** com o processo aberto na aula (tela do eproc), um QR flutuante no canto da projeção leva a turma ao link do processo no celular ou no notebook, com o endereço escrito embaixo; no painel, "Ampliar o QR" (grande no meio, para escanear de longe), "QR no canto" e "Esconder o QR"; sem link publicado, o painel avisa que não há QR | Publicada (0.35.0) |
-
-## Pacotes anteriores
 
 ### Pacote 18 (publicado como 0.34.0 em 2026-11-17)
 

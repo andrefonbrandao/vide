@@ -3,6 +3,7 @@
 // Com material (slides/PDF): roda = passa as páginas; clique esquerdo = projeta o
 // candidato mais recente (ou clique direto num candidato).
 // Sempre: clique direito = recolhe o artigo; clique na roda = a roda passa a rolar o artigo.
+import { compararVersao } from '../comum/versao';
 import { avisar, confirmar } from '../comum/avisos';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { controlador, type EstadoAula } from './controlador';
@@ -381,7 +382,13 @@ export function Aula({ ativa }: { ativa: boolean }) {
         {e.totalAcervo === 0 && (
           <div className="aviso" data-ui>Nenhuma lei importada. Vá em <strong>Biblioteca › Leis</strong> e importe as leis antes da aula.</div>
         )}
-        {e.projecao.conectada && e.projecao.versao !== __VERSAO__ && (
+        {e.projecao.conectada && e.projecao.versao !== __VERSAO__ && compararVersao(e.projecao.versao, __VERSAO__) > 0 && (
+          <div className="aviso" data-ui>
+            Saiu uma versão nova do Vide e a janela de projeção já está com ela. <strong>Recarregue esta página</strong> (tecla F5) para esta tela
+            ficar igual à projeção.
+          </div>
+        )}
+        {e.projecao.conectada && e.projecao.versao !== __VERSAO__ && compararVersao(e.projecao.versao, __VERSAO__) < 0 && (
           <div className="aviso" data-ui>
             A janela de projeção está com uma versão antiga do Vide. <strong>Feche a janela de projeção</strong> e clique em{' '}
             <strong>Abrir projeção</strong> de novo.

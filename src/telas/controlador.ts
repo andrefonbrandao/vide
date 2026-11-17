@@ -5,6 +5,7 @@ import { carregarIndice, listarDiplomas } from '../dados/db';
 import { abreviacaoDe, definirExtras, diplomaPrincipal, todosDiplomas, type DefDiploma } from '../dados/diplomas';
 import type { Item } from '../dados/modelo';
 import { abrirCanal, type LayoutArtigo, type Mensagem } from '../comum/canal';
+import { compararVersao } from '../comum/versao';
 import { listarMateriais } from '../material/documento';
 import { PAGINA_INTEIRA, ajustarRegiao, ehInteira, passo, type Regiao } from '../material/regiao';
 import { inicioDoTexto, resolver, type Projetavel } from '../comum/legislacao';
@@ -942,8 +943,10 @@ export class ControladorAula {
       const p = this.estado.projecao;
       const versao = m.versao ?? '?';
       const materialCarregado = m.materialCarregado ?? null;
-      // Janela de projeção com versão antiga do app: pede para ela se recarregar.
-      if (versao !== __VERSAO__ && Date.now() - this.ultimoPedidoRecarga > 15_000) {
+      // Janela de projeção com versão MAIS ANTIGA que esta: pede para ela se recarregar.
+      // (Se a projeção for a mais nova — esta aba foi aberta antes de uma publicação —,
+      // recarregá-la não adianta: ela voltaria nova e o pedido se repetiria sem fim.)
+      if (compararVersao(versao, __VERSAO__) < 0 && Date.now() - this.ultimoPedidoRecarga > 15_000) {
         this.ultimoPedidoRecarga = Date.now();
         this.canal.enviar({ t: 'recarregar' });
         registrar('sessao', 'janela de projeção desatualizada', { versao_projecao: versao, versao_app: __VERSAO__ });

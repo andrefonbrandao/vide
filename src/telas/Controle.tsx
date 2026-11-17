@@ -1,6 +1,7 @@
 // Página do celular: microfone + controle remoto da aula.
 // O acervo, a detecção, o registro e a projeção ficam no computador; o celular
 // manda o texto reconhecido e os comandos, e recebe a lista de alternativas.
+import { compararVersao } from '../comum/versao';
 import { useEffect, useRef, useState } from 'react';
 import { Logo } from '../comum/Logo';
 import {
@@ -30,17 +31,6 @@ const TEXTO_VOZ: Record<StatusVoz, string> = {
   erro: 'A escuta parou',
   'sem-suporte': 'Este navegador não reconhece voz',
 };
-
-/** -1 se a < b, 0 se iguais, 1 se a > b ("0.9.0" < "0.10.0"). */
-function compararVersao(a: string, b: string): number {
-  const pa = a.split('.').map((n) => parseInt(n, 10) || 0);
-  const pb = b.split('.').map((n) => parseInt(n, 10) || 0);
-  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
-    if (d) return d < 0 ? -1 : 1;
-  }
-  return 0;
-}
 
 export function Controle({ codigo }: { codigo: string }) {
   const [conexao, setConexao] = useState<StatusConexao>('conectando');
