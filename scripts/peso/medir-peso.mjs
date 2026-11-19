@@ -220,10 +220,13 @@ try {
   app = await medirApp(pw, ex);
 } finally {
   srv.kill();
-  try {
-    execSync('pkill -f "[w]orkerd"');
-  } catch {
-    /* já parou */
+  // O npx deixa o wrangler e o workerd vivos: para os dois (senão o teste não termina).
+  for (const alvo of ['[w]rangler dev', '[w]orkerd']) {
+    try {
+      execSync(`pkill -f "${alvo}"`);
+    } catch {
+      /* já parou */
+    }
   }
 }
 
@@ -261,3 +264,5 @@ const md = [
 ].join('\n');
 console.log(md);
 if (!process.argv.includes('--sem-registro')) appendFileSync(join(RAIZ, 'PESO.md'), `\n${md}`);
+// Garante que o processo termina (sobras do servidor não seguram o teste).
+process.exit(0);
