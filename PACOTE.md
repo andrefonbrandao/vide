@@ -12,6 +12,15 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 - Mudanças mais trabalhosas ou arriscadas são avisadas antes e podem ficar fora do pacote.
 - A cada 5 pacotes publicados (pacotes 15, 20, 25…), roda-se o **teste de peso** (`npm run peso`, ver `PESO.md`); se o Vide estiver pesado, o Claude recomenda a melhoria antes de mexer.
 
+## Próximas etapas anotadas
+
+**Orientação de trabalhos acadêmicos** (a parte 1, o caderno do orientador, está no pacote 21)
+- **Parte 2 — página do orientando** (link com código de acesso): cronograma e quanto falta para cada etapa, pendências (sugestões e comandos), modelos e orientações gerais para consulta; o orientando **envia as versões** do trabalho por ela.
+- **Parte 3 — e-mails ao orientando** (pelo Gmail do professor, enviados quando o Vide estiver aberto):
+  - **Lembretes de prazo:** o prazo é calculado na hora do envio (não quando o lembrete foi agendado); vários avisos atrasados viram um só; prazo vencido com o Vide fechado: aviso de "venceu em…" ou nada (o professor escolhe); cada envio fica marcado e vai para o Drive, para outro computador não repetir.
+  - **Resumo da sessão para o orientando:** no registro da sessão, um **campo próprio para o resumo feito pela IA** (separado das anotações internas do professor, editável antes de enviar) e um botão para **mandar ao orientando por e-mail**, com as sugestões e os comandos e seus prazos; o envio fica registrado na linha do tempo. (A IA pode já escrever esse resumo dirigido ao orientando.)
+- **Parte 4 — importar conversas:** e-mails trocados com o orientando direto do Gmail (o "copiar e colar" do WhatsApp e do e-mail já existe na parte 1).
+
 ## Situação
 
 **Pacote 21** aberto em 2026-11-19, a partir da versão 0.36.0 (já publicada).
