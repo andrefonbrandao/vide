@@ -139,4 +139,19 @@ describe('dois computadores e o Drive', () => {
     await sincronizar(pc1, drive);
     expect((await pc1.processos.get(p.id))?.titulo).toBe('Ação de cobrança (2)');
   });
+  test('orientação: trabalho, sessão e versão vão para o outro computador', async () => {
+    const t = { ...base('t1', 1), orientandoId: 'o1', titulo: 'Precedentes no CPC', tipo: 'TCC' as const, inicio: '2026-08-01', etapas: [], situacao: 'andamento' as const };
+    await pc1.orientandos.put({ ...base('o1', 1), nome: 'Ana', email: '', telefone: '', curso: '', observacoes: '' });
+    await pc1.trabalhos.put(t);
+    await pc1.interacoes.put({ ...base('i1', 1), trabalhoId: 't1', canal: 'sessao', em: '2026-11-12T10:00', resumo: 'Recorte do tema', texto: '', encaminhamentos: [] });
+    await pc1.versoes.put({ ...base('v1', 1), trabalhoId: 't1', rotulo: 'Versão 1', nomeArquivo: 'cap1.docx', mime: 'application/msword', tamanho: 3, recebida_em: '2026-11-10', notas: '', arquivo: new Blob(['abc']) });
+    const r1 = await sincronizar(pc1, drive);
+    expect(r1.enviados.join(' ')).toContain('orientação');
+    expect(r1.enviados).toContain('versão "Versão 1"');
+    const r2 = await sincronizar(pc2, drive);
+    expect(r2.mudou.has('orientacao')).toBe(true);
+    expect((await pc2.trabalhos.get('t1'))?.titulo).toBe('Precedentes no CPC');
+    expect((await pc2.interacoes.get('i1'))?.resumo).toBe('Recorte do tema');
+    expect(await (await pc2.versoes.get('v1'))!.arquivo.text()).toBe('abc');
+  });
 });

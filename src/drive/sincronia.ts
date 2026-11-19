@@ -13,6 +13,7 @@ import type { LinkTreino } from '../treino/tipos';
 import type { Caso } from '../consulta/tipos';
 import type { Processo } from '../processo/tipos';
 import type { Disciplina, Turma } from '../turmas/tipos';
+import type { Interacao, Orientando, Trabalho, Versao, VersaoMeta } from '../orientacao/tipos';
 import type { ArmazemRemoto, ArquivoRemoto } from './remoto';
 
 export type MaterialMeta = Omit<Material, 'arquivo'>;
@@ -40,6 +41,11 @@ export interface DadosRemotos {
   /** Disciplinas e turmas. */
   disciplinas?: Disciplina[];
   turmas?: Turma[];
+  /** Orientação: orientandos, trabalhos, sessões e comunicações, e os dados das versões (o arquivo vai à parte). */
+  orientandos?: Orientando[];
+  trabalhos?: Trabalho[];
+  interacoes?: Interacao[];
+  versoes?: VersaoMeta[];
   materiais: MaterialMeta[];
   diplomas: Diploma[];
   sessoes: SessaoMeta[];
@@ -49,10 +55,10 @@ export interface ResumoSincronia {
   baixados: string[];
   enviados: string[];
   /** Coleções que mudaram neste computador (para atualizar as telas). */
-  mudou: Set<'acervo' | 'materiais' | 'questoes' | 'registro'>;
+  mudou: Set<'acervo' | 'materiais' | 'questoes' | 'registro' | 'orientacao'>;
 }
 
-const VAZIO: DadosRemotos = { formato: 'vide-dados@1', questoes: [], questionarios: [], jogos: [], treinos: [], casos: [], processos: [], disciplinas: [], turmas: [], materiais: [], diplomas: [], sessoes: [] };
+const VAZIO: DadosRemotos = { formato: 'vide-dados@1', questoes: [], questionarios: [], jogos: [], treinos: [], casos: [], processos: [], disciplinas: [], turmas: [], orientandos: [], trabalhos: [], interacoes: [], versoes: [], materiais: [], diplomas: [], sessoes: [] };
 
 interface ComData {
   id: string;
@@ -89,6 +95,11 @@ async function lerJson<T>(b: Blob): Promise<T> {
 
 function semArquivo(m: Material): MaterialMeta {
   const { arquivo: _arquivo, ...meta } = m;
+  return meta;
+}
+
+function versaoSemArquivo(v: Versao): VersaoMeta {
+  const { arquivo: _arquivo, ...meta } = v;
   return meta;
 }
 
@@ -145,6 +156,16 @@ export async function sincronizar(banco: BancoVide, remoto: ArmazemRemoto, aviso
     if (tm.paraLocal.length) await banco.turmas.bulkPut(tm.paraLocal);
     resumo.mudou.add('questoes');
     resumo.baixados.push('disciplinas e turmas');
+  }
+  const ot = mesclar(await banco.orientandos.toArray(), rem.orientandos ?? []);
+  const tb = mesclar(await banco.trabalhos.toArray(), rem.trabalhos ?? []);
+  const it = mesclar(await banco.interacoes.toArray(), rem.interacoes ?? []);
+  if (ot.paraLocal.length + tb.paraLocal.length + it.paraLocal.length) {
+    if (ot.paraLocal.length) await banco.orientandos.bulkPut(ot.paraLocal);
+    if (tb.paraLocal.length) await banco.trabalhos.bulkPut(tb.paraLocal);
+    if (it.paraLocal.length) await banco.interacoes.bulkPut(it.paraLocal);
+    resumo.mudou.add('orientacao');
+    resumo.baixados.push('orientação');
   }
   if (pc.paraLocal.length) {
     await banco.processos.bulkPut(pc.paraLocal);
@@ -204,6 +225,42 @@ export async function sincronizar(banco: BancoVide, remoto: ArmazemRemoto, aviso
       await remoto.criar(`Material - ${nomeSeguro(m.nome)}${extensao(m)}`, { vide: 'material', id: m.id }, blob);
       resumo.enviados.push(`material "${m.nome}"`);
     } else if (m.excluido_em && arq) {
+      await remoto.lixeira(arq.id);
+    }
+  }
+
+  // ---------- versões dos trabalhos (orientação) ----------
+  const locaisVer = await banco.versoes.toArray();
+  const blobVer = new Map(locaisVer.map((v) => [v.id, v.arquivo]));
+  const ver = mesclar(locaisVer.map(versaoSemArquivo), rem.versoes ?? []);
+  const versoesFinal = new Map(ver.resultado.map((v) => [v.id, v]));
+  for (const r of ver.paraLocal) {
+    const blob = blobVer.get(r.id);
+    if (r.excluido_em) await banco.versoes.put({ ...r, arquivo: new Blob([]) });
+    else if (blob && blob.size > 0) await banco.versoes.put({ ...r, arquivo: blob });
+    else {
+      const arq = achar('versao', r.id);
+      if (!arq) {
+        versoesFinal.delete(r.id);
+        const antigo = (rem.versoes ?? []).find((x) => x.id === r.id);
+        if (antigo) versoesFinal.set(r.id, antigo);
+        continue;
+      }
+      aviso(`baixando "${r.nomeArquivo}"…`);
+      const conteudo = await remoto.baixar(arq.id);
+      await banco.versoes.put({ ...r, arquivo: new Blob([conteudo], { type: r.mime }) });
+      resumo.baixados.push(`versão "${r.rotulo}"`);
+    }
+    resumo.mudou.add('orientacao');
+  }
+  for (const v of versoesFinal.values()) {
+    const arq = achar('versao', v.id);
+    const blob = blobVer.get(v.id);
+    if (!v.excluido_em && !arq && blob && blob.size > 0) {
+      aviso(`enviando "${v.nomeArquivo}"…`);
+      await remoto.criar(`Orientação - ${nomeSeguro(v.rotulo)} - ${nomeSeguro(v.nomeArquivo)}`, { vide: 'versao', id: v.id }, blob);
+      resumo.enviados.push(`versão "${v.rotulo}"`);
+    } else if (v.excluido_em && arq) {
       await remoto.lixeira(arq.id);
     }
   }
@@ -343,6 +400,10 @@ export async function sincronizar(banco: BancoVide, remoto: ArmazemRemoto, aviso
     processos: pc.resultado,
     disciplinas: dc.resultado,
     turmas: tm.resultado,
+    orientandos: ot.resultado,
+    trabalhos: tb.resultado,
+    interacoes: it.resultado,
+    versoes: [...versoesFinal.values()],
     materiais: [...materiaisFinal.values()],
     diplomas: [...diplomasFinal.values()],
     sessoes: [...sessoesFinal.values()],
@@ -364,6 +425,7 @@ export async function sincronizar(banco: BancoVide, remoto: ArmazemRemoto, aviso
       cs.remotoDesatualizado ? 'casos' : '',
       dc.remotoDesatualizado || tm.remotoDesatualizado ? 'disciplinas e turmas' : '',
       tr.remotoDesatualizado ? 'links de treino' : '',
+      ot.remotoDesatualizado || tb.remotoDesatualizado || it.remotoDesatualizado || ver.remotoDesatualizado ? 'orientação' : '',
       mat.remotoDesatualizado || dip.remotoDesatualizado ? 'dados do acervo' : '',
     ].filter(Boolean);
     if (partes.length) resumo.enviados.push(partes.join(', '));

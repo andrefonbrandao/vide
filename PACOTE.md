@@ -14,13 +14,19 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 20** aberto em 2026-11-17, a partir da versão 0.35.0 (já publicada). **Fechado e publicado como versão 0.36.0.**
+**Pacote 21** aberto em 2026-11-19, a partir da versão 0.36.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | **Orientação, parte 1 (caderno do orientador):** nova seção "Orientação › Orientandos". Cadastro do orientando (nome, e-mail, telefone, curso) e do trabalho (TCC, monografia, artigo, dissertação, tese), com **cronograma sugerido** pelo tipo e prazos espalhados até a defesa (editável; "faltam 7 dias", "venceu há 2 dias"); **sessões e comunicações** em linha do tempo, com **colar a conversa** do WhatsApp ou do e-mail (o Vide reconhece o canal, a data, quem falou e faz o resumo); **sugestões e comandos** em cada registro, que viram **pendências** até serem cumpridas (e podem ser marcadas na sessão seguinte); **versões** do trabalho (PDF, Word…), com data, etapa e anotações; outro trabalho do mesmo orientando. Tudo neste computador e no Google Drive (as versões como arquivos próprios). A tela é baixada só quando aberta (não pesa na aula). **Próximas partes:** página do orientando (com envio de versões e modelos), lembretes por e-mail (pelo Gmail, com o Vide aberto, calculando o prazo na hora do envio) | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 20 (publicado como 0.36.0 em 2026-11-19)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | **Correção: projeção abrindo e fechando sem parar.** Quando a aba principal estava aberta desde antes de uma publicação e a janela de projeção já vinha com a versão nova, a aba principal pedia à projeção que se recarregasse a cada 15 s, sem fim. Agora só pede quando a projeção é a mais antiga; quando a projeção é a mais nova, a tela da aula avisa: "recarregue esta página (F5)" | Publicada (0.36.0) |
-
-## Pacotes anteriores
 
 ### Pacote 19 (publicado como 0.35.0 em 2026-11-17)
 

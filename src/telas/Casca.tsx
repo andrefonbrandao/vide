@@ -1,6 +1,6 @@
 // A "casca" do app: barra lateral com as seções, topo com a busca e o "+ Criar",
 // o modelo de página (caminho, título, descrição e ações) e a página de Ajustes.
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 import { CamadaAvisos } from '../comum/avisos';
 import {
   IcAjustes,
@@ -11,6 +11,7 @@ import {
   IcLei,
   IcLink,
   IcMais,
+  IcOrientacao,
   IcPasta,
   IcPerguntas,
   IcProcesso,
@@ -35,6 +36,9 @@ import { Registro } from './Registro';
 import { Pagina } from './Pagina';
 import { AvisoAula, MinhasTurmas, SeletorTurma } from './Turmas';
 import { useTurmaAtiva } from './FaixaTurma';
+
+// A orientação só é baixada quando aberta (não pesa na aula).
+const Orientacoes = lazy(() => import('./Orientacoes').then((m) => ({ default: m.Orientacoes })));
 
 interface ItemMenu {
   rota: Rota;
@@ -73,6 +77,10 @@ const GRUPOS: { titulo: string | null; itens: ItemMenu[] }[] = [
       { rota: 'resultados', rotulo: 'Resultados', icone: <IcResultados /> },
       { rota: 'registro', rotulo: 'Registro das aulas', icone: <IcRegistro /> },
     ],
+  },
+  {
+    titulo: 'Orientação',
+    itens: [{ rota: 'orientacoes', rotulo: 'Orientandos', icone: <IcOrientacao /> }],
   },
 ];
 
@@ -314,7 +322,7 @@ function BarraLateral({ rota, recolhida }: { rota: Rota; recolhida: boolean }) {
 /** No celular, a barra lateral some: estas abas levam às outras páginas do mesmo grupo. */
 function AbasGrupo({ rota }: { rota: Rota }) {
   const grupo = GRUPOS.find((g) => g.titulo && g.itens.some((i) => i.rota === rota));
-  if (!grupo) return null;
+  if (!grupo || grupo.itens.length < 2) return null;
   return (
     <nav className="abas-grupo" aria-label={grupo.titulo ?? ''} data-ui>
       {grupo.itens.map((i) => (
@@ -350,7 +358,7 @@ function BarraCelular({ rota }: { rota: Rota }) {
     ['aula', 'Aula', <IcProjecao key="a" />, ['aula']],
     ['materiais', 'Biblioteca', <IcPasta key="b" />, ['leis', 'materiais']],
     ['questoes', 'Atividades', <IcPerguntas key="q" />, ['questoes', 'casos', 'processos', 'links']],
-    ['turmas', 'Turma', <IcTurmas key="t" />, ['turmas', 'resultados', 'registro']],
+    ['turmas', 'Turma', <IcTurmas key="t" />, ['turmas', 'resultados', 'registro', 'orientacoes']],
   ];
   return (
     <nav className="barra-celular" aria-label="Seções" data-ui>
@@ -439,6 +447,11 @@ export function Casca() {
           )}
           {rota === 'ajustes' && <Ajustes key={chave} />}
           {rota === 'turmas' && <MinhasTurmas key={chave} />}
+          {rota === 'orientacoes' && (
+            <Suspense fallback={<p className="ajuda pagina">Carregando…</p>}>
+              <Orientacoes key={chave} />
+            </Suspense>
+          )}
         </main>
       </div>
       <BarraCelular rota={rota} />

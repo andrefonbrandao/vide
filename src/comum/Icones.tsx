@@ -302,3 +302,12 @@ export const IcTurmas = (p: P) => (
     <path d="M7.5 14.5h3M7.5 17.5h5" />
   </Svg>
 );
+
+/** Capelo (orientação de trabalhos acadêmicos). */
+export const IcOrientacao = (p: P) => (
+  <Svg {...p}>
+    <path d="M2 9l10-5 10 5-10 5z" />
+    <path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5" />
+    <path d="M22 9v6" />
+  </Svg>
+);

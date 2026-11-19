@@ -97,6 +97,7 @@ class ServicoDrive {
     const tabelas = [
       db.questoes, db.questionarios, db.jogos, db.treinos, db.materiais, db.diplomas, db.itens, db.apagados,
       db.casos, db.processos, db.disciplinas, db.turmas,
+      db.orientandos, db.trabalhos, db.interacoes, db.versoes,
     ] as const;
     for (const t of tabelas) {
       const f = marcar(false);
@@ -170,6 +171,7 @@ class ServicoDrive {
           window.dispatchEvent(new Event('vide-processos-mudou'));
           window.dispatchEvent(new Event('vide-turmas-mudou'));
         }
+        if (r.mudou.has('orientacao')) window.dispatchEvent(new Event('vide-orientacao-mudou'));
         if (r.mudou.has('registro')) window.dispatchEvent(new Event('vide-registro-mudou'));
         const partes = [r.baixados.length ? `recebido: ${r.baixados.join(', ')}` : '', r.enviados.length ? `enviado: ${r.enviados.join(', ')}` : '']
           .filter(Boolean)

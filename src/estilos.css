@@ -1413,3 +1413,54 @@ button.pilula:hover { border-color: var(--tinta); }
 .proc-atalho-perguntas { display: inline-block; margin-left: 8px; font: inherit; font-size: 12px; font-weight: 800; color: #2f6b4f; background: #dcebe2; border: 0; border-radius: 99px; padding: 1px 9px; cursor: pointer; vertical-align: middle; }
 .proc-atalho-perguntas:hover { background: #c9e0d2; }
 .selo-so-turma { margin-left: 4px; font-size: 11px; vertical-align: middle; }
+
+/* ---------- Orientação ---------- */
+.ori-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; margin: 8px 0 12px; }
+.ori-cartao { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; cursor: pointer; font: inherit; color: inherit; }
+.ori-cartao:hover { border-color: var(--tinta); }
+.ori-cartao-cab { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 17px; }
+.ori-cartao-titulo { color: var(--tinta-2); font-size: 14px; }
+.ori-selo { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #e3e8ee; color: var(--tinta); }
+.ori-prazo { font-size: 14px; padding: 4px 10px; border-radius: 8px; background: #e4ebe6; }
+.ori-prazo.proxima, .ori-prazo.hoje { background: #fbeed0; }
+.ori-prazo.atrasada { background: #fbe3dc; color: #8f2d18; }
+.ori-cronograma { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+.ori-cronograma td { padding: 4px 6px; border-bottom: 1px solid var(--linha); vertical-align: middle; }
+.ori-cronograma td:first-child { width: 28px; }
+.ori-cronograma input[type='date'], .ori-etapa-nome input { font: inherit; padding: 5px 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: inherit; }
+.ori-cronograma input[type='date']:hover, .ori-etapa-nome input:hover, .ori-cronograma input:focus { border-color: var(--linha); background: #fff; outline: none; }
+.ori-etapa-nome { width: 50%; }
+.ori-etapa-nome input { width: 100%; }
+.ori-etapa-situacao { font-size: 13px; font-weight: 700; white-space: nowrap; color: var(--tinta-2); }
+.ori-cronograma tr.concluida .ori-etapa-nome input { text-decoration: line-through; color: var(--tinta-3); }
+.ori-cronograma tr.atrasada .ori-etapa-situacao { color: #a2361f; }
+.ori-cronograma tr.proxima .ori-etapa-situacao, .ori-cronograma tr.hoje .ori-etapa-situacao { color: #8a6410; }
+.ori-pendencias, .ori-encaminhamentos { list-style: none; padding: 0; margin: 6px 0; display: flex; flex-direction: column; gap: 6px; }
+.ori-pendencias li, .ori-encaminhamentos li { display: flex; align-items: center; gap: 8px; }
+.ori-pendencias .link-discreto { margin-left: auto; }
+.ori-pend-texto { flex: 1; }
+.ori-encaminhamentos li.cumprido > span:last-child { text-decoration: line-through; color: var(--tinta-3); }
+.ori-encaminhamentos li.descartado > span:last-child { color: var(--tinta-3); }
+.ori-encaminhamentos input:not([type='checkbox']) { font: inherit; padding: 5px 8px; border: 1px solid var(--linha); border-radius: 8px; }
+.ori-encaminhamentos input:not([type='checkbox']):not([type='date']) { flex: 1; }
+.ori-tipo-enc { flex: none; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; padding: 2px 7px; border-radius: 6px; border: none; background: #e4ebe6; color: var(--tinta); font-family: inherit; }
+.ori-tipo-enc.comando { background: #fbe3dc; color: #8f2d18; }
+button.ori-tipo-enc { cursor: pointer; }
+.ori-novo-enc { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ori-novo-enc input:not([type='date']) { flex: 1; min-width: 220px; }
+.ori-novo-enc input { font: inherit; padding: 7px 10px; border: 1px solid var(--linha); border-radius: 8px; }
+.ori-linha-tempo { list-style: none; padding: 0; margin: 10px 0; display: flex; flex-direction: column; gap: 10px; }
+.ori-interacao { border-left: 5px solid #9fb3a8; }
+.ori-interacao.sessao { border-left-color: var(--tinta); }
+.ori-interacao.whatsapp { border-left-color: #3f9a62; }
+.ori-interacao.email { border-left-color: #3d6fb4; }
+.ori-interacao-cab { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ori-interacao-cab .link-discreto { margin-left: auto; }
+.ori-interacao-cab .link-discreto + .link-discreto { margin-left: 8px; }
+.ori-resumo { margin: 6px 0; white-space: pre-wrap; }
+.ori-colado { margin: 6px 0 0; padding: 10px 12px; background: #fff; border: 1px solid var(--linha); border-radius: 10px; white-space: pre-wrap; font-family: inherit; font-size: 14px; max-height: 360px; overflow: auto; }
+.ori-chat p { margin: 0 0 8px; white-space: pre-wrap; }
+.ori-notas { width: 100%; font: inherit; padding: 6px 10px; margin-top: 8px; border: 1px solid var(--linha); border-radius: 8px; background: #fff; resize: vertical; }
+@media (max-width: 700px) {
+  .ori-cronograma td:nth-child(4) { display: none; }
+}
