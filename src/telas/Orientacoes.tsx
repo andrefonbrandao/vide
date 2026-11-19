@@ -26,6 +26,8 @@ import {
 import { analisarColagem, type Colagem } from '../orientacao/colar';
 import { agoraLocal, dataBR, dataHoraBR, emOrdem, etapaAtual, hojeISO, pendencias, rotuloDias, situacaoEtapa, type Pendencia } from '../orientacao/prazos';
 import { CANAIS, TIPOS_TRABALHO, type Canal, type Encaminhamento, type Interacao, type Orientando, type Trabalho, type TipoTrabalho, type Versao } from '../orientacao/tipos';
+import { Reconhecedor, obterConstrutor, type StatusVoz } from '../voz/reconhecedor';
+import { controlador } from './controlador';
 import { Figura } from './ConsultaTela';
 import { Pagina } from './Pagina';
 
@@ -511,6 +513,7 @@ function ConversaColada({ texto }: { texto: string }) {
 
 function ItemInteracao({ i, versoes, aoEditar }: { i: Interacao; versoes: Versao[]; aoEditar: () => void }) {
   const [verTexto, setVerTexto] = useState(false);
+  const [verTranscricao, setVerTranscricao] = useState(false);
   const versao = i.versaoId ? versoes.find((v) => v.id === i.versaoId) : undefined;
   const mudarEnc = (id: string, situacao: Encaminhamento['situacao']) =>
     void salvarInteracao({ ...i, encaminhamentos: i.encaminhamentos.map((e) => (e.id === id ? { ...e, situacao, resolvido_em: situacao === 'pendente' ? null : hojeISO() } : e)) });
@@ -551,6 +554,14 @@ function ItemInteracao({ i, versoes, aoEditar }: { i: Interacao; versoes: Versao
           ))}
         </ul>
       )}
+      {i.transcricao?.trim() && (
+        <>
+          <button className="link-discreto" style={{ marginLeft: 0, marginRight: 14 }} onClick={() => setVerTranscricao(!verTranscricao)}>
+            {verTranscricao ? 'esconder a transcrição' : `ver a transcrição (${i.transcricao.trim().split('\n').length} trechos)`}
+          </button>
+          {verTranscricao && <pre className="ori-colado">{i.transcricao}</pre>}
+        </>
+      )}
       {i.texto.trim() && (
         <>
           <button className="link-discreto" style={{ marginLeft: 0 }} onClick={() => setVerTexto(!verTexto)}>
@@ -560,6 +571,105 @@ function ItemInteracao({ i, versoes, aoEditar }: { i: Interacao; versoes: Versao
         </>
       )}
     </li>
+  );
+}
+
+// ---------- Transcrição da sessão (o mesmo reconhecimento de voz da aula) ----------
+
+const p2 = (n: number) => String(n).padStart(2, '0');
+
+/** Microfone ligado: cada trecho definitivo vira uma linha "[HH:MM] texto". */
+function useTranscricao(aoTrecho: (linha: string) => void) {
+  const [status, setStatus] = useState<StatusVoz>('parado');
+  const [detalhe, setDetalhe] = useState('');
+  const [parcial, setParcial] = useState('');
+  const aoTrechoRef = useRef(aoTrecho);
+  aoTrechoRef.current = aoTrecho;
+  const voz = useRef<Reconhecedor | null>(null);
+  useEffect(() => {
+    const r = new Reconhecedor({
+      onParcial: (t) => setParcial(t),
+      onFinal: (t) => {
+        setParcial('');
+        const texto = t.trim();
+        if (!texto) return;
+        const d = new Date();
+        aoTrechoRef.current(`[${p2(d.getHours())}:${p2(d.getMinutes())}] ${texto}`);
+      },
+      onStatus: (st, det) => {
+        setStatus(st);
+        setDetalhe(det ?? '');
+      },
+      onDiagnostico: () => {},
+    });
+    voz.current = r;
+    return () => r.parar();
+  }, []);
+  const iniciar = () => {
+    // A escuta da aula usa o mesmo microfone: pausa antes.
+    const aula = controlador();
+    if (aula.obter().escutando) aula.pausar();
+    voz.current?.iniciar();
+  };
+  const parar = () => voz.current?.parar();
+  const ligado = status === 'ouvindo' || status === 'iniciando' || status === 'reiniciando';
+  return { status, detalhe, parcial, ligado, iniciar, parar };
+}
+
+function PainelTranscricao({ transcricao, aoMudar, aoTrecho }: { transcricao: string; aoMudar: (t: string) => void; aoTrecho: (linha: string) => void }) {
+  const { status, detalhe, parcial, ligado, iniciar, parar } = useTranscricao(aoTrecho);
+  const [desde, setDesde] = useState<number | null>(null);
+  const [agora, setAgora] = useState(Date.now());
+  const caixa = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (!ligado) return;
+    const t = window.setInterval(() => setAgora(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, [ligado]);
+  // Acompanha o fim do texto enquanto transcreve.
+  useEffect(() => {
+    if (ligado && caixa.current) caixa.current.scrollTop = caixa.current.scrollHeight;
+  }, [transcricao, ligado]);
+  const suporte = !!obterConstrutor();
+  const min = desde ? Math.max(0, Math.floor((agora - desde) / 60_000)) : 0;
+  const palavras = transcricao.trim() ? transcricao.trim().split(/\s+/).length : 0;
+  return (
+    <div className="campo ori-transcricao">
+      <label htmlFor="int-transcricao">Transcrição da sessão</label>
+      {!suporte ? (
+        <p className="aviso">Este navegador não transcreve a voz. Use o Chrome ou o Edge, como na aula.</p>
+      ) : (
+        <div className="ori-transcricao-barra">
+          {ligado ? (
+            <button type="button" className="botao escuro" onClick={parar}>
+              ■ Pausar a transcrição
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="botao primario"
+              onClick={() => {
+                if (!desde) setDesde(Date.now());
+                setAgora(Date.now());
+                iniciar();
+              }}
+            >
+              ● {transcricao.trim() ? 'Continuar a transcrever' : 'Transcrever a sessão'}
+            </button>
+          )}
+          <span className={`ori-transcricao-status ${ligado ? 'ligado' : ''}`}>
+            {status === 'ouvindo' ? `ouvindo${desde ? ` · ${min} min` : ''}` : status === 'iniciando' || status === 'reiniciando' ? 'ligando o microfone…' : status === 'erro' ? detalhe || 'a escuta parou' : 'microfone desligado'}
+          </span>
+          {palavras > 0 && <span className="ajuda" style={{ margin: 0 }}>{palavras} palavras</span>}
+        </div>
+      )}
+      <textarea id="int-transcricao" ref={caixa} rows={ligado || transcricao ? 8 : 3} value={transcricao} onChange={(e) => aoMudar(e.target.value)} placeholder="O que for dito aparece aqui, com o horário. Dá para corrigir à mão depois." />
+      {ligado && parcial && <p className="ori-parcial">{parcial}…</p>}
+      <span className="ajuda" style={{ margin: 0 }}>
+        A transcrição vai sendo guardada enquanto você fala. Como na aula, só o microfone deste computador é ouvido: numa sessão online, a voz do orientando entra se sair pela caixa de
+        som (com fone de ouvido, só a sua).
+      </span>
+    </div>
   );
 }
 
@@ -580,7 +690,18 @@ function FormInteracao({ inicial, trabalho, interacoes, versoes, aoFechar }: { i
   const [cumpridas, setCumpridas] = useState<string[]>([]);
   const anteriores = pendencias(interacoes.filter((x) => x.id !== i.id));
   const ehSessao = i.canal === 'sessao';
-  const novo = !interacoes.some((x) => x.id === inicial.id);
+  // Registro novo (mesmo depois de a transcrição guardá-lo pela primeira vez).
+  const [novo] = useState(() => !interacoes.some((x) => x.id === inicial.id));
+  // Transcrição: cada trecho entra no texto e o registro é guardado na hora (não se perde se a página mudar).
+  const atual = useRef(i);
+  atual.current = i;
+  const aoTrecho = (linha: string) => {
+    const t = atual.current.transcricao?.trim();
+    const proximo = { ...atual.current, transcricao: t ? `${t}\n${linha}` : linha };
+    atual.current = proximo;
+    setI(proximo);
+    void salvarInteracao(proximo);
+  };
 
   const aoColar = (texto: string) => {
     const c = analisarColagem(texto);
@@ -613,7 +734,7 @@ function FormInteracao({ inicial, trabalho, interacoes, versoes, aoFechar }: { i
           : i;
         await salvarInteracao(final);
         for (const p of anteriores.filter((p) => cumpridas.includes(p.enc.id))) await resolverPendencia(p, 'cumprido');
-        avisar(ehSessao ? 'Sessão registrada' : 'Comunicação registrada');
+        avisar(novo ? (ehSessao ? 'Sessão registrada' : 'Comunicação registrada') : 'Registro salvo');
         aoFechar();
       }}
     >
@@ -643,6 +764,7 @@ function FormInteracao({ inicial, trabalho, interacoes, versoes, aoFechar }: { i
           <input id="int-em" type="datetime-local" value={i.em} onChange={(e) => e.target.value && setI({ ...i, em: e.target.value })} />
         </div>
       </div>
+      {ehSessao && <PainelTranscricao transcricao={i.transcricao ?? ''} aoMudar={(t) => setI({ ...i, transcricao: t })} aoTrecho={aoTrecho} />}
       <div className="campo">
         <label htmlFor="int-colar">{ehSessao ? 'Anotações (opcional)' : 'Conversa (cole aqui o WhatsApp ou o e-mail)'}</label>
         <textarea

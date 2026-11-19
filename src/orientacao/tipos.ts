@@ -68,8 +68,10 @@ export interface Interacao extends Sincronizavel {
   modo?: 'presencial' | 'online';
   /** O que foi conversado, em poucas linhas. */
   resumo: string;
-  /** A conversa colada (WhatsApp, e-mail), como veio. */
+  /** A conversa colada (WhatsApp, e-mail), como veio; na sessão, as anotações. */
   texto: string;
+  /** Sessão transcrita pelo microfone: uma linha por trecho, "[HH:MM] texto". */
+  transcricao?: string;
   encaminhamentos: Encaminhamento[];
   /** Versão do trabalho discutida nesta interação. */
   versaoId?: string | null;

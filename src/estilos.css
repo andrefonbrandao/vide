@@ -1464,3 +1464,10 @@ button.ori-tipo-enc { cursor: pointer; }
 @media (max-width: 700px) {
   .ori-cronograma td:nth-child(4) { display: none; }
 }
+.ori-transcricao { background: #fff; border: 1px solid var(--linha); border-radius: 12px; padding: 10px 12px; }
+.ori-transcricao-barra { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 4px 0 6px; }
+.ori-transcricao-status { font-size: 13px; font-weight: 700; color: var(--tinta-3); }
+.ori-transcricao-status.ligado { color: #a2361f; }
+.ori-transcricao-status.ligado::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #d8452b; margin-right: 6px; animation: ori-pisca 1.2s infinite; }
+@keyframes ori-pisca { 50% { opacity: 0.25; } }
+.ori-parcial { margin: 4px 0 0; color: var(--tinta-3); font-style: italic; }
