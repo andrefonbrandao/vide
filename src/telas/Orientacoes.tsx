@@ -24,6 +24,8 @@ import {
   salvarVersao,
 } from '../orientacao/banco';
 import { analisarColagem, type Colagem } from '../orientacao/colar';
+import { lerRespostaIA, pedidoRegistroIA } from '../orientacao/ia';
+import { copiar } from './ProcessoTexto';
 import { agoraLocal, dataBR, dataHoraBR, emOrdem, etapaAtual, hojeISO, pendencias, rotuloDias, situacaoEtapa, type Pendencia } from '../orientacao/prazos';
 import { CANAIS, TIPOS_TRABALHO, type Canal, type Encaminhamento, type Interacao, type Orientando, type Trabalho, type TipoTrabalho, type Versao } from '../orientacao/tipos';
 import { Reconhecedor, obterConstrutor, type StatusVoz } from '../voz/reconhecedor';
@@ -673,6 +675,59 @@ function PainelTranscricao({ transcricao, aoMudar, aoTrecho }: { transcricao: st
   );
 }
 
+/** "Organizar com a IA": copia o pedido (com a transcrição) e lê a resposta colada de volta. */
+function OrganizarComIA({ pedido, temMaterial, aoUsar }: { pedido: () => string; temMaterial: boolean; aoUsar: (resposta: string) => string }) {
+  const [colando, setColando] = useState(false);
+  const [resposta, setResposta] = useState('');
+  const [msg, setMsg] = useState('');
+  return (
+    <div className="campo ori-ia">
+      <label>Organizar com a IA</label>
+      <div className="linha-opcoes">
+        <button
+          type="button"
+          className="botao primario"
+          disabled={!temMaterial}
+          onClick={async () => {
+            const ok = await copiar(pedido());
+            setMsg(ok ? 'Pedido copiado. Cole no Claude (ou outra IA), copie a resposta inteira e clique em "Colar a resposta da IA".' : 'Este navegador não deixou copiar.');
+          }}
+        >
+          Copiar o pedido para a IA
+        </button>
+        <button type="button" className={`botao${colando ? ' escuro' : ''}`} onClick={() => setColando(!colando)}>
+          Colar a resposta da IA
+        </button>
+      </div>
+      {!temMaterial && <span className="ajuda" style={{ margin: 0 }}>Transcreva a sessão, cole a conversa ou escreva anotações primeiro.</span>}
+      {msg && <span className="ajuda" style={{ margin: 0 }}>{msg}</span>}
+      {colando && (
+        <>
+          <textarea rows={7} aria-label="Resposta da IA" value={resposta} onChange={(e) => setResposta(e.target.value)} placeholder="Cole aqui a resposta da IA (RESUMO, SUGESTÕES E COMANDOS…)" />
+          <div className="linha-opcoes">
+            <button
+              type="button"
+              className="botao escuro"
+              disabled={!resposta.trim()}
+              onClick={() => {
+                setMsg(aoUsar(resposta));
+                setResposta('');
+                setColando(false);
+              }}
+            >
+              Usar a resposta
+            </button>
+          </div>
+        </>
+      )}
+      <span className="ajuda" style={{ margin: 0 }}>
+        O pedido leva a transcrição, as anotações, o cronograma e as pendências anteriores (sem o nome do orientando). A resposta preenche o resumo, as sugestões e os comandos, e marca as
+        pendências já cumpridas; confira antes de registrar.
+      </span>
+    </div>
+  );
+}
+
 function descreverColagem(c: Colagem): string {
   const partes = [c.canal === 'whatsapp' ? `WhatsApp, ${c.mensagens.length} ${c.mensagens.length === 1 ? 'mensagem' : 'mensagens'}` : 'e-mail'];
   if (c.em) partes.push(`de ${dataHoraBR(c.em)}`);
@@ -787,6 +842,21 @@ function FormInteracao({ inicial, trabalho, interacoes, versoes, aoFechar }: { i
           </span>
         )}
       </div>
+      <OrganizarComIA
+        temMaterial={!!(i.transcricao?.trim() || i.texto.trim() || i.resumo.trim())}
+        pedido={() => pedidoRegistroIA({ trabalho, interacao: i, anteriores, versao: versoes.find((v) => v.id === i.versaoId), hoje: hojeISO() })}
+        aoUsar={(texto) => {
+          const r = lerRespostaIA(texto);
+          if (!r.resumo && !r.encaminhamentos.length && !r.cumpridas.length) return 'Não reconheci a resposta. Ela precisa ter as partes "RESUMO:" e "SUGESTÕES E COMANDOS:".';
+          const ja = new Set(i.encaminhamentos.map((e) => e.texto.trim().toLowerCase()));
+          const novos = r.encaminhamentos.filter((e) => !ja.has(e.texto.trim().toLowerCase())).map((e) => ({ id: novoId(), ...e, situacao: 'pendente' as const, resolvido_em: null }));
+          setI({ ...i, resumo: r.resumo || i.resumo, encaminhamentos: [...i.encaminhamentos, ...novos] });
+          const marcadas = r.cumpridas.map((n) => anteriores[n - 1]?.enc.id).filter((x): x is string => !!x);
+          setCumpridas([...new Set([...cumpridas, ...marcadas])]);
+          const partes = [r.resumo ? 'o resumo' : '', novos.length ? `${novos.length} ${novos.length === 1 ? 'sugestão ou comando' : 'sugestões e comandos'}` : '', marcadas.length ? `${marcadas.length} ${marcadas.length === 1 ? 'pendência marcada' : 'pendências marcadas'} como cumprida${marcadas.length === 1 ? '' : 's'}` : ''].filter(Boolean);
+          return `Preenchido: ${partes.join(', ')}. Confira e clique em ${novo ? '"Registrar"' : '"Salvar"'}.`;
+        }}
+      />
       <div className="campo">
         <label htmlFor="int-resumo">{ehSessao ? 'O que foi conversado' : 'Resumo'}</label>
         <textarea id="int-resumo" rows={3} value={i.resumo} onChange={(e) => setI({ ...i, resumo: e.target.value })} placeholder={ehSessao ? 'ex.: Discutimos o recorte do tema; o capítulo 1 está descritivo demais.' : ''} />

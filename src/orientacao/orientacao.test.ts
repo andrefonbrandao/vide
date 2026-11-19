@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { analisarColagem, dataDeEmail } from './colar';
+import { lerRespostaIA, pedidoRegistroIA } from './ia';
 import { cronogramaModelo, diasEntre, etapaAtual, pendencias, rotuloDias, situacaoEtapa } from './prazos';
 import type { Interacao } from './tipos';
 
@@ -61,5 +62,42 @@ describe('colar conversa', () => {
   });
   test('texto qualquer', () => {
     expect(analisarColagem('Conversamos sobre o recorte do tema.')).toMatchObject({ canal: null, resumo: 'Conversamos sobre o recorte do tema.' });
+  });
+});
+
+
+describe('pedido e resposta da IA', () => {
+  test('o pedido leva a transcrição, o cronograma e as pendências numeradas', () => {
+    const base = { usuario_id: null, criado_em: '', atualizado_em: '', excluido_em: null };
+    const trabalho = { ...base, id: 't', orientandoId: 'o', titulo: 'Precedentes', tipo: 'TCC' as const, inicio: '2026-08-01', situacao: 'andamento' as const, etapas: [{ id: 'e', nome: 'Capítulo 2', prazo: '2026-11-30', concluida_em: null }] };
+    const antiga: Interacao = { ...base, id: 'a', trabalhoId: 't', canal: 'sessao', em: '2026-11-01T10:00', resumo: '', texto: '', encaminhamentos: [{ id: 'x', tipo: 'comando', texto: 'Ler Marinoni', situacao: 'pendente' }] };
+    const atual: Interacao = { ...base, id: 'b', trabalhoId: 't', canal: 'sessao', em: '2026-11-19T14:00', modo: 'online', resumo: '', texto: '', encaminhamentos: [], transcricao: '[14:01] reescreva a introdução até sexta' };
+    const p = pedidoRegistroIA({ trabalho, interacao: atual, anteriores: pendencias([antiga]), hoje: '2026-11-19' });
+    expect(p).toContain('[14:01] reescreva a introdução até sexta');
+    expect(p).toContain('Capítulo 2: prazo 30/11/2026 (faltam 11 dias)');
+    expect(p).toContain('1. [comando] Ler Marinoni');
+    expect(p).toContain('SESSÃO: 19/11/2026 14:00 (online)');
+  });
+  test('lê a resposta', () => {
+    const r = lerRespostaIA(`**RESUMO:**
+A sessão tratou do recorte do tema.
+O capítulo 1 está descritivo.
+
+## SUGESTÕES E COMANDOS:
+- [comando] Reescrever a introdução com o problema de pesquisa | até 21/11/2026
+- [sugestão] Ler o capítulo de Taruffo sobre precedentes.
+- Comando: Enviar o sumário revisado (prazo: 28/11/2026)
+
+PENDÊNCIAS ANTERIORES CUMPRIDAS:
+- 1
+- 3`);
+    expect(r.resumo).toBe('A sessão tratou do recorte do tema.\nO capítulo 1 está descritivo.');
+    expect(r.encaminhamentos).toEqual([
+      { tipo: 'comando', texto: 'Reescrever a introdução com o problema de pesquisa', prazo: '2026-11-21' },
+      { tipo: 'sugestao', texto: 'Ler o capítulo de Taruffo sobre precedentes', prazo: undefined },
+      { tipo: 'comando', texto: 'Enviar o sumário revisado', prazo: '2026-11-28' },
+    ]);
+    expect(r.cumpridas).toEqual([1, 3]);
+    expect(lerRespostaIA('RESUMO: curto\nPENDÊNCIAS ANTERIORES CUMPRIDAS: nenhuma').cumpridas).toEqual([]);
   });
 });
