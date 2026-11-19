@@ -14,11 +14,11 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 20** aberto em 2026-11-17, a partir da versão 0.35.0 (já publicada). Ao fechar: **teste de peso**.
+**Pacote 20** aberto em 2026-11-17, a partir da versão 0.35.0 (já publicada). **Fechado e publicado como versão 0.36.0.**
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| 1 | **Correção: projeção abrindo e fechando sem parar.** Quando a aba principal estava aberta desde antes de uma publicação e a janela de projeção já vinha com a versão nova, a aba principal pedia à projeção que se recarregasse a cada 15 s, sem fim. Agora só pede quando a projeção é a mais antiga; quando a projeção é a mais nova, a tela da aula avisa: "recarregue esta página (F5)" | No pacote |
+| 1 | **Correção: projeção abrindo e fechando sem parar.** Quando a aba principal estava aberta desde antes de uma publicação e a janela de projeção já vinha com a versão nova, a aba principal pedia à projeção que se recarregasse a cada 15 s, sem fim. Agora só pede quando a projeção é a mais antiga; quando a projeção é a mais nova, a tela da aula avisa: "recarregue esta página (F5)" | Publicada (0.36.0) |
 
 ## Pacotes anteriores
 
