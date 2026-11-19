@@ -25,9 +25,10 @@ import {
 } from '../orientacao/banco';
 import { analisarColagem, type Colagem } from '../orientacao/colar';
 import { lerRespostaIA, pedidoRegistroIA } from '../orientacao/ia';
+import type { OpcoesRelatorio } from '../orientacao/relatorioPdf';
 import { copiar } from './ProcessoTexto';
 import { agoraLocal, dataBR, dataHoraBR, emOrdem, etapaAtual, hojeISO, pendencias, rotuloDias, situacaoEtapa, type Pendencia } from '../orientacao/prazos';
-import { CANAIS, TIPOS_TRABALHO, type Canal, type Encaminhamento, type Interacao, type Orientando, type Trabalho, type TipoTrabalho, type Versao } from '../orientacao/tipos';
+import { CANAIS, ELEMENTOS_VAZIOS, TIPOS_TRABALHO, type Elementos, type Canal, type Encaminhamento, type Interacao, type Orientando, type Trabalho, type TipoTrabalho, type Versao } from '../orientacao/tipos';
 import { Reconhecedor, obterConstrutor, type StatusVoz } from '../voz/reconhecedor';
 import { controlador } from './controlador';
 import { Figura } from './ConsultaTela';
@@ -42,6 +43,20 @@ function rotuloInteracao(i: Interacao): string {
 
 function tamanhoLegivel(n: number): string {
   return n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
+}
+
+/** Baixa um arquivo com o nome certo (ou abre o PDF numa aba nova). */
+function baixarArquivo(blob: Blob, nome: string, abrir = false): void {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  if (abrir) {
+    a.target = '_blank';
+    a.rel = 'noopener';
+  } else a.download = nome;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(a.href), 60_000);
 }
 
 /** Recarrega quando a orientação muda (aqui ou pelo Drive). */
@@ -257,13 +272,14 @@ function FormNovaOrientacao({ aoFechar, aoCriar }: { aoFechar: () => void; aoCri
 
 // ---------- Trabalho ----------
 
-type Aba = 'geral' | 'conversas' | 'versoes' | 'dados';
+type Aba = 'geral' | 'elementos' | 'conversas' | 'versoes' | 'dados';
 
 function TrabalhoDetalhe({ trabalho, orientando, aoVoltar, aoAbrir }: { trabalho: Trabalho; orientando?: Orientando; aoVoltar: () => void; aoAbrir: (id: string) => void }) {
   const [aba, setAba] = useState<Aba>('geral');
   const [interacoes, setInteracoes] = useState<Interacao[]>([]);
   const [versoes, setVersoes] = useState<Versao[]>([]);
   const [registrando, setRegistrando] = useState<Interacao | null>(null);
+  const [relatorio, setRelatorio] = useState(false);
   const carregar = useCallback(() => {
     void listarInteracoes(trabalho.id).then(setInteracoes);
     void listarVersoes(trabalho.id).then(setVersoes);
@@ -295,13 +311,18 @@ function TrabalhoDetalhe({ trabalho, orientando, aoVoltar, aoAbrir }: { trabalho
           <button className="botao" onClick={() => registrar('whatsapp')}>
             Registrar comunicação
           </button>
+          <button className={`botao${relatorio ? ' escuro' : ''}`} onClick={() => setRelatorio(!relatorio)}>
+            Relatório em PDF
+          </button>
         </>
       }
     >
+      {relatorio && <PainelRelatorio trabalho={trabalho} orientando={orientando} interacoes={interacoes} versoes={versoes} aoFechar={() => setRelatorio(false)} />}
       <nav className="secoes-questoes" aria-label="Partes da orientação">
         {(
           [
             ['geral', pend.length ? `Cronograma e pendências (${pend.length})` : 'Cronograma e pendências'],
+            ['elementos', 'Elementos do trabalho'],
             ['conversas', `Sessões e comunicações (${interacoes.length})`],
             ['versoes', `Versões (${versoes.length})`],
             ['dados', 'Dados'],
@@ -318,6 +339,7 @@ function TrabalhoDetalhe({ trabalho, orientando, aoVoltar, aoAbrir }: { trabalho
           <ListaPendencias pend={pend} aoRegistrar={() => registrar('sessao')} />
         </>
       )}
+      {aba === 'elementos' && <ElementosTrabalho trabalho={trabalho} />}
       {aba === 'conversas' && (
         <Conversas trabalho={trabalho} interacoes={interacoes} versoes={versoes} registrando={registrando} setRegistrando={setRegistrando} aoRegistrar={registrar} />
       )}
@@ -450,6 +472,150 @@ function ListaPendencias({ pend, aoRegistrar }: { pend: Pendencia[]; aoRegistrar
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+// ---------- Elementos do trabalho ----------
+
+const AJUDA_ELEMENTOS: Record<Exclude<keyof Elementos, 'atualizado_em'>, { nome: string; ajuda: string; linhas: number }> = {
+  tema: { nome: 'Tema', ajuda: 'O assunto, em linhas gerais.', linhas: 2 },
+  delimitacao: { nome: 'Delimitação do tema', ajuda: 'O recorte: que aspecto do tema, em que âmbito, em que período.', linhas: 3 },
+  problema: { nome: 'Problema de pesquisa', ajuda: 'A pergunta que o trabalho vai responder.', linhas: 3 },
+  hipoteses: { nome: 'Hipótese(s)', ajuda: 'Respostas provisórias ao problema, a confirmar ou não (se houver).', linhas: 3 },
+  objetivoGeral: { nome: 'Objetivo geral', ajuda: 'Dá conta da totalidade do problema, com um verbo de precisão (analisar, verificar, identificar…).', linhas: 2 },
+  objetivosEspecificos: { nome: 'Objetivos específicos', ajuda: 'Detalham o objetivo geral. Um por linha, começando com verbo no infinitivo.', linhas: 4 },
+  justificativa: { nome: 'Justificativa', ajuda: 'Por que o tema importa: relevância teórica, prática e social.', linhas: 4 },
+  metodologia: { nome: 'Metodologia', ajuda: 'Método, tipo de pesquisa e fontes (se já definidos).', linhas: 3 },
+};
+
+function ElementosTrabalho({ trabalho }: { trabalho: Trabalho }) {
+  const [t, mudar] = useRascunho(trabalho, salvarTrabalho);
+  const e: Elementos = { ...ELEMENTOS_VAZIOS, ...t.elementos };
+  const mudarCampo = (p: Partial<Elementos>) => mudar({ ...t, elementos: { ...e, ...p, atualizado_em: hojeISO() } });
+  return (
+    <section className="cartao ori-elementos">
+      <h3 style={{ marginTop: 0 }}>Elementos do trabalho</h3>
+      <p className="ajuda">
+        O que já foi definido com o orientando. Fica guardado sozinho; atualize a cada sessão, conforme o trabalho amadurece.
+        {e.atualizado_em ? ` Última alteração: ${dataBR(e.atualizado_em)}.` : ''}
+      </p>
+      {(Object.keys(AJUDA_ELEMENTOS) as (keyof typeof AJUDA_ELEMENTOS)[]).map((campo) => {
+        const a = AJUDA_ELEMENTOS[campo];
+        const valor = campo === 'objetivosEspecificos' ? e.objetivosEspecificos.join('\n') : e[campo];
+        return (
+          <div className="campo" key={campo}>
+            <label htmlFor={`el-${campo}`}>{a.nome}</label>
+            <textarea
+              id={`el-${campo}`}
+              rows={a.linhas}
+              value={valor}
+              placeholder={a.ajuda}
+              onChange={(ev) => mudarCampo(campo === 'objetivosEspecificos' ? { objetivosEspecificos: ev.target.value.split('\n') } : { [campo]: ev.target.value })}
+            />
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+// ---------- Relatório em PDF ----------
+
+const OPCOES_PADRAO: OpcoesRelatorio = { elementos: true, cronograma: true, pendencias: true, sessoes: true, transcricoes: false, conversas: false, versoes: true, orientador: '' };
+
+function lerOpcoes(): OpcoesRelatorio {
+  try {
+    return { ...OPCOES_PADRAO, ...(JSON.parse(localStorage.getItem('vide.orientacao.relatorio') ?? '{}') as Partial<OpcoesRelatorio>), de: '', ate: '' };
+  } catch {
+    return OPCOES_PADRAO;
+  }
+}
+
+function PainelRelatorio({ trabalho, orientando, interacoes, versoes, aoFechar }: { trabalho: Trabalho; orientando?: Orientando; interacoes: Interacao[]; versoes: Versao[]; aoFechar: () => void }) {
+  const [o, setO] = useState<OpcoesRelatorio>(lerOpcoes);
+  const [gerando, setGerando] = useState(false);
+  const mudar = (p: Partial<OpcoesRelatorio>) => {
+    const novo = { ...o, ...p };
+    setO(novo);
+    try {
+      const { de: _de, ate: _ate, ...guardar } = novo;
+      localStorage.setItem('vide.orientacao.relatorio', JSON.stringify(guardar));
+    } catch {
+      /* ignore */
+    }
+  };
+  const algum = o.elementos || o.cronograma || o.pendencias || o.sessoes || o.versoes;
+  const caixa = (campo: 'elementos' | 'cronograma' | 'pendencias' | 'sessoes' | 'versoes' | 'transcricoes' | 'conversas', rotulo: string) => (
+    <label className="ori-opcao">
+      <input type="checkbox" checked={o[campo]} onChange={(e) => mudar({ [campo]: e.target.checked })} /> {rotulo}
+    </label>
+  );
+  return (
+    <section className="cartao form-turma ori-relatorio">
+      <h3>Relatório em PDF</h3>
+      <div className="linha-opcoes">
+        <button type="button" className="botao pequeno" onClick={() => mudar({ elementos: true, cronograma: false, pendencias: false, sessoes: false, versoes: false })}>
+          Só os elementos
+        </button>
+        <button type="button" className="botao pequeno" onClick={() => mudar({ elementos: false, cronograma: true, pendencias: true, sessoes: true, versoes: true })}>
+          Só as orientações
+        </button>
+        <button type="button" className="botao pequeno" onClick={() => mudar({ elementos: true, cronograma: true, pendencias: true, sessoes: true, versoes: true })}>
+          Tudo
+        </button>
+      </div>
+      <div className="ori-opcoes">
+        {caixa('elementos', 'Elementos do trabalho (tema, problema, objetivos…)')}
+        {caixa('cronograma', 'Cronograma')}
+        {caixa('pendencias', 'Pendências do orientando')}
+        {caixa('sessoes', 'Sessões e comunicações (resumos, sugestões e comandos)')}
+        {o.sessoes && (
+          <div className="ori-subopcoes">
+            <span className="ajuda" style={{ margin: 0 }}>
+              Período:
+            </span>
+            <input type="date" aria-label="De" value={o.de ?? ''} onChange={(e) => mudar({ de: e.target.value })} />
+            <span className="ajuda" style={{ margin: 0 }}>
+              até
+            </span>
+            <input type="date" aria-label="Até" value={o.ate ?? ''} onChange={(e) => mudar({ ate: e.target.value })} />
+            {caixa('conversas', 'com as anotações e as conversas coladas')}
+            {caixa('transcricoes', 'com as transcrições (longas)')}
+          </div>
+        )}
+        {caixa('versoes', 'Versões recebidas (com as suas anotações)')}
+      </div>
+      <div className="campo" style={{ maxWidth: 420 }}>
+        <label htmlFor="rel-orientador">Orientador(a), no cabeçalho (opcional)</label>
+        <input id="rel-orientador" value={o.orientador ?? ''} onChange={(e) => mudar({ orientador: e.target.value })} placeholder="ex.: Prof. Me. Fulano de Tal" />
+      </div>
+      <div className="modal-botoes">
+        <button
+          type="button"
+          className="botao primario"
+          disabled={!algum || gerando}
+          onClick={async () => {
+            setGerando(true);
+            try {
+              const { gerarRelatorioPdf, nomeArquivoRelatorio } = await import('../orientacao/relatorioPdf');
+              const hoje = hojeISO();
+              const blob = await gerarRelatorioPdf({ orientando, trabalho, interacoes, versoes, hoje }, o);
+              baixarArquivo(blob, nomeArquivoRelatorio(orientando?.nome ?? 'orientando', hoje));
+              avisar('Relatório gerado');
+            } catch (e) {
+              avisar(`Não foi possível gerar o PDF: ${(e as Error).message}`, 'erro');
+            } finally {
+              setGerando(false);
+            }
+          }}
+        >
+          {gerando ? 'Gerando…' : 'Baixar o PDF'}
+        </button>
+        <button type="button" className="botao" onClick={aoFechar}>
+          Fechar
+        </button>
+      </div>
     </section>
   );
 }
@@ -1037,14 +1203,9 @@ function Versoes({ trabalho, versoes, interacoes }: { trabalho: Trabalho; versoe
 function ItemVersao({ v, etapa, discutida }: { v: Versao; etapa?: string; discutida: Interacao[] }) {
   const [notas, setNotas] = useState(v.notas);
   const abrir = () => {
-    const url = URL.createObjectURL(v.arquivo.size ? new Blob([v.arquivo], { type: v.mime }) : v.arquivo);
-    const a = document.createElement('a');
-    a.href = url;
-    if (v.mime === 'application/pdf') a.target = '_blank';
-    else a.download = v.nomeArquivo;
-    a.rel = 'noopener';
-    a.click();
-    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    const blob = new Blob([v.arquivo], { type: v.mime });
+    if (v.mime === 'application/pdf') baixarArquivo(blob, v.nomeArquivo, true);
+    else baixarArquivo(blob, v.nomeArquivo);
   };
   return (
     <li className="cartao ori-versao">

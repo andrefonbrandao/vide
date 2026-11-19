@@ -25,6 +25,24 @@ export interface Etapa {
 
 export type SituacaoTrabalho = 'andamento' | 'concluido' | 'interrompido';
 
+/** Elementos do projeto de pesquisa (como no manual de normalização: tema e problema, hipóteses, objetivos, justificativa, metodologia). */
+export interface Elementos {
+  tema: string;
+  delimitacao: string;
+  /** De preferência, uma pergunta. */
+  problema: string;
+  hipoteses: string;
+  justificativa: string;
+  objetivoGeral: string;
+  /** Um por item, começando com verbo no infinitivo. */
+  objetivosEspecificos: string[];
+  metodologia: string;
+  /** Última alteração ("AAAA-MM-DD"). */
+  atualizado_em?: string;
+}
+
+export const ELEMENTOS_VAZIOS: Elementos = { tema: '', delimitacao: '', problema: '', hipoteses: '', justificativa: '', objetivoGeral: '', objetivosEspecificos: [], metodologia: '' };
+
 export interface Trabalho extends Sincronizavel {
   orientandoId: string;
   titulo: string;
@@ -35,6 +53,8 @@ export interface Trabalho extends Sincronizavel {
   defesa?: string;
   etapas: Etapa[];
   situacao: SituacaoTrabalho;
+  /** Tema, problema, objetivos… (o que já foi definido). */
+  elementos?: Elementos;
 }
 
 export type Canal = 'sessao' | 'whatsapp' | 'email' | 'telefone' | 'outro';

@@ -1473,3 +1473,8 @@ button.ori-tipo-enc { cursor: pointer; }
 .ori-parcial { margin: 4px 0 0; color: var(--tinta-3); font-style: italic; }
 .ori-ia { background: #f3efe4; border: 1px solid #e3dac2; border-radius: 12px; padding: 10px 12px; }
 .ori-ia textarea { font: inherit; padding: 8px 10px; border: 1px solid var(--linha); border-radius: 8px; background: #fff; }
+.ori-opcoes { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+.ori-opcao { display: flex; align-items: center; gap: 8px; font-size: 15px; cursor: pointer; }
+.ori-subopcoes { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: 26px; }
+.ori-subopcoes input[type='date'] { font: inherit; padding: 4px 8px; border: 1px solid var(--linha); border-radius: 8px; }
+.ori-subopcoes .ori-opcao { font-size: 14px; margin-right: 8px; }

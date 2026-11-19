@@ -23,15 +23,21 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 21** aberto em 2026-11-19, a partir da versão 0.36.0 (já publicada). **Fechado e publicado como versão 0.37.0.**
+**Pacote 22** aberto em 2026-11-19, a partir da versão 0.37.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | **Orientação: elementos do trabalho e relatório em PDF.** Nova aba "Elementos do trabalho" (tema, delimitação, problema, hipóteses, objetivo geral, objetivos específicos — um por linha —, justificativa e metodologia, como no projeto de pesquisa do manual de normalização), guardada sozinha, com a data da última alteração. Botão **"Relatório em PDF"**: escolher o que entra (elementos, cronograma, pendências, sessões e comunicações — com período e, se quiser, anotações, conversas e transcrições —, versões), atalhos "Só os elementos", "Só as orientações" e "Tudo", nome do orientador no cabeçalho; o PDF é montado no computador (o leitor de PDF é baixado só no clique) | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 21 (publicado como 0.37.0 em 2026-11-19)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | **Orientação, parte 1 (caderno do orientador):** nova seção "Orientação › Orientandos". Cadastro do orientando (nome, e-mail, telefone, curso) e do trabalho (TCC, monografia, artigo, dissertação, tese), com **cronograma sugerido** pelo tipo e prazos espalhados até a defesa (editável; "faltam 7 dias", "venceu há 2 dias"); **sessões e comunicações** em linha do tempo, com **colar a conversa** do WhatsApp ou do e-mail (o Vide reconhece o canal, a data, quem falou e faz o resumo); **sugestões e comandos** em cada registro, que viram **pendências** até serem cumpridas (e podem ser marcadas na sessão seguinte); **versões** do trabalho (PDF, Word…), com data, etapa e anotações; outro trabalho do mesmo orientando. Tudo neste computador e no Google Drive (as versões como arquivos próprios). A tela é baixada só quando aberta (não pesa na aula). **Próximas partes:** página do orientando (com envio de versões e modelos), lembretes por e-mail (pelo Gmail, com o Vide aberto, calculando o prazo na hora do envio) | Publicada (0.37.0) |
 | 2 | **Transcrever a sessão de orientação:** no registro da sessão, "Transcrever a sessão" liga o microfone (o mesmo reconhecimento de voz da aula; se a escuta da aula estiver ligada, ela pausa); cada trecho entra com o horário ("[14:03] …") e o registro é guardado enquanto se fala (não se perde se a página mudar); pausar e continuar, inclusive depois, pelo "editar"; a transcrição pode ser corrigida à mão e aparece na linha do tempo em "ver a transcrição" | Publicada (0.37.0) |
 | 3 | **Organizar a sessão com a IA:** no registro da sessão (ou da comunicação), "Copiar o pedido para a IA" monta um pedido com a transcrição, as anotações, o cronograma com os prazos e as pendências anteriores numeradas (sem o nome do orientando); cola-se no Claude (ou outra IA); "Colar a resposta da IA" › "Usar a resposta" preenche o resumo, acrescenta as sugestões e os comandos (com prazo, se foi dito) e marca as pendências anteriores já cumpridas, para conferir e registrar | Publicada (0.37.0) |
-
-## Pacotes anteriores
 
 ### Pacote 20 (publicado como 0.36.0 em 2026-11-19)
 
