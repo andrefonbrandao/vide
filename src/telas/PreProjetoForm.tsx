@@ -172,7 +172,7 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
   const [texto, setTexto] = useState<TextoProjeto | null>(null);
   const [estado, setEstado] = useState('');
   const [ultimoEnvio, setUltimoEnvio] = useState<string | null>(null);
-  const [ocupado, setOcupado] = useState<'' | 'ver' | 'pdf' | 'envio'>('');
+  const [ocupado, setOcupado] = useState<'' | 'ver' | 'pdf' | 'word' | 'envio'>('');
   const [erro, setErro] = useState('');
   const timer = useRef<number | null>(null);
   const pendente = useRef<TextoProjeto | null>(null);
@@ -277,6 +277,28 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
     return gerarPreProjetoPdf({ nome: dados.nome, config: dados.preProjeto!, texto: texto!, etapas: dados.etapas, logo });
   };
   /** Pré-visualizar (abre numa aba nova) ou baixar: só para o orientando, nada vai ao orientador. */
+  const baixarWord = async () => {
+    setOcupado('word');
+    setErro('');
+    try {
+      const { gerarPreProjetoDocx, nomeArquivoPreProjetoDocx } = await import('../orientacao/preProjetoDocx');
+      const logo = await fetch('/logo-uniftec.png')
+        .then(async (r) => (r.ok ? new Uint8Array(await r.arrayBuffer()) : undefined))
+        .catch(() => undefined);
+      const blob = await gerarPreProjetoDocx({ nome: dados.nome, config: dados.preProjeto!, texto: texto!, etapas: dados.etapas, logo });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = nomeArquivoPreProjetoDocx(dados.nome);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(a.href), 60_000);
+    } catch (e) {
+      setErro(`Não foi possível montar o Word: ${(e as Error).message}`);
+    } finally {
+      setOcupado('');
+    }
+  };
   const verPdf = async (modo: 'abrir' | 'baixar') => {
     // A aba precisa ser aberta já no clique (senão o navegador bloqueia); o PDF entra nela depois.
     const aba = modo === 'abrir' ? window.open('', '_blank') : null;
@@ -342,11 +364,14 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
         <button type="button" className="botao" disabled={!!ocupado} onClick={() => void verPdf('baixar')} title="Salva o PDF no seu aparelho. Só para você: nada vai ao orientador.">
           {ocupado === 'pdf' ? 'Montando…' : 'Baixar o PDF'}
         </button>
+        <button type="button" className="botao" disabled={!!ocupado} onClick={() => void baixarWord()} title="Salva em Word (.docx), com a mesma formatação. Só para você: nada vai ao orientador.">
+          {ocupado === 'word' ? 'Montando…' : 'Baixar em Word'}
+        </button>
         <button type="button" className="botao primario" disabled={!!ocupado} onClick={() => void enviar()}>
           {ocupado === 'envio' ? 'Enviando…' : 'Enviar ao orientador'}
         </button>
         <span className="ajuda pp-so-voce" style={{ margin: 0, flexBasis: '100%' }}>
-          Pré-visualizar e baixar são só para você. O orientador só recebe quando você clicar em "Enviar ao orientador".
+          Pré-visualizar e baixar (PDF ou Word) são só para você. O orientador só recebe quando você clicar em "Enviar ao orientador".
         </span>
         <span className="ajuda" style={{ margin: 0 }}>
           {estado}
@@ -432,6 +457,9 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
         </button>
         <button type="button" className="botao" disabled={!!ocupado} onClick={() => void verPdf('baixar')} title="Salva o PDF no seu aparelho. Só para você: nada vai ao orientador.">
           {ocupado === 'pdf' ? 'Montando…' : 'Baixar o PDF'}
+        </button>
+        <button type="button" className="botao" disabled={!!ocupado} onClick={() => void baixarWord()} title="Salva em Word (.docx), com a mesma formatação. Só para você: nada vai ao orientador.">
+          {ocupado === 'word' ? 'Montando…' : 'Baixar em Word'}
         </button>
         <button type="button" className="botao primario" disabled={!!ocupado} onClick={() => void enviar()}>
           {ocupado === 'envio' ? 'Enviando…' : 'Enviar ao orientador'}

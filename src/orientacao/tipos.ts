@@ -202,6 +202,8 @@ export interface Versao extends Sincronizavel {
   etapaId?: string | null;
   notas: string;
   arquivo: Blob;
+  /** Envio do pré-projeto pela página: o texto (para gerar o Word daquela versão). */
+  projeto?: TextoProjeto;
 }
 
 export type VersaoMeta = Omit<Versao, 'arquivo'>;

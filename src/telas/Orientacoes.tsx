@@ -32,7 +32,7 @@ import { pendenciasVencidas } from '../orientacao/alertas';
 import { naturezaPadrao } from '../orientacao/campos';
 import { lerEncaminhamentos, lerRespostaIA, pedidoRegistroIA } from '../orientacao/ia';
 import type { OpcoesRelatorio } from '../orientacao/relatorioPdf';
-import { assinarPublicacao, buscarEnvios, configPreProjetoPadrao, desativarOrientacao, estadoPublicacao, guardarRascunho, lerRascunho, MAX_MODELO, pdfDoPreProjeto, publicarOrientacao, urlDoOrientando } from '../orientacao/publicar';
+import { assinarPublicacao, buscarEnvios, configPreProjetoPadrao, desativarOrientacao, estadoPublicacao, guardarRascunho, lerRascunho, MAX_MODELO, pdfDoPreProjeto, publicarOrientacao, urlDoOrientando, wordDoPreProjeto } from '../orientacao/publicar';
 import { QR } from './JogoTela';
 import { copiar } from './ProcessoTexto';
 import { agoraLocal, dataBR, dataHoraBR, diasEntre, emOrdem, etapaAtual, hojeISO, pendencias, rotuloDias, situacaoEtapa, type Pendencia } from '../orientacao/prazos';
@@ -502,7 +502,7 @@ function TrabalhoDetalhe({ trabalho, orientando, aoVoltar, aoAbrir }: { trabalho
           aoCompartilhar={() => setJanela('compartilhar')}
         />
       )}
-      {aba === 'tempo' && <LinhaDoTempo trabalho={trabalho} interacoes={interacoes} versoes={versoes} aoEditar={setRegistrando} aoRegistrar={registrar} />}
+      {aba === 'tempo' && <LinhaDoTempo trabalho={trabalho} orientando={orientando} interacoes={interacoes} versoes={versoes} aoEditar={setRegistrando} aoRegistrar={registrar} />}
       {aba === 'trabalho' && (
         <>
           <ElementosTrabalho trabalho={trabalho} />
@@ -1027,7 +1027,7 @@ function PainelRelatorio({ trabalho, orientando, interacoes, versoes, aoFechar }
 type FiltroTempo = 'tudo' | 'sessoes' | 'comunicacoes' | 'versoes';
 
 /** Sessões, comunicações e versões numa linha do tempo só, da mais nova para a mais antiga, por mês. */
-function LinhaDoTempo({ trabalho, interacoes, versoes, aoEditar, aoRegistrar }: { trabalho: Trabalho; interacoes: Interacao[]; versoes: Versao[]; aoEditar: (i: Interacao) => void; aoRegistrar: (c: Canal) => void }) {
+function LinhaDoTempo({ trabalho, orientando, interacoes, versoes, aoEditar, aoRegistrar }: { trabalho: Trabalho; orientando?: Orientando; interacoes: Interacao[]; versoes: Versao[]; aoEditar: (i: Interacao) => void; aoRegistrar: (c: Canal) => void }) {
   const [filtro, setFiltro] = useState<FiltroTempo>('tudo');
   const [novaVersao, setNovaVersao] = useState(false);
   const sessoes = interacoes.filter((i) => i.canal === 'sessao');
@@ -1084,7 +1084,12 @@ function LinhaDoTempo({ trabalho, interacoes, versoes, aoEditar, aoRegistrar }: 
                 {x.i ? (
                   <ItemInteracao i={x.i} versoes={versoes} aoEditar={() => aoEditar(x.i!)} />
                 ) : (
-                  <ItemVersao v={x.v!} etapa={trabalho.etapas.find((e) => e.id === x.v!.etapaId)?.nome} discutida={interacoes.filter((i) => i.versaoId === x.v!.id)} />
+                  <ItemVersao
+                    v={x.v!}
+                    etapa={trabalho.etapas.find((e) => e.id === x.v!.etapaId)?.nome}
+                    discutida={interacoes.filter((i) => i.versaoId === x.v!.id)}
+                    aoWord={x.v!.projeto ? async () => baixarArquivo(await wordDoPreProjeto(trabalho, orientando, x.v!.projeto!), x.v!.nomeArquivo.replace(/\.pdf$/i, '.docx')) : undefined}
+                  />
                 )}
               </Fragment>
             );
@@ -1738,7 +1743,7 @@ function FormNovaVersao({ trabalho, total, aoFechar }: { trabalho: Trabalho; tot
   );
 }
 
-function ItemVersao({ v, etapa, discutida }: { v: Versao; etapa?: string; discutida: Interacao[] }) {
+function ItemVersao({ v, etapa, discutida, aoWord }: { v: Versao; etapa?: string; discutida: Interacao[]; aoWord?: () => void }) {
   const [notas, setNotas] = useState(v.notas);
   const abrir = () => {
     const blob = new Blob([v.arquivo], { type: v.mime });
@@ -1756,6 +1761,11 @@ function ItemVersao({ v, etapa, discutida }: { v: Versao; etapa?: string; discut
         <button className="botao pequeno" style={{ marginLeft: 'auto' }} onClick={abrir} disabled={!v.arquivo.size}>
           {v.mime === 'application/pdf' ? 'Abrir' : 'Baixar'}
         </button>
+        {aoWord && (
+          <button className="botao pequeno" onClick={aoWord} title="Esta versão do pré-projeto em Word">
+            Word
+          </button>
+        )}
         <button
           className="link-discreto"
           style={{ marginLeft: 8 }}
@@ -2119,6 +2129,10 @@ function JanelaCompartilhar({ trabalho, orientando, aoFechar }: { trabalho: Trab
   );
 }
 
+function nomePreProjeto(nome: string | undefined, sufixo: string, ext: 'pdf' | 'docx'): string {
+  return `Pre-projeto (${sufixo}) - ${(nome ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')}.${ext}`;
+}
+
 /** Na aba Trabalho: o pré-projeto que o orientando escreve na página dele. */
 function PreProjetoCartao({ trabalho, orientando, aoCompartilhar }: { trabalho: Trabalho; orientando?: Orientando; aoCompartilhar: () => void }) {
   const [ocupado, setOcupado] = useState('');
@@ -2137,14 +2151,11 @@ function PreProjetoCartao({ trabalho, orientando, aoCompartilhar }: { trabalho: 
           <span>Cópia do rascunho (aqui e no Drive)</span>
           <span className="ori-info-acoes">
             <strong>{new Date(trabalho.rascunhoProjeto.guardadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</strong>
-            <button
-              type="button"
-              className="ori-link"
-              onClick={async () =>
-                baixarArquivo(await pdfDoPreProjeto(trabalho, orientando, trabalho.rascunhoProjeto!.texto), `Pre-projeto (copia) - ${(orientando?.nome ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')}.pdf`)
-              }
-            >
-              ver (PDF)
+            <button type="button" className="ori-link" onClick={async () => baixarArquivo(await pdfDoPreProjeto(trabalho, orientando, trabalho.rascunhoProjeto!.texto), nomePreProjeto(orientando?.nome, 'copia', 'pdf'))}>
+              PDF
+            </button>
+            <button type="button" className="ori-link" onClick={async () => baixarArquivo(await wordDoPreProjeto(trabalho, orientando, trabalho.rascunhoProjeto!.texto), nomePreProjeto(orientando?.nome, 'copia', 'docx'))}>
+              Word
             </button>
           </span>
         </div>
@@ -2160,25 +2171,29 @@ function PreProjetoCartao({ trabalho, orientando, aoCompartilhar }: { trabalho: 
             <strong>{pub.ultimoEnvio ? new Date(pub.ultimoEnvio).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'nenhum ainda'}</strong>
           </div>
           <div className="linha-opcoes" style={{ marginTop: 10 }}>
-            <button
-              type="button"
-              className="botao"
-              disabled={!!ocupado}
-              onClick={async () => {
-                setOcupado('rascunho');
-                try {
-                  const { projeto } = await lerRascunho(trabalho.id);
-                  if (!projeto) avisar('O orientando ainda não escreveu nada no pré-projeto.', 'erro');
-                  else baixarArquivo(await pdfDoPreProjeto(trabalho, orientando, projeto), `Pre-projeto (rascunho) - ${(orientando?.nome ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '')}.pdf`);
-                } catch (e) {
-                  avisar((e as Error).message, 'erro');
-                } finally {
-                  setOcupado('');
-                }
-              }}
-            >
-              {ocupado === 'rascunho' ? 'Montando…' : 'Ver o rascunho atual (PDF)'}
-            </button>
+            <span className="ori-calmo">Rascunho atual:</span>
+            {(['pdf', 'docx'] as const).map((ext) => (
+              <button
+                key={ext}
+                type="button"
+                className="botao"
+                disabled={!!ocupado}
+                onClick={async () => {
+                  setOcupado(ext);
+                  try {
+                    const { projeto } = await lerRascunho(trabalho.id);
+                    if (!projeto) avisar('O orientando ainda não escreveu nada no pré-projeto.', 'erro');
+                    else baixarArquivo(await (ext === 'pdf' ? pdfDoPreProjeto : wordDoPreProjeto)(trabalho, orientando, projeto), nomePreProjeto(orientando?.nome, 'rascunho', ext));
+                  } catch (e) {
+                    avisar((e as Error).message, 'erro');
+                  } finally {
+                    setOcupado('');
+                  }
+                }}
+              >
+                {ocupado === ext ? 'Montando…' : ext === 'pdf' ? 'PDF' : 'Word'}
+              </button>
+            ))}
             <button
               type="button"
               className="botao"

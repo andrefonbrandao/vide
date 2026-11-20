@@ -6,8 +6,9 @@
 // de rosto e numeradas a partir da introdução, no canto superior direito.
 // O pdf-lib é carregado só na hora.
 import type { PDFFont, PDFPage } from 'pdf-lib';
-import { lerParagrafos, lerTrechos, ordenarReferencias, type Paragrafo, type Trecho } from './marcacao';
-import { dataBR, emOrdem } from './prazos';
+import { lerParagrafos, lerTrechos, type Paragrafo, type Trecho } from './marcacao';
+import { estruturaPreProjeto } from './preProjetoEstrutura';
+import { dataBR } from './prazos';
 import type { ConfigPreProjeto, Etapa, TextoProjeto } from './tipos';
 import { naturezaPadrao } from './campos';
 export { naturezaPadrao };
@@ -45,7 +46,16 @@ function seguro(s: string): string {
     .replace(/[^\x20-\x7e¡-ÿ–—‘’“”•…€ŒœŠšŸŽžƒˆ˜†‡‰‹›™]/g, '?');
 }
 
-export async function gerarPreProjetoPdf(e: EntradaPreProjeto): Promise<Blob> {
+export interface ItemSumario {
+  rotulo: string;
+  titulo: string;
+  nivel: 0 | 1 | 2;
+  /** Número da página, como aparece no trabalho. */
+  pagina: number;
+}
+
+/** `aoSumario` recebe os títulos com as páginas (o Word usa para já trazer o sumário numerado). */
+export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (itens: ItemSumario[]) => void): Promise<Blob> {
   const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
   const pdf = await PDFDocument.create();
   const t = { ...TEXTO_VAZIO, ...e.texto };
@@ -276,10 +286,6 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto): Promise<Blob> {
     });
     y -= 6;
   };
-  const textoCorrido = (texto: string, comSubtitulos = false, rotuloPai = '') => {
-    let sub = 0;
-    for (const p of lerParagrafos(texto, comSubtitulos)) desenharParagrafo(p, rotuloPai, () => ++sub);
-  };
   const desenharParagrafo = (p: Paragrafo, rotuloPai: string, proximoSub: () => number) => {
     if (p.tipo === 'sub') {
       titulo(`${rotuloPai}.${proximoSub()}`, p.trechos.map((x) => ('t' in x ? x.t : '')).join(''), 2);
@@ -378,61 +384,11 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto): Promise<Blob> {
   // ---------- Parte textual ----------
   novaPagina();
   const primeiraTextual = pdf.getPageCount() - 1;
-  let sec = 0;
-  const secao = (nome: string) => {
-    sec++;
-    titulo(String(sec), nome, 1);
-    return String(sec);
-  };
-  const subsecao = (pai: string, n: number, nome: string, texto: string, comSub = false) => {
-    if (!texto.trim()) return n;
-    titulo(`${pai}.${n}`, nome, 2);
-    textoCorrido(texto, comSub, `${pai}.${n}`);
-    return n + 1;
-  };
-
-  // 1 Introdução (tema e delimitação; problema; hipóteses)
-  if (t.introducao.trim() || t.problema.trim() || t.hipoteses.trim()) {
-    const s1 = secao('Introdução');
-    textoCorrido(t.introducao);
-    let n = 1;
-    n = subsecao(s1, n, 'Problema de pesquisa', t.problema);
-    subsecao(s1, n, 'Hipótese(s)', t.hipoteses);
-  }
-  // 2 Objetivos e justificativa
-  if (t.objetivoGeral.trim() || t.objetivosEspecificos.trim() || t.justificativa.trim()) {
-    const s2 = secao('Objetivos e justificativa');
-    let n = 1;
-    n = subsecao(s2, n, 'Objetivo geral', t.objetivoGeral);
-    // Específicos: frases completas, sem marcador, com ponto final.
-    const especificos = t.objetivosEspecificos
-      .split('\n')
-      .map((x) => x.trim().replace(/^[-•*]\s*/, '').replace(/[;,]$/, ''))
-      .filter(Boolean)
-      .map((x) => (/[.!?]$/.test(x) ? x : `${x}.`))
-      .join('\n');
-    n = subsecao(s2, n, 'Objetivos específicos', especificos);
-    subsecao(s2, n, 'Justificativa', t.justificativa);
-  }
-  // 3 Fundamentação teórica (com subtítulos "## ")
-  if (t.fundamentacao.trim()) {
-    const s3 = secao('Fundamentação teórica');
-    textoCorrido(t.fundamentacao, true, s3);
-  }
-  // 4 Procedimentos metodológicos
-  if ([t.metodo, t.populacao, t.coleta, t.analise].some((x) => x.trim())) {
-    const s4 = secao('Procedimentos metodológicos');
-    let n = 1;
-    n = subsecao(s4, n, 'Método(s) de pesquisa', t.metodo);
-    n = subsecao(s4, n, 'Delimitação da população (amostragem) ou objeto da investigação', t.populacao);
-    n = subsecao(s4, n, 'Técnicas de coleta de dados', t.coleta);
-    subsecao(s4, n, 'Técnicas de análise de dados', t.analise);
-  }
-  // 5 Cronograma das atividades (quadro) e recursos
-  const etapas = emOrdem(e.etapas);
-  if (etapas.length || t.recursos.trim()) {
-    const s5 = secao('Cronograma das atividades');
-    if (etapas.length) {
+  for (const bl of estruturaPreProjeto(t, e.etapas)) {
+    if (bl.tipo === 'titulo') titulo(bl.rotulo, bl.texto, bl.nivel);
+    else if (bl.tipo === 'par') desenharParagrafo(bl.p, '', () => 0);
+    else if (bl.tipo === 'cronograma') {
+      const etapas = bl.etapas;
       const linhaQ = 16;
       const altura = linhaQ * (etapas.length + 1) + 48;
       if (y - altura < M.base + alturaNotas) novaPagina();
@@ -457,18 +413,17 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto): Promise<Blob> {
       reservar(PEQ.linha, []);
       centro('Fonte: o autor.', f.n, PEQ.tam, y + 2);
       y -= 6;
+    } else {
+      // Referências: elemento pós-textual, começa em página nova (sem número, centralizado;
+      // espaço simples; uma linha em branco entre elas).
+      if (!topoDaPagina()) novaPagina();
+      titulo('', 'Referências', 0);
+      y -= 6;
+      bl.lista.forEach((r, k) => {
+        if (k) y -= SIMPLES12;
+        paragrafo(lerTrechos(r), { linha: SIMPLES12, justificar: false });
+      });
     }
-    subsecao(s5, 1, 'Recursos', t.recursos);
-  }
-  // Referências (sem número, centralizado; espaço simples; uma linha em branco entre elas)
-  const refs = ordenarReferencias(t.referencias);
-  if (refs.length) {
-    titulo('', 'Referências', 0);
-    y -= 6;
-    refs.forEach((r, k) => {
-      if (k) y -= SIMPLES12;
-      paragrafo(lerTrechos(r), { linha: SIMPLES12, justificar: false });
-    });
   }
   desenharNotas();
 
@@ -502,6 +457,7 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto): Promise<Blob> {
     pg.drawText(num, { x: A4.w - M.dir - wNum, y: yb, size: 12, font: fnt, color: preto });
   });
 
+  aoSumario?.(sumario.map((x) => ({ rotulo: x.rotulo, titulo: x.titulo, nivel: x.nivel, pagina: x.pagina + qtdSum })));
   // ---------- Números de página: contadas desde a folha de rosto; mostradas a partir da introdução ----------
   const inicioNumeros = primeiraTextual + qtdSum;
   pdf.getPages().forEach((pg, k) => {

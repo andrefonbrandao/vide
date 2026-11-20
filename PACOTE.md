@@ -19,19 +19,26 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 - **Parte 3 — e-mails ao orientando** (pelo Gmail do professor, enviados quando o Vide estiver aberto):
   - **Lembretes de prazo:** o prazo é calculado na hora do envio (não quando o lembrete foi agendado); vários avisos atrasados viram um só; prazo vencido com o Vide fechado: aviso de "venceu em…" ou nada (o professor escolhe); cada envio fica marcado e vai para o Drive, para outro computador não repetir.
   - **Resumo da sessão para o orientando:** no registro da sessão, um **campo próprio para o resumo feito pela IA** (separado das anotações internas do professor, editável antes de enviar) e um botão para **mandar ao orientando por e-mail**, com as sugestões e os comandos e seus prazos; o envio fica registrado na linha do tempo. (A IA pode já escrever esse resumo dirigido ao orientando.)
-- **Trabalho final (TCC II):** o formulário do trabalho final pelo modelo em Word da Uniftec (capa, folha de rosto, aprovação, resumo/abstract, sumário, introdução, objetivos e justificativa, desenvolvimento, considerações finais, referências, apêndices e anexos), aproveitando o texto do pré-projeto; **gerar também o Word** a partir do modelo; tabelas e figuras.
+- **Trabalho final (TCC II):** o formulário do trabalho final pelo modelo em Word da Uniftec (capa, folha de rosto, aprovação, resumo/abstract, sumário, introdução, objetivos e justificativa, desenvolvimento, considerações finais, referências, apêndices e anexos), aproveitando o texto do pré-projeto; tabelas e figuras (o Word do pré-projeto já existe desde o pacote 27).
 - **Parte 4 — importar conversas:** e-mails trocados com o orientando direto do Gmail (o "copiar e colar" do WhatsApp e do e-mail já existe na parte 1).
 
 ## Situação
 
-**Pacote 26** aberto em 2026-11-20, a partir da versão 0.41.0 (já publicada). **Fechado e publicado como versão 0.42.0.**
+**Pacote 27** aberto em 2026-11-20, a partir da versão 0.42.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | **Pré-projeto em Word (.docx) e em PDF, para o orientando e para o orientador.** O Word tem a mesma estrutura e formatação do PDF (A4, margens 3/2 cm, Arial 12, entrelinha 1,5, recuo 1,25 cm, citação longa com recuo de 4 cm em fonte 10, títulos como "Título 1/2", **notas de rodapé do Word**, quadro do cronograma, capa com o logotipo, folha de rosto, **sumário do Word já numerado** — e atualizável —, números de página no cabeçalho a partir da introdução, contando desde a folha de rosto). Orientando: "Baixar em Word" ao lado de "Baixar o PDF". Orientador: rascunho atual e cópia guardada em PDF ou Word; cada envio vira versão em PDF com o botão "Word" daquela versão. O PDF e o Word leem a mesma estrutura (numeração e ordem iguais) | No pacote |
+| 2 | **Correção: as Referências começam em página nova** (elemento pós-textual), no PDF e no Word | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 26 (publicado como 0.42.0 em 2026-11-20)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | **Orientação reorganizada, parte 2:** **registrar sessão numa tela focada** (cobre a página): no alto, presencial/online e data; à esquerda, o editor com as abas **Anotações · Transcrição** (na comunicação, a conversa colada), "O que foi conversado" e **"Organizar com IA"** num botão só, que abre a janela em dois passos (copiar o pedido · colar a resposta); à direita, **Tarefas para o orientando** (com colar em bloco), **pendências anteriores** para marcar e a versão discutida; rodapé fixo com Cancelar e Registrar. **Linha do tempo unificada:** sessões, comunicações e versões numa lista só, por mês, com filtros (Tudo · Sessões · Comunicações · Versões) e "+ Comunicação" / "+ Versão" (em janela) | Publicada (0.42.0) |
 | 2 | **Segurança do rascunho do pré-projeto:** (a) o Vide guarda uma **cópia do rascunho** do orientando no computador e no **Drive** (ao abrir a Orientação e a cada 5 minutos), visível na aba Trabalho com "ver (PDF)"; (b) **desativar a página** avisa que o rascunho será apagado do serviço e guarda a cópia antes; ao **criar uma página nova**, o rascunho volta para ela; (c) **dois aparelhos**: o serviço não grava por cima de um texto mais novo — o orientando vê "O texto foi alterado em outro aparelho" e escolhe qual manter; ao voltar para a aba, o texto mais novo é trazido sozinho | Publicada (0.42.0) |
-
-## Pacotes anteriores
 
 ### Pacote 25 (publicado como 0.41.0 em 2026-11-20)
 

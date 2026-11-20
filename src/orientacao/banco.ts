@@ -132,7 +132,7 @@ export async function excluirInteracao(i: Interacao): Promise<void> {
   publicavel(i.trabalhoId);
 }
 
-export async function adicionarVersao(trabalhoId: string, arquivo: File, dados: Pick<Versao, 'rotulo' | 'recebida_em' | 'etapaId' | 'notas'>): Promise<Versao> {
+export async function adicionarVersao(trabalhoId: string, arquivo: File, dados: Pick<Versao, 'rotulo' | 'recebida_em' | 'etapaId' | 'notas' | 'projeto'>): Promise<Versao> {
   const v: Versao = { ...base(), trabalhoId, ...dados, nomeArquivo: arquivo.name, mime: arquivo.type || 'application/octet-stream', tamanho: arquivo.size, arquivo };
   await db.versoes.put(v);
   avisarMudancaOrientacao();
