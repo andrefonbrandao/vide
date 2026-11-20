@@ -7,10 +7,12 @@
 // O pdf-lib é carregado só na hora.
 import type { PDFFont, PDFPage } from 'pdf-lib';
 import { lerParagrafos, lerTrechos, type Paragrafo, type Trecho } from './marcacao';
-import { estruturaPreProjeto } from './preProjetoEstrutura';
+import { estruturaPreProjeto, type Bloco } from './preProjetoEstrutura';
+import { estruturaFinal, FINAL_VAZIO, finalDoPreProjeto, legendaTabela, siglasDe } from './trabalhoFinalEstrutura';
+import { textoPuro, type TabelaTexto } from './marcacao';
 import { rotuloPrazo } from './prazos';
 import type { ConfigPreProjeto, Etapa, TextoProjeto } from './tipos';
-import { naturezaPadrao } from './campos';
+import { naturezaDe, naturezaPadrao } from './campos';
 export { naturezaPadrao };
 
 export interface EntradaPreProjeto {
@@ -49,18 +51,29 @@ function seguro(s: string): string {
 export interface ItemSumario {
   rotulo: string;
   titulo: string;
-  nivel: 0 | 1 | 2;
+  nivel: 0 | 1 | 2 | 3;
   /** Número da página, como aparece no trabalho. */
   pagina: number;
 }
 
+/** O que o Word aproveita da montagem do PDF: os títulos e as tabelas com as páginas, e a página da introdução. */
+export interface PaginasDoPdf {
+  listas: { titulo: string; itens: ItemSumario[] }[];
+  /** Número (contado desde a folha de rosto) da primeira página numerada. */
+  inicio: number;
+}
+
 /** `aoSumario` recebe os títulos com as páginas (o Word usa para já trazer o sumário numerado). */
-export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (itens: ItemSumario[]) => void): Promise<Blob> {
+export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (itens: ItemSumario[], extra: PaginasDoPdf) => void): Promise<Blob> {
   const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
   const pdf = await PDFDocument.create();
   const t = { ...TEXTO_VAZIO, ...e.texto };
   const c = e.config;
-  pdf.setTitle(seguro(t.titulo || 'Pré-projeto'));
+  /** Trabalho final (TCC II): outra parte pré-textual e outras seções. */
+  const tf = c.formato === 'final' ? { ...FINAL_VAZIO, ...(t.final ?? finalDoPreProjeto(t)) } : null;
+  const tit = tf ? tf.titulo : t.titulo;
+  const subt = (tf ? tf.subtitulo : t.subtitulo).trim();
+  pdf.setTitle(seguro(tit || (tf ? 'Trabalho final' : 'Pré-projeto')));
   pdf.setAuthor(seguro(e.nome));
   pdf.setCreator('Vide');
   const f = {
@@ -267,13 +280,13 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (iten
   };
 
   // ---------- Títulos (e o que vai para o sumário) ----------
-  const sumario: { rotulo: string; titulo: string; nivel: 1 | 2 | 0; pagina: number }[] = [];
+  const sumario: ItemSumario[] = [];
   const topoDaPagina = () => y >= A4.h - M.topo - 0.5;
-  const titulo = (rotulo: string, texto: string, nivel: 1 | 2 | 0, noSumario = true) => {
+  const titulo = (rotulo: string, texto: string, nivel: 0 | 1 | 2 | 3, noSumario = true) => {
     // Título não fica sozinho no pé da página.
     if (y - (topoDaPagina() ? 0 : CORPO.linha) - CORPO.linha * 3 < M.base + alturaNotas) novaPagina();
     if (!topoDaPagina()) y -= CORPO.linha;
-    const t1 = nivel === 2 ? texto : texto.toUpperCase();
+    const t1 = nivel >= 2 ? texto : texto.toUpperCase();
     if (noSumario) sumario.push({ rotulo, titulo: t1, nivel, pagina: pdf.getPageCount() - 1 });
     const cheio = rotulo ? `${rotulo} ${t1}` : t1;
     const linhas = quebrarSimples(cheio, f.b, CORPO.tam, LARG);
@@ -300,6 +313,72 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (iten
     paragrafo(p.trechos, { recuoPrimeira: RECUO_PAR });
   };
 
+  // ---------- Tabelas e quadros (fonte 10; título em cima, fonte embaixo) ----------
+  const desenharTabela = (tab: TabelaTexto, legenda: string, aoComecar: (pagina: number) => void) => {
+    const ncol = Math.max(1, ...tab.linhas.map((l) => l.length));
+    const linhas = tab.linhas.map((l) => Array.from({ length: ncol }, (_, k) => seguro(textoPuro(l[k] ?? ''))));
+    if (!linhas.length) linhas.push(Array.from({ length: ncol }, () => ''));
+    // Larguras pelo tamanho do conteúdo (com um mínimo), somando a largura útil.
+    const peso = Array.from({ length: ncol }, (_, k) => Math.min(40, Math.max(6, ...linhas.map((l) => l[k].length))));
+    const total = peso.reduce((a, b) => a + b, 0);
+    const larg = peso.map((p) => (LARG * p) / total);
+    const PAD = 4;
+    const celulas = linhas.map((l, r) => l.map((txt, k) => quebrarSimples(txt, r === 0 ? f.b : f.n, PEQ.tam, larg[k] - 2 * PAD)));
+    const altura = (r: number) => Math.max(1, ...celulas[r].map((x) => x.length)) * PEQ.linha + 2 * PAD - 2;
+    const legendaLinhas = quebrarSimples(legenda, f.b, PEQ.tam, LARG);
+    const precisa = legendaLinhas.length * PEQ.linha + 10 + altura(0) + (linhas.length > 1 ? altura(1) : 0);
+    if (y - precisa < M.base + alturaNotas) novaPagina();
+    if (!topoDaPagina()) y -= 10;
+    aoComecar(pdf.getPageCount() - 1);
+    for (const l of legendaLinhas) {
+      reservar(PEQ.linha, []);
+      centro(l, f.b, PEQ.tam, y + 3);
+    }
+    y -= 4;
+    const quadro = tab.tipo === 'quadro';
+    const fio = (yy: number) => pagina.drawLine({ start: { x: M.esq, y: yy }, end: { x: M.esq + LARG, y: yy }, thickness: 0.7, color: preto });
+    const linha = (r: number) => {
+      const h = altura(r);
+      const topo = y;
+      y -= h;
+      let x = M.esq;
+      celulas[r].forEach((ls, k) => {
+        if (quadro) pagina.drawRectangle({ x, y, width: larg[k], height: h, borderColor: preto, borderWidth: 0.6 });
+        ls.forEach((t2, j) => {
+          const fnt = r === 0 ? f.b : f.n;
+          const w = fnt.widthOfTextAtSize(t2, PEQ.tam);
+          const xx = r === 0 || !quadro ? x + (larg[k] - w) / 2 : x + PAD;
+          pagina.drawText(t2, { x: xx, y: topo - PAD - (j + 1) * PEQ.linha + 3, size: PEQ.tam, font: fnt, color: preto });
+        });
+        x += larg[k];
+      });
+      return topo;
+    };
+    const cabecalho = () => {
+      const topo = linha(0);
+      if (!quadro) {
+        fio(topo);
+        fio(y);
+      }
+    };
+    cabecalho();
+    for (let r = 1; r < linhas.length; r++) {
+      if (y - altura(r) < M.base + alturaNotas) {
+        if (!quadro) fio(y);
+        novaPagina();
+        cabecalho();
+      }
+      linha(r);
+    }
+    if (!quadro && linhas.length > 1) fio(y);
+    y -= 2;
+    for (const l of quebrarSimples(`Fonte: ${tab.fonte.trim() || 'o autor.'}`, f.n, PEQ.tam, LARG)) {
+      reservar(PEQ.linha, []);
+      pagina.drawText(l, { x: M.esq, y: y + 3, size: PEQ.tam, font: f.n, color: preto });
+    }
+    y -= 10;
+  };
+
   // ---------- Capa ----------
   novaPagina();
   const alto = A4.h - M.topo;
@@ -316,17 +395,17 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (iten
   }
   blocoCentro(seguro(`CURSO SUPERIOR DE ${c.curso || 'XXXX'}`).toUpperCase(), f.b, 14, yy);
   blocoCentro(seguro(e.nome).toUpperCase(), f.b, 14, alto - util * 0.36);
-  let yt = blocoCentro(seguro(t.titulo || 'TÍTULO DO TRABALHO').toUpperCase(), f.b, 14, alto - util * 0.55);
-  if (t.subtitulo.trim()) blocoCentro(seguro(t.subtitulo.trim()), f.b, 14, yt);
+  let yt = blocoCentro(seguro(tit || 'TÍTULO DO TRABALHO').toUpperCase(), f.b, 14, alto - util * 0.55);
+  if (subt) blocoCentro(seguro(subt), f.b, 14, yt);
   blocoCentro(seguro(c.cidade || 'Caxias do Sul'), f.b, 14, M.base + 44);
   blocoCentro(seguro(c.ano), f.b, 14, M.base + 22);
 
   // ---------- Folha de rosto (e a de aprovação, que repete o começo) ----------
-  const naturezaTexto = seguro(c.natureza.trim() || naturezaPadrao(c));
+  const naturezaTexto = seguro(naturezaDe(c));
   const cabecalhoRosto = () => {
     blocoCentro(seguro(e.nome).toUpperCase(), f.b, 12, alto);
-    yt = blocoCentro(seguro(t.titulo || 'TÍTULO DO TRABALHO').toUpperCase(), f.b, 14, alto - util * 0.3);
-    if (t.subtitulo.trim()) yt = blocoCentro(seguro(t.subtitulo.trim()), f.b, 14, yt);
+    yt = blocoCentro(seguro(tit || 'TÍTULO DO TRABALHO').toUpperCase(), f.b, 14, alto - util * 0.3);
+    if (subt) yt = blocoCentro(seguro(subt), f.b, 14, yt);
     // Natureza: recuo de 7,5 cm, justificado, espaço simples, negrito 12.
     const x = M.esq + 7.5 * CM;
     const larg = A4.w - M.dir - x;
@@ -356,19 +435,91 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (iten
   if (c.coorientador.trim()) blocoCentro(seguro(`Coorientador(a): ${c.coorientador.trim()}`), f.b, 12, yo);
   rodapeRosto();
 
-  if (c.aprovacao) {
+  if (c.aprovacao || tf) {
     novaPagina();
     let ya = cabecalhoRosto() - 40;
     ya = blocoCentro('Aprovado em ____/____/______', f.n, 12, ya) - 24;
     ya = blocoCentro('BANCA EXAMINADORA', f.b, 12, ya) - 30;
-    for (const quem of [`Professor(a) Orientador(a): ${c.orientador.trim() || '_______________'}`, 'Professor(a) Avaliador(a): _______________', 'Professor(a) Avaliador(a): _______________']) {
+    for (const quem of bancaExaminadora(c)) {
       pagina.drawLine({ start: { x: M.esq + LARG * 0.15, y: ya }, end: { x: M.esq + LARG * 0.85, y: ya }, thickness: 0.6, color: preto });
       ya = blocoCentro(seguro(quem), f.n, 11, ya - 2) - 34;
     }
     rodapeRosto();
   }
 
-  if (c.resumo) {
+  if (tf) {
+    // Dedicatória e epígrafe: no pé da página, à direita; agradecimentos com título.
+    const noPe = (texto: string) => {
+      const ps = texto.split('\n').map((l) => l.trim()).filter(Boolean);
+      if (!ps.length) return;
+      novaPagina();
+      const x = M.esq + 7.5 * CM;
+      const larg = A4.w - M.dir - x;
+      const linhas = ps.flatMap((l) => linhasRicas(l, 12, larg));
+      let yp = M.base + linhas.length * CORPO.linha;
+      for (const l of linhas) {
+        desenharRica(l, x, yp - CORPO.tam, 12);
+        yp -= CORPO.linha;
+      }
+    };
+    noPe(tf.dedicatoria);
+    if (tf.agradecimentos.trim()) {
+      novaPagina();
+      titulo('', 'Agradecimentos', 0, false);
+      y -= 6;
+      for (const p of lerParagrafos(tf.agradecimentos)) paragrafo(p.trechos, { recuoPrimeira: RECUO_PAR });
+    }
+    noPe(tf.epigrafe);
+    // Título, autor e orientador com e-mail, e o resumo (e a mesma página em inglês).
+    const paginaResumo = (o: { titulo: string; sub: string; autor: string; advisor: string; rotulo: string; texto: string; rotuloPalavras: string; palavras: string }) => {
+      novaPagina();
+      y = blocoCentro(seguro(o.titulo || 'TÍTULO DO TRABALHO').toUpperCase(), f.b, 12, y, SIMPLES12);
+      if (o.sub.trim()) y = blocoCentro(seguro(o.sub.trim()), f.b, 12, y, SIMPLES12);
+      y -= 20;
+      const direita = (s2: string, fnt: PDFFont) => {
+        if (!s2.trim()) return;
+        y -= 13;
+        const w = fnt.widthOfTextAtSize(seguro(s2), 10);
+        pagina.drawText(seguro(s2), { x: A4.w - M.dir - w, y: y + 2, size: 10, font: fnt, color: preto });
+      };
+      direita(e.nome, f.b);
+      direita(o.autor, f.n);
+      direita(tf.email, f.n);
+      y -= 8;
+      direita(c.orientador.trim(), f.b);
+      direita(o.advisor, f.n);
+      direita(c.emailOrientador?.trim() ?? '', f.n);
+      y -= 20;
+      const ps = lerParagrafos(o.texto);
+      if (ps.length)
+        ps.forEach((p, k) => paragrafo(k === 0 ? [{ t: `${o.rotulo}: `, negrito: true }, ...p.trechos] : p.trechos, { tam: PEQ.tam, linha: PEQ.linha + 0.4 }));
+      else paragrafo([{ t: `${o.rotulo}: `, negrito: true }], { tam: PEQ.tam, linha: PEQ.linha + 0.4, justificar: false });
+      if (o.palavras.trim()) {
+        y -= PEQ.linha;
+        paragrafo([{ t: `${o.rotuloPalavras}: `, negrito: true }, ...lerTrechos(o.palavras.trim())], { tam: PEQ.tam, linha: PEQ.linha + 0.4, justificar: false });
+      }
+    };
+    paginaResumo({ titulo: tf.titulo, sub: tf.subtitulo, autor: 'Autor(a)', advisor: 'Orientador(a)', rotulo: 'Resumo', texto: tf.resumo, rotuloPalavras: 'Palavras-chave', palavras: tf.palavrasChave });
+    paginaResumo({ titulo: tf.tituloIngles || 'Title of work', sub: tf.subtituloIngles, autor: 'Author', advisor: 'Advisor', rotulo: 'Abstract', texto: tf.abstract, rotuloPalavras: 'Keywords', palavras: tf.keywords });
+  }
+  // As listas de quadros e de tabelas entram aqui depois (quando se souber as páginas).
+  const posicaoListas = pdf.getPageCount();
+  const siglas = tf ? siglasDe(tf.siglas) : [];
+  if (siglas.length) {
+    novaPagina();
+    titulo('', 'Lista de abreviaturas e siglas', 0, false);
+    y -= 6;
+    const col = Math.max(...siglas.map((x) => f.n.widthOfTextAtSize(seguro(x.sigla), 12))) + 16;
+    for (const x of siglas) {
+      const linhas = quebrarSimples(x.nome, f.n, 12, LARG - col);
+      linhas.forEach((l, k) => {
+        reservar(CORPO.linha, []);
+        if (k === 0) pagina.drawText(seguro(x.sigla), { x: M.esq, y: y + 5, size: 12, font: f.n, color: preto });
+        pagina.drawText(l, { x: M.esq + col, y: y + 5, size: 12, font: f.n, color: preto });
+      });
+    }
+  }
+  if (c.resumo && !tf) {
     novaPagina();
     titulo('', 'Resumo', 0, false);
     y -= 6;
@@ -384,8 +535,13 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (iten
   // ---------- Parte textual ----------
   novaPagina();
   const primeiraTextual = pdf.getPageCount() - 1;
-  for (const bl of estruturaPreProjeto(t, e.etapas)) {
-    if (bl.tipo === 'titulo') titulo(bl.rotulo, bl.texto, bl.nivel);
+  const tabelasNoTexto: { tipo: 'tabela' | 'quadro'; item: ItemSumario }[] = [];
+  const blocos: Bloco[] = tf ? estruturaFinal(tf) : estruturaPreProjeto(t, e.etapas);
+  for (const bl of blocos) {
+    if (bl.tipo === 'titulo') {
+      if (bl.novaPagina && !topoDaPagina()) novaPagina();
+      titulo(bl.rotulo, bl.texto, bl.nivel);
+    } else if (bl.tipo === 'tabela') desenharTabela(bl.tabela, legendaTabela(bl), (pg) => tabelasNoTexto.push({ tipo: bl.tabela.tipo, item: { rotulo: '', titulo: legendaTabela(bl), nivel: 2, pagina: pg } }));
     else if (bl.tipo === 'par') desenharParagrafo(bl.p, '', () => 0);
     else if (bl.tipo === 'cronograma') {
       const etapas = bl.etapas;
@@ -413,7 +569,7 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (iten
       reservar(PEQ.linha, []);
       centro('Fonte: o autor.', f.n, PEQ.tam, y + 2);
       y -= 6;
-    } else {
+    } else if (bl.tipo === 'referencias') {
       // Referências: elemento pós-textual, começa em página nova (sem número, centralizado;
       // espaço simples; uma linha em branco entre elas).
       if (!topoDaPagina()) novaPagina();
@@ -427,49 +583,68 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (iten
   }
   desenharNotas();
 
-  // ---------- Sumário (inserido antes da introdução) ----------
+  // ---------- Listas de quadros e de tabelas (com três ou mais) e sumário, inseridos antes da introdução ----------
   const LINHA_SUM = CORPO.linha;
   const porPagina = Math.floor((A4.h - M.topo - M.base - CORPO.linha * 3) / LINHA_SUM);
-  const qtdSum = Math.max(1, Math.ceil(sumario.length / porPagina));
-  for (let k = 0; k < qtdSum; k++) pdf.insertPage(posicaoSumario + k, [A4.w, A4.h]);
-  const recuoTit = Math.max(0, ...sumario.map((s) => f.b.widthOfTextAtSize(s.rotulo, 12))) + 8;
-  sumario.forEach((s, k) => {
-    const pg = pdf.getPage(posicaoSumario + Math.floor(k / porPagina));
-    if (k % porPagina === 0) {
-      const w = f.b.widthOfTextAtSize('SUMÁRIO', 12);
-      pg.drawText('SUMÁRIO', { x: M.esq + (LARG - w) / 2, y: A4.h - M.topo - 12, size: 12, font: f.b, color: preto });
-    }
-    const yb = A4.h - M.topo - CORPO.linha * 3 - (k % porPagina) * LINHA_SUM;
-    const fnt = s.nivel === 2 ? f.n : f.b;
-    const num = String(s.pagina + qtdSum);
-    const wNum = fnt.widthOfTextAtSize(num, 12);
-    const xTit = M.esq + (s.rotulo ? recuoTit : 0);
-    let tit = seguro(s.titulo);
-    const maxTit = A4.w - M.dir - wNum - 24 - xTit;
-    while (fnt.widthOfTextAtSize(tit, 12) > maxTit && tit.length > 4) tit = `${tit.slice(0, -2)}…`;
-    if (s.rotulo) pg.drawText(s.rotulo, { x: M.esq, y: yb, size: 12, font: fnt, color: preto });
-    pg.drawText(tit, { x: xTit, y: yb, size: 12, font: fnt, color: preto });
-    // Pontilhado até o número da página.
-    const xi = xTit + fnt.widthOfTextAtSize(tit, 12) + 4;
-    const xf = A4.w - M.dir - wNum - 4;
-    const ponto = f.n.widthOfTextAtSize('.', 12) + 1.2;
-    for (let x = xi; x + ponto <= xf; x += ponto) pg.drawText('.', { x, y: yb, size: 12, font: f.n, color: preto });
-    pg.drawText(num, { x: A4.w - M.dir - wNum, y: yb, size: 12, font: fnt, color: preto });
-  });
+  const paginasDe = (n: number) => Math.max(1, Math.ceil(n / porPagina));
+  const listas = (['quadro', 'tabela'] as const)
+    .map((tipo) => ({ titulo: tipo === 'quadro' ? 'LISTA DE QUADROS' : 'LISTA DE TABELAS', itens: tabelasNoTexto.filter((x) => x.tipo === tipo).map((x) => x.item) }))
+    .filter((l) => tf && l.itens.length >= 3);
+  const desloc = listas.reduce((s2, l) => s2 + paginasDe(l.itens.length), 0) + paginasDe(sumario.length);
+  /** Insere as páginas de uma lista (títulos com pontilhado e página) a partir de `pos`; devolve quantas. */
+  const inserirLista = (pos: number, cabeca: string, itens: ItemSumario[]) => {
+    const qtd = paginasDe(itens.length);
+    for (let k = 0; k < qtd; k++) pdf.insertPage(pos + k, [A4.w, A4.h]);
+    const recuoTit = Math.max(0, ...itens.map((s2) => f.b.widthOfTextAtSize(s2.rotulo, 12))) + 8;
+    itens.forEach((s2, k) => {
+      const pg = pdf.getPage(pos + Math.floor(k / porPagina));
+      if (k % porPagina === 0) {
+        const w = f.b.widthOfTextAtSize(cabeca, 12);
+        pg.drawText(cabeca, { x: M.esq + (LARG - w) / 2, y: A4.h - M.topo - 12, size: 12, font: f.b, color: preto });
+      }
+      const yb = A4.h - M.topo - CORPO.linha * 3 - (k % porPagina) * LINHA_SUM;
+      const fnt = s2.nivel >= 2 ? f.n : f.b;
+      const num = String(s2.pagina + desloc);
+      const wNum = fnt.widthOfTextAtSize(num, 12);
+      const xTit = M.esq + (s2.rotulo ? recuoTit : 0);
+      let tt = seguro(s2.titulo);
+      const maxTit = A4.w - M.dir - wNum - 24 - xTit;
+      while (fnt.widthOfTextAtSize(tt, 12) > maxTit && tt.length > 4) tt = `${tt.slice(0, -2)}…`;
+      if (s2.rotulo) pg.drawText(s2.rotulo, { x: M.esq, y: yb, size: 12, font: fnt, color: preto });
+      pg.drawText(tt, { x: xTit, y: yb, size: 12, font: fnt, color: preto });
+      // Pontilhado até o número da página.
+      const xi = xTit + fnt.widthOfTextAtSize(tt, 12) + 4;
+      const xf = A4.w - M.dir - wNum - 4;
+      const ponto = f.n.widthOfTextAtSize('.', 12) + 1.2;
+      for (let x = xi; x + ponto <= xf; x += ponto) pg.drawText('.', { x, y: yb, size: 12, font: f.n, color: preto });
+      pg.drawText(num, { x: A4.w - M.dir - wNum, y: yb, size: 12, font: fnt, color: preto });
+    });
+    return qtd;
+  };
+  let pos = posicaoListas;
+  for (const l of listas) pos += inserirLista(pos, l.titulo, l.itens);
+  inserirLista(posicaoSumario + (pos - posicaoListas), 'SUMÁRIO', sumario);
 
-  aoSumario?.(sumario.map((x) => ({ rotulo: x.rotulo, titulo: x.titulo, nivel: x.nivel, pagina: x.pagina + qtdSum })));
+  const comPagina = (xs: ItemSumario[]) => xs.map((x) => ({ ...x, pagina: x.pagina + desloc }));
   // ---------- Números de página: contadas desde a folha de rosto; mostradas a partir da introdução ----------
-  const inicioNumeros = primeiraTextual + qtdSum;
+  const inicioNumeros = primeiraTextual + desloc;
+  aoSumario?.(comPagina(sumario), { listas: listas.map((l) => ({ titulo: l.titulo, itens: comPagina(l.itens) })), inicio: inicioNumeros });
   pdf.getPages().forEach((pg, k) => {
     if (k < inicioNumeros) return;
-    const s = String(k);
-    pg.drawText(s, { x: A4.w - M.dir - f.n.widthOfTextAtSize(s, 10), y: A4.h - 2 * CM, size: 10, font: f.n, color: preto });
+    const s2 = String(k);
+    pg.drawText(s2, { x: A4.w - M.dir - f.n.widthOfTextAtSize(s2, 10), y: A4.h - 2 * CM, size: 10, font: f.n, color: preto });
   });
   const bytes = await pdf.save();
   return new Blob([bytes as BlobPart], { type: 'application/pdf' });
 }
 
-export function nomeArquivoPreProjeto(nome: string): string {
+/** Os nomes da banca (folha de aprovação). */
+export function bancaExaminadora(c: ConfigPreProjeto): string[] {
+  const av = c.avaliadores ?? [];
+  return [`Professor(a) Orientador(a): ${c.orientador.trim() || '_______________'}`, ...[0, 1].map((k) => `Professor(a) Avaliador(a): ${av[k]?.trim() || '_______________'}`)];
+}
+
+export function nomeArquivoPreProjeto(nome: string, formato?: 'pre' | 'final'): string {
   const limpo = nome.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w .-]+/g, '-').slice(0, 60);
-  return `Pre-projeto - ${limpo}.pdf`;
+  return `${formato === 'final' ? 'Trabalho final' : 'Pre-projeto'} - ${limpo}.pdf`;
 }

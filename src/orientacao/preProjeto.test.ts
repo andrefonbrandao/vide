@@ -47,5 +47,5 @@ test('Word: arquivo .docx com notas de rodapé, sumário e referências em pági
   expect(doc).toContain('<w:footnoteReference w:id="2"/>');
   expect(doc).toContain('PRECEDENTES &amp; &lt;TESES&gt;');
   expect(doc).toContain('<w:pageBreakBefore/>');
-  expect(doc).toContain('TOC \\o "1-2"');
+  expect(doc).toContain('TOC \\o "1-3"');
 });

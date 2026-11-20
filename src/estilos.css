@@ -1567,6 +1567,18 @@ button.ori-tipo-enc { cursor: pointer; }
 .pp-cronograma ul { margin: 4px 0 0; padding-left: 18px; }
 .pp-dicas { background: var(--papel); border: 1px solid var(--linha); border-radius: 10px; padding: 8px 14px; }
 .pp-dicas summary { cursor: pointer; font-weight: 700; }
+.ori-formato { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 10px; }
+.pp-parte { border: 1px solid var(--linha); border-radius: 10px; padding: 10px 12px 4px; margin: 0 0 12px; background: #fff; }
+.pp-parte-cab { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.pp-parte-num { font-weight: 800; min-width: 22px; }
+.pp-parte-cab input { flex: 1 1 200px; min-width: 0; font: inherit; font-weight: 700; font-size: 15px; padding: 5px 8px; }
+.pp-contagem { display: block; }
+.pp-contagem.fora { color: #a5481f; }
+.pp-tabela-janela { width: min(860px, 100%); }
+.pp-grade { display: grid; gap: 4px; overflow-x: auto; margin-top: 8px; }
+.pp-grade input { font: inherit; font-size: 14px; padding: 5px 7px; min-width: 0; border: 1px solid var(--linha); border-radius: 6px; }
+.pp-grade input.pp-grade-cab { font-weight: 700; background: var(--papel); }
+@media (max-width: 560px) { .pp-parte-cab input { flex-basis: calc(100% - 36px); } }
 
 /* ---------- Orientação: nova organização (lista, visão geral, compartilhar) ---------- */
 .ori-filtros { display: flex; align-items: center; gap: 6px; margin: 4px 0 14px; flex-wrap: wrap; }

@@ -32,7 +32,7 @@ import { pendenciasVencidas } from '../orientacao/alertas';
 import { naturezaPadrao } from '../orientacao/campos';
 import { lerEncaminhamentos, lerRespostaIA, pedidoRegistroIA } from '../orientacao/ia';
 import type { OpcoesRelatorio } from '../orientacao/relatorioPdf';
-import { assinarPublicacao, buscarEnvios, configPreProjetoPadrao, desativarOrientacao, estadoPublicacao, guardarRascunho, lerRascunho, MAX_MODELO, pdfDoPreProjeto, publicarOrientacao, urlDoOrientando, wordDoPreProjeto } from '../orientacao/publicar';
+import { assinarPublicacao, buscarEnvios, configPreProjetoPadrao, desativarOrientacao, estadoPublicacao, formatoDoTexto, guardarRascunho, lerRascunho, MAX_MODELO, pdfDoPreProjeto, publicarOrientacao, urlDoOrientando, wordDoPreProjeto } from '../orientacao/publicar';
 import { QR } from './JogoTela';
 import { copiar } from './ProcessoTexto';
 import { agoraLocal, dataBR, dataHoraBR, diasEntre, emOrdem, etapaAtual, hojeISO, pendencias, precisao, rotuloDias, rotuloPrazo, rotuloPrazoCurto, rotuloSituacao, situacaoEtapa, type Pendencia, type Precisao } from '../orientacao/prazos';
@@ -1813,7 +1813,7 @@ function ItemVersao({ v, etapa, discutida, aoWord }: { v: Versao; etapa?: string
           {v.mime === 'application/pdf' ? 'Abrir' : 'Baixar'}
         </button>
         {aoWord && (
-          <button className="botao pequeno" onClick={aoWord} title="Esta versão do pré-projeto em Word">
+          <button className="botao pequeno" onClick={aoWord} title="Esta versão em Word">
             Word
           </button>
         )}
@@ -2036,13 +2036,47 @@ function CamposCapa({ cfg, mudar }: { cfg: ConfigPreProjeto; mudar: (p: Partial<
           <input id="pp-coorient" value={cfg.coorientador} onChange={(e) => mudar({ coorientador: e.target.value })} />
         </div>
       </div>
+      {cfg.formato === 'final' && (
+        <div className="grade-2">
+          <div className="campo">
+            <label htmlFor="pp-email-or">Seu e-mail (página do resumo)</label>
+            <input id="pp-email-or" type="email" value={cfg.emailOrientador ?? ''} onChange={(e) => mudar({ emailOrientador: e.target.value })} />
+          </div>
+          {[0, 1].map((k) => (
+            <div className="campo" key={k}>
+              <label htmlFor={`pp-aval-${k}`}>Avaliador(a) {k + 1} da banca (folha de aprovação)</label>
+              <input
+                id={`pp-aval-${k}`}
+                value={cfg.avaliadores?.[k] ?? ''}
+                placeholder="ex.: Me. Fulana de Tal (em branco: uma linha para preencher)"
+                onChange={(e) => {
+                  const av = [cfg.avaliadores?.[0] ?? '', cfg.avaliadores?.[1] ?? ''];
+                  av[k] = e.target.value;
+                  mudar({ avaliadores: av });
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
       <div className="campo">
         <label htmlFor="pp-natureza">Natureza do trabalho (folha de rosto)</label>
-        <textarea id="pp-natureza" rows={2} value={cfg.natureza} onChange={(e) => mudar({ natureza: e.target.value })} placeholder={naturezaPadrao(cfg)} />
+        <textarea
+          id="pp-natureza"
+          rows={2}
+          value={(cfg.formato === 'final' ? cfg.naturezaFinal : cfg.natureza) ?? ''}
+          onChange={(e) => mudar(cfg.formato === 'final' ? { naturezaFinal: e.target.value } : { natureza: e.target.value })}
+          placeholder={naturezaPadrao(cfg)}
+        />
         <span className="ajuda" style={{ margin: 0 }}>
           Em branco, vale o texto em cinza.
         </span>
       </div>
+      {cfg.formato === 'final' ? (
+        <p className="ajuda" style={{ margin: 0 }}>
+          No trabalho final, a folha de aprovação, o resumo e o abstract sempre entram. Dedicatória, agradecimentos e epígrafe entram se o orientando escrever.
+        </p>
+      ) : (
       <div className="linha-opcoes">
         <label className="ori-opcao">
           <input type="checkbox" checked={cfg.resumo} onChange={(e) => mudar({ resumo: e.target.checked }, true)} /> Pedir resumo e palavras-chave
@@ -2051,6 +2085,7 @@ function CamposCapa({ cfg, mudar }: { cfg: ConfigPreProjeto; mudar: (p: Partial<
           <input type="checkbox" checked={cfg.aprovacao} onChange={(e) => mudar({ aprovacao: e.target.checked }, true)} /> Incluir folha de aprovação
         </label>
       </div>
+      )}
     </div>
   );
 }
@@ -2139,13 +2174,43 @@ function JanelaCompartilhar({ trabalho, orientando, aoFechar }: { trabalho: Trab
       )}
       <div className="ori-alternar">
         <div>
-          <strong>Formulário do pré-projeto</strong>
-          <span className="ori-calmo">Ele escreve e gera o PDF pelo manual; os envios chegam como versões</span>
+          <strong>Formulário do trabalho</strong>
+          <span className="ori-calmo">Ele escreve e gera o PDF e o Word pelo manual; os envios chegam como versões</span>
         </div>
-        <button type="button" role="switch" aria-checked={cfg.ativo} aria-label="Formulário do pré-projeto" className={`ori-toggle${cfg.ativo ? ' ligado' : ''}`} onClick={() => mudar({ ativo: !cfg.ativo }, true)} />
+        <button type="button" role="switch" aria-checked={cfg.ativo} aria-label="Formulário do trabalho" className={`ori-toggle${cfg.ativo ? ' ligado' : ''}`} onClick={() => mudar({ ativo: !cfg.ativo }, true)} />
       </div>
       {cfg.ativo && (
         <>
+          <div className="ori-formato" role="radiogroup" aria-label="Qual formulário">
+            {(
+              [
+                ['pre', 'Pré-projeto (TCC I)'],
+                ['final', 'Trabalho final (TCC II)'],
+              ] as const
+            ).map(([v, nomeF]) => (
+              <button
+                key={v}
+                type="button"
+                role="radio"
+                aria-checked={(cfg.formato ?? 'pre') === v}
+                className={`botao pequeno${(cfg.formato ?? 'pre') === v ? ' escuro' : ''}`}
+                onClick={async () => {
+                  if ((cfg.formato ?? 'pre') === v) return;
+                  if (
+                    v === 'pre' ||
+                    (await confirmar({
+                      titulo: 'Trocar para o trabalho final?',
+                      texto: `Na página ${nome ? `de ${primeiro}` : 'do orientando'}, a aba "Meu pré-projeto" vira "Meu trabalho final", já com o texto do pré-projeto em cada lugar (introdução, objetivos, capítulos, referências). O pré-projeto continua guardado: as versões enviadas ficam aqui e, se você voltar para o pré-projeto, o texto dele está lá.`,
+                      botao: 'Trocar',
+                    }))
+                  )
+                    mudar({ formato: v }, true);
+                }}
+              >
+                {nomeF}
+              </button>
+            ))}
+          </div>
           <button type="button" className="ori-link ori-capa-link" onClick={() => setVerCapa(!verCapa)} aria-expanded={verCapa}>
             Capa e folha de rosto: {cfg.instituicao} · {cfg.curso || 'curso?'} · {cfg.cidade} · {cfg.ano} {verCapa ? '▴' : '›'}
           </button>
@@ -2180,8 +2245,8 @@ function JanelaCompartilhar({ trabalho, orientando, aoFechar }: { trabalho: Trab
   );
 }
 
-function nomePreProjeto(nome: string | undefined, sufixo: string, ext: 'pdf' | 'docx'): string {
-  return `Pre-projeto (${sufixo}) - ${(nome ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')}.${ext}`;
+function nomePreProjeto(nome: string | undefined, sufixo: string, ext: 'pdf' | 'docx', formato?: 'pre' | 'final'): string {
+  return `${formato === 'final' ? 'Trabalho final' : 'Pre-projeto'} (${sufixo}) - ${(nome ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')}.${ext}`;
 }
 
 /** Na aba Trabalho: o pré-projeto que o orientando escreve na página dele. */
@@ -2192,7 +2257,7 @@ function PreProjetoCartao({ trabalho, orientando, aoCompartilhar }: { trabalho: 
   return (
     <section className="ori-card" style={{ marginTop: 18 }}>
       <div className="ori-card-cab">
-        <h3 className="ori-card-titulo">Pré-projeto (TCC I)</h3>
+        <h3 className="ori-card-titulo">{trabalho.preProjeto?.formato === 'final' ? 'Trabalho final (TCC II)' : 'Pré-projeto (TCC I)'}</h3>
         <button type="button" className="ori-card-acao" onClick={aoCompartilhar}>
           {ativo ? 'Configurar' : 'Ligar o formulário'}
         </button>
@@ -2202,10 +2267,10 @@ function PreProjetoCartao({ trabalho, orientando, aoCompartilhar }: { trabalho: 
           <span>Cópia do rascunho (aqui e no Drive)</span>
           <span className="ori-info-acoes">
             <strong>{new Date(trabalho.rascunhoProjeto.guardadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</strong>
-            <button type="button" className="ori-link" onClick={async () => baixarArquivo(await pdfDoPreProjeto(trabalho, orientando, trabalho.rascunhoProjeto!.texto), nomePreProjeto(orientando?.nome, 'copia', 'pdf'))}>
+            <button type="button" className="ori-link" onClick={async () => baixarArquivo(await pdfDoPreProjeto(trabalho, orientando, trabalho.rascunhoProjeto!.texto), nomePreProjeto(orientando?.nome, 'copia', 'pdf', formatoDoTexto(trabalho, trabalho.rascunhoProjeto!.texto)))}>
               PDF
             </button>
-            <button type="button" className="ori-link" onClick={async () => baixarArquivo(await wordDoPreProjeto(trabalho, orientando, trabalho.rascunhoProjeto!.texto), nomePreProjeto(orientando?.nome, 'copia', 'docx'))}>
+            <button type="button" className="ori-link" onClick={async () => baixarArquivo(await wordDoPreProjeto(trabalho, orientando, trabalho.rascunhoProjeto!.texto), nomePreProjeto(orientando?.nome, 'copia', 'docx', formatoDoTexto(trabalho, trabalho.rascunhoProjeto!.texto)))}>
               Word
             </button>
           </span>
@@ -2213,7 +2278,7 @@ function PreProjetoCartao({ trabalho, orientando, aoCompartilhar }: { trabalho: 
       )}
       {!ativo || !pub ? (
         <p className="ori-calmo">
-          {!pub ? 'Compartilhe a página do orientando e ligue o formulário do pré-projeto: ele escreve lá e o Vide monta o PDF pelo manual.' : 'O formulário está desligado. Ligue em Compartilhar.'}
+          {!pub ? 'Compartilhe a página do orientando e ligue o formulário (pré-projeto ou trabalho final): ele escreve lá e o Vide monta o PDF e o Word pelo manual.' : 'O formulário está desligado. Ligue em Compartilhar.'}
         </p>
       ) : (
         <>
@@ -2233,8 +2298,8 @@ function PreProjetoCartao({ trabalho, orientando, aoCompartilhar }: { trabalho: 
                   setOcupado(ext);
                   try {
                     const { projeto } = await lerRascunho(trabalho.id);
-                    if (!projeto) avisar('O orientando ainda não escreveu nada no pré-projeto.', 'erro');
-                    else baixarArquivo(await (ext === 'pdf' ? pdfDoPreProjeto : wordDoPreProjeto)(trabalho, orientando, projeto), nomePreProjeto(orientando?.nome, 'rascunho', ext));
+                    if (!projeto) avisar('O orientando ainda não escreveu nada no formulário.', 'erro');
+                    else baixarArquivo(await (ext === 'pdf' ? pdfDoPreProjeto : wordDoPreProjeto)(trabalho, orientando, projeto), nomePreProjeto(orientando?.nome, 'rascunho', ext, formatoDoTexto(trabalho, projeto)));
                   } catch (e) {
                     avisar((e as Error).message, 'erro');
                   } finally {

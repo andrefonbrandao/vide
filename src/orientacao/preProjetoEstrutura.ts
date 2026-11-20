@@ -3,14 +3,16 @@
 // específicos, 2.3 justificativa), 3 Fundamentação teórica (com subtítulos), 4 Procedimentos
 // metodológicos (4.1 a 4.4), 5 Cronograma das atividades (quadro; 5.1 Recursos), Referências.
 // Seção vazia não aparece, e a numeração se ajusta.
-import { lerParagrafos, ordenarReferencias, type Paragrafo } from './marcacao';
+import { lerParagrafos, ordenarReferencias, type Paragrafo, type TabelaTexto } from './marcacao';
 import { emOrdem } from './prazos';
 import type { Etapa, TextoProjeto } from './tipos';
 
 export type Bloco =
-  | { tipo: 'titulo'; nivel: 1 | 2; rotulo: string; texto: string }
+  /** nivel 0: título sem número, centralizado, em página nova (apêndices, anexos). */
+  | { tipo: 'titulo'; nivel: 0 | 1 | 2 | 3; rotulo: string; texto: string; novaPagina?: boolean }
   | { tipo: 'par'; p: Paragrafo }
   | { tipo: 'cronograma'; etapas: Etapa[] }
+  | { tipo: 'tabela'; tabela: TabelaTexto; numero: number }
   | { tipo: 'referencias'; lista: string[] };
 
 /** Objetivos específicos: frases completas, sem marcador, com ponto final. */

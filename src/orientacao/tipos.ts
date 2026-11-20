@@ -78,6 +78,48 @@ export interface ConfigPreProjeto {
   /** Elementos opcionais. */
   resumo: boolean;
   aprovacao: boolean;
+  /** Qual formulário o orientando vê: o pré-projeto (TCC I) ou o trabalho final (TCC II). */
+  formato?: 'pre' | 'final';
+  /** Natureza do trabalho final (vazio = o padrão). */
+  naturezaFinal?: string;
+  /** Trabalho final: e-mail do orientador (página do resumo) e os avaliadores da banca. */
+  emailOrientador?: string;
+  avaliadores?: string[];
+}
+
+/** Uma parte com nome escolhido pelo orientando (capítulo do desenvolvimento, apêndice, anexo). */
+export interface ParteNomeada {
+  id: string;
+  titulo: string;
+  texto: string;
+}
+
+/** O texto do trabalho final (TCC II). Mesmas marcações do pré-projeto, mais "### " (sub-subtítulo) e as tabelas/quadros ("::: Tabela – título" … ":::"). */
+export interface TextoFinal {
+  titulo: string;
+  subtitulo: string;
+  tituloIngles: string;
+  subtituloIngles: string;
+  email: string;
+  dedicatoria: string;
+  agradecimentos: string;
+  epigrafe: string;
+  resumo: string;
+  palavrasChave: string;
+  abstract: string;
+  keywords: string;
+  /** Uma por linha: "ABNT – Associação Brasileira de Normas Técnicas". */
+  siglas: string;
+  introducao: string;
+  objetivoGeral: string;
+  objetivosEspecificos: string;
+  justificativa: string;
+  /** Os capítulos do desenvolvimento (pelo menos um), com o nome que o orientando escolher. */
+  capitulos: ParteNomeada[];
+  consideracoes: string;
+  referencias: string;
+  apendices: ParteNomeada[];
+  anexos: ParteNomeada[];
 }
 
 /** O texto do pré-projeto que o orientando escreve (marcações: **negrito**, _itálico_, "> " citação longa, "## " subtítulo, [[nota de rodapé]]). */
@@ -101,6 +143,10 @@ export interface TextoProjeto {
   recursos: string;
   /** Uma referência por linha (o Vide põe em ordem alfabética). */
   referencias: string;
+  /** O trabalho final (TCC II), quando o orientador troca o formulário; o pré-projeto fica guardado ao lado. */
+  final?: TextoFinal;
+  /** Só nos envios: qual formulário foi enviado. */
+  formatoEnvio?: 'pre' | 'final';
   atualizado_em?: string;
 }
 

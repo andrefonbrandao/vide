@@ -176,16 +176,22 @@ export function logoUniftec(): Promise<Uint8Array | undefined> {
   return logo;
 }
 
-/** PDF do pré-projeto a partir de um texto (do rascunho ou de um envio). */
+/** Formato do texto: o de quando foi enviado (nos envios) ou o que está valendo agora. */
+export const formatoDoTexto = (t: Trabalho, texto: TextoProjeto): 'pre' | 'final' => texto.formatoEnvio ?? t.preProjeto?.formato ?? 'pre';
+function configDoTexto(t: Trabalho, o: Orientando | undefined, texto: TextoProjeto) {
+  return { ...(t.preProjeto ?? configPreProjetoPadrao(o)), formato: formatoDoTexto(t, texto) };
+}
+
+/** PDF do pré-projeto (ou do trabalho final) a partir de um texto (do rascunho ou de um envio). */
 export async function pdfDoPreProjeto(t: Trabalho, o: Orientando | undefined, texto: TextoProjeto): Promise<Blob> {
   const { gerarPreProjetoPdf } = await import('./preProjetoPdf');
-  return gerarPreProjetoPdf({ nome: o?.nome ?? '', config: t.preProjeto ?? configPreProjetoPadrao(o), texto, etapas: t.etapas, logo: await logoUniftec() });
+  return gerarPreProjetoPdf({ nome: o?.nome ?? '', config: configDoTexto(t, o, texto), texto, etapas: t.etapas, logo: await logoUniftec() });
 }
 
 /** Word (.docx) do pré-projeto a partir de um texto. */
 export async function wordDoPreProjeto(t: Trabalho, o: Orientando | undefined, texto: TextoProjeto): Promise<Blob> {
   const { gerarPreProjetoDocx } = await import('./preProjetoDocx');
-  return gerarPreProjetoDocx({ nome: o?.nome ?? '', config: t.preProjeto ?? configPreProjetoPadrao(o), texto, etapas: t.etapas, logo: await logoUniftec() });
+  return gerarPreProjetoDocx({ nome: o?.nome ?? '', config: configDoTexto(t, o, texto), texto, etapas: t.etapas, logo: await logoUniftec() });
 }
 
 /** O rascunho atual do orientando (o que está escrito agora na página dele). */
@@ -216,12 +222,13 @@ export async function buscarEnvios(trabalhoId: string): Promise<number> {
     for (const e of envios) {
       const d = new Date(e.em);
       const quando = d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-      const rotulo = `Pré-projeto — enviado em ${quando}`;
+      const fin = formatoDoTexto(t, e.projeto) === 'final';
+      const rotulo = `${fin ? 'Trabalho final' : 'Pré-projeto'} — enviado em ${quando}`;
       if (ja.has(rotulo)) continue;
       const blob = await pdfDoPreProjeto(t, o, e.projeto);
       const p2 = (x: number) => String(x).padStart(2, '0');
       const dia = `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
-      const nome = `Pre-projeto - ${(o?.nome ?? 'orientando').normalize('NFD').replace(/[\u0300-\u036f]/g, '')} - ${dia} ${p2(d.getHours())}h${p2(d.getMinutes())}.pdf`;
+      const nome = `${fin ? 'Trabalho final' : 'Pre-projeto'} - ${(o?.nome ?? 'orientando').normalize('NFD').replace(/[\u0300-\u036f]/g, '')} - ${dia} ${p2(d.getHours())}h${p2(d.getMinutes())}.pdf`;
       await adicionarVersao(t.id, new File([blob], nome, { type: 'application/pdf' }), { rotulo, recebida_em: dia, etapaId: etapaAtual(t)?.id ?? null, notas: 'Enviado pelo orientando pela página de orientação.', projeto: e.projeto });
       n++;
     }

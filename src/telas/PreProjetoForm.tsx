@@ -3,9 +3,12 @@
 // "Enviar ao orientador" manda uma cópia datada (vira uma versão no caderno do professor).
 import { useEffect, useRef, useState } from 'react';
 import { rotuloPrazo } from '../orientacao/prazos';
-import type { DadosOrientando, TextoProjeto } from '../orientacao/tipos';
+import { separarTabelas, textoDaTabela, type TabelaTexto } from '../orientacao/marcacao';
+import { finalDoPreProjeto } from '../orientacao/trabalhoFinalEstrutura';
+import type { DadosOrientando, TextoFinal, TextoProjeto } from '../orientacao/tipos';
+import { CamposFinal } from './TrabalhoFinalForm';
 
-type Campo = Exclude<keyof TextoProjeto, 'atualizado_em'>;
+type Campo = Exclude<keyof TextoProjeto, 'atualizado_em' | 'final' | 'formatoEnvio'>;
 
 const VAZIO: TextoProjeto = {
   titulo: '', subtitulo: '', resumo: '', palavrasChave: '', introducao: '', problema: '', hipoteses: '', objetivoGeral: '', objetivosEspecificos: '',
@@ -28,16 +31,135 @@ function inicial(d: DadosOrientando): TextoProjeto {
   };
 }
 
-interface DefCampo {
-  campo: Campo;
+export interface DefCampo {
+  campo: string;
   nome: string;
   ajuda: string;
   linhas: number;
   subtitulos?: boolean;
+  /** Também "### " (3.1.1). */
+  subsub?: boolean;
+  /** Botão de tabela/quadro. */
+  tabelas?: boolean;
   simples?: boolean;
 }
 
-const GRUPOS: { titulo: string; campos: DefCampo[]; so?: 'resumo' }[] = [
+/** Onde está a tabela/quadro que contém a posição `pos` do texto (início e fim do bloco), se houver. */
+function tabelaNaPosicao(texto: string, pos: number): { ini: number; fim: number; tabela: TabelaTexto } | null {
+  const linhas = texto.split('\n');
+  let ofs = 0;
+  let aberta: { ini: number } | null = null;
+  for (const l of linhas) {
+    const fimLinha = ofs + l.length;
+    if (!aberta && /^:::\s*(tabela|quadro)\b/i.test(l.trim())) aberta = { ini: ofs };
+    else if (aberta && l.trim() === ':::') {
+      if (pos >= aberta.ini && pos <= fimLinha) {
+        const bloco = texto.slice(aberta.ini, fimLinha);
+        const p = separarTabelas(bloco).find((x) => x.tipo === 'tabela');
+        if (p && p.tipo === 'tabela') return { ini: aberta.ini, fim: fimLinha, tabela: p.tabela };
+      }
+      aberta = null;
+    }
+    ofs = fimLinha + 1;
+  }
+  return null;
+}
+
+/** Tira as linhas (menos o cabeçalho) e as colunas que ficaram em branco. */
+function semVazias(linhas: string[][]): string[][] {
+  const cheia = (x: string) => !!x.trim();
+  const cols = (linhas[0] ?? []).map((_, k) => k).filter((k) => linhas.some((l) => cheia(l[k] ?? '')));
+  const usar = cols.length ? cols : [0];
+  return linhas.map((l) => usar.map((k) => l[k] ?? '')).filter((l, i) => i === 0 || l.some(cheia));
+}
+
+/** Janela para montar uma tabela ou um quadro numa grade. */
+function EditorTabela({ inicial, aoFechar, aoConfirmar }: { inicial: TabelaTexto | null; aoFechar: () => void; aoConfirmar: (t: TabelaTexto) => void }) {
+  const [t, setT] = useState<TabelaTexto>(
+    () =>
+      inicial ?? {
+        tipo: 'tabela',
+        titulo: '',
+        fonte: 'o autor.',
+        linhas: [
+          ['', '', ''],
+          ['', '', ''],
+          ['', '', ''],
+        ],
+      },
+  );
+  const ncol = Math.max(1, ...t.linhas.map((l) => l.length));
+  const linhas = t.linhas.map((l) => Array.from({ length: ncol }, (_, k) => l[k] ?? ''));
+  const mudarCelula = (r: number, k: number, v: string) => setT({ ...t, linhas: linhas.map((l, i) => (i === r ? l.map((x, j) => (j === k ? v.replace(/\|/g, '/') : x)) : l)) });
+  return (
+    <div className="modal-fundo" onMouseDown={(e) => e.target === e.currentTarget && aoFechar()}>
+      <div className="modal pp-tabela-janela" role="dialog" aria-label={inicial ? 'Editar tabela ou quadro' : 'Nova tabela ou quadro'}>
+        <h2>{inicial ? 'Editar' : 'Inserir'} {t.tipo === 'quadro' ? 'quadro' : 'tabela'}</h2>
+        <div className="linha-opcoes">
+          <label className="ori-opcao">
+            <input type="radio" checked={t.tipo === 'tabela'} onChange={() => setT({ ...t, tipo: 'tabela' })} /> Tabela (números, dados)
+          </label>
+          <label className="ori-opcao">
+            <input type="radio" checked={t.tipo === 'quadro'} onChange={() => setT({ ...t, tipo: 'quadro' })} /> Quadro (texto)
+          </label>
+        </div>
+        <p className="ajuda" style={{ margin: '4px 0 10px' }}>
+          Tabela: dados numéricos, sem linhas nas laterais. Quadro: informações em texto, todo fechado com linhas. O Vide numera sozinho ({t.tipo === 'quadro' ? 'Quadro' : 'Tabela'} 1, 2…) e, com
+          três ou mais, faz a lista no começo do trabalho.
+        </p>
+        <div className="campo">
+          <label htmlFor="pp-tab-titulo">Título</label>
+          <input id="pp-tab-titulo" value={t.titulo} onChange={(e) => setT({ ...t, titulo: e.target.value })} placeholder="ex.: Decisões analisadas por ano" autoFocus />
+        </div>
+        <div className="pp-grade" style={{ gridTemplateColumns: `repeat(${ncol}, minmax(90px, 1fr))` }}>
+          {linhas.map((l, r) =>
+            l.map((v, k) => (
+              <input
+                key={`${r}-${k}`}
+                className={r === 0 ? 'pp-grade-cab' : ''}
+                aria-label={r === 0 ? `Cabeçalho da coluna ${k + 1}` : `Linha ${r}, coluna ${k + 1}`}
+                placeholder={r === 0 ? `Coluna ${k + 1}` : ''}
+                value={v}
+                onChange={(e) => mudarCelula(r, k, e.target.value)}
+              />
+            )),
+          )}
+        </div>
+        <div className="linha-opcoes" style={{ marginTop: 8 }}>
+          <button type="button" className="botao pequeno" onClick={() => setT({ ...t, linhas: [...linhas, Array.from({ length: ncol }, () => '')] })}>
+            + linha
+          </button>
+          <button type="button" className="botao pequeno" disabled={linhas.length <= 2} onClick={() => setT({ ...t, linhas: linhas.slice(0, -1) })}>
+            − linha
+          </button>
+          <button type="button" className="botao pequeno" disabled={ncol >= 8} onClick={() => setT({ ...t, linhas: linhas.map((l) => [...l, '']) })}>
+            + coluna
+          </button>
+          <button type="button" className="botao pequeno" disabled={ncol <= 1} onClick={() => setT({ ...t, linhas: linhas.map((l) => l.slice(0, -1)) })}>
+            − coluna
+          </button>
+          <span className="ajuda" style={{ margin: 0 }}>
+            A primeira linha é o cabeçalho.
+          </span>
+        </div>
+        <div className="campo" style={{ marginTop: 10 }}>
+          <label htmlFor="pp-tab-fonte">Fonte</label>
+          <input id="pp-tab-fonte" value={t.fonte} onChange={(e) => setT({ ...t, fonte: e.target.value })} placeholder="ex.: o autor (2026), com base em STF (2025)." />
+        </div>
+        <div className="modal-botoes">
+          <button type="button" className="botao primario" onClick={() => aoConfirmar({ ...t, linhas: semVazias(linhas) })}>
+            {inicial ? 'Salvar' : 'Inserir no texto'}
+          </button>
+          <button type="button" className="botao" onClick={aoFechar}>
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const GRUPOS: { titulo: string; campos: (DefCampo & { campo: Campo })[]; so?: 'resumo' }[] = [
   {
     titulo: 'Identificação',
     campos: [
@@ -108,8 +230,21 @@ const GRUPOS: { titulo: string; campos: DefCampo[]; so?: 'resumo' }[] = [
 ];
 
 /** Campo de texto com a barra de marcações (negrito, itálico, citação longa, nota de rodapé, subtítulo). */
-function CampoTexto({ def, valor, aoMudar }: { def: DefCampo; valor: string; aoMudar: (v: string) => void }) {
+export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; valor: string; aoMudar: (v: string) => void; rotulo?: React.ReactNode }) {
   const ref = useRef<HTMLTextAreaElement>(null);
+  const [tabela, setTabela] = useState<{ ini: number; fim: number; tabela: TabelaTexto | null } | null>(null);
+  const abrirTabela = () => {
+    const el = ref.current;
+    const pos = el?.selectionStart ?? valor.length;
+    const achada = tabelaNaPosicao(valor, pos);
+    if (achada) setTabela(achada);
+    else {
+      // Nova: entra depois da linha em que está o cursor.
+      const fimLinha = valor.indexOf('\n', pos);
+      const onde = fimLinha < 0 ? valor.length : fimLinha;
+      setTabela({ ini: onde, fim: onde, tabela: null });
+    }
+  };
   const envolver = (antes: string, depois: string, exemplo: string) => {
     const el = ref.current;
     if (!el) return;
@@ -134,7 +269,7 @@ function CampoTexto({ def, valor, aoMudar }: { def: DefCampo; valor: string; aoM
   };
   return (
     <div className="campo pp-campo">
-      <label htmlFor={`pp-${def.campo}`}>{def.nome}</label>
+      {rotulo ?? <label htmlFor={`pp-${def.campo}`}>{def.nome}</label>}
       {def.ajuda && <span className="ajuda" style={{ margin: 0 }}>{def.ajuda}</span>}
       {def.linhas === 1 ? (
         <input id={`pp-${def.campo}`} value={valor} onChange={(e) => aoMudar(e.target.value)} />
@@ -159,10 +294,34 @@ function CampoTexto({ def, valor, aoMudar }: { def: DefCampo; valor: string; aoM
                   Subtítulo
                 </button>
               )}
+              {def.subsub && (
+                <button type="button" title="Subtítulo dentro do subtítulo (3.1.1, 3.1.2…)" onClick={() => noComecoDaLinha('### ', 'Subtítulo')}>
+                  Sub-subtítulo
+                </button>
+              )}
+              {def.tabelas && (
+                <button type="button" title="Insere uma tabela ou um quadro depois da linha do cursor. Com o cursor dentro de uma tabela, edita a tabela." onClick={abrirTabela}>
+                  Tabela ou quadro
+                </button>
+              )}
             </div>
           )}
           <textarea id={`pp-${def.campo}`} ref={ref} rows={def.linhas} value={valor} onChange={(e) => aoMudar(e.target.value)} />
         </>
+      )}
+      {tabela && (
+        <EditorTabela
+          inicial={tabela.tabela}
+          aoFechar={() => setTabela(null)}
+          aoConfirmar={(t) => {
+            const bloco = textoDaTabela(t);
+            const antes = valor.slice(0, tabela.ini);
+            const depois = valor.slice(tabela.fim);
+            const novo = tabela.tabela ? antes + bloco + depois : `${antes}${antes && !antes.endsWith('\n') ? '\n' : ''}${bloco}${depois && !depois.startsWith('\n') ? '\n' : ''}${depois}`;
+            aoMudar(novo);
+            setTabela(null);
+          }}
+        />
       )}
     </div>
   );
@@ -255,9 +414,17 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const mudar = (campo: Campo, v: string) => {
-    if (!texto) return;
-    const novo = { ...texto, [campo]: v, atualizado_em: new Date().toISOString() };
+  const final = dados.preProjeto?.formato === 'final';
+  /** O trabalho final começa com o texto do pré-projeto (que continua guardado ao lado). */
+  const fin: TextoFinal | null = texto && final ? (texto.final ?? finalDoPreProjeto(texto)) : null;
+  // Fixa o texto inicial do trabalho final (senão os capítulos ganhariam ids novos a cada desenho).
+  useEffect(() => {
+    if (final && texto && !texto.final) setTexto({ ...texto, final: finalDoPreProjeto(texto) });
+  }, [final, texto]);
+  const mudarFinal = (p: Partial<TextoFinal>) => fin && aplicar({ ...texto!, final: { ...fin, ...p } });
+  const mudar = (campo: Campo, v: string) => texto && aplicar({ ...texto, [campo]: v });
+  const aplicar = (t: TextoProjeto) => {
+    const novo = { ...t, atualizado_em: new Date().toISOString() };
     setTexto(novo);
     pendente.current = novo;
     setEstado('Alterações ainda não salvas…');
@@ -269,12 +436,13 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
     }, 1500);
   };
 
+  const comFinal = (): TextoProjeto => (fin ? { ...texto!, final: fin } : texto!);
   const gerarPdf = async (): Promise<Blob> => {
     const { gerarPreProjetoPdf } = await import('../orientacao/preProjetoPdf');
     const logo = await fetch('/logo-uniftec.png')
       .then(async (r) => (r.ok ? new Uint8Array(await r.arrayBuffer()) : undefined))
       .catch(() => undefined);
-    return gerarPreProjetoPdf({ nome: dados.nome, config: dados.preProjeto!, texto: texto!, etapas: dados.etapas, logo });
+    return gerarPreProjetoPdf({ nome: dados.nome, config: dados.preProjeto!, texto: comFinal(), etapas: dados.etapas, logo });
   };
   /** Pré-visualizar (abre numa aba nova) ou baixar: só para o orientando, nada vai ao orientador. */
   const baixarWord = async () => {
@@ -285,10 +453,10 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
       const logo = await fetch('/logo-uniftec.png')
         .then(async (r) => (r.ok ? new Uint8Array(await r.arrayBuffer()) : undefined))
         .catch(() => undefined);
-      const blob = await gerarPreProjetoDocx({ nome: dados.nome, config: dados.preProjeto!, texto: texto!, etapas: dados.etapas, logo });
+      const blob = await gerarPreProjetoDocx({ nome: dados.nome, config: dados.preProjeto!, texto: comFinal(), etapas: dados.etapas, logo });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = nomeArquivoPreProjetoDocx(dados.nome);
+      a.download = nomeArquivoPreProjetoDocx(dados.nome, final ? 'final' : 'pre');
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -312,7 +480,7 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
       else {
         const a = document.createElement('a');
         a.href = url;
-        a.download = `Pre-projeto - ${dados.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '')}.pdf`;
+        a.download = `${final ? 'Trabalho final' : 'Pre-projeto'} - ${dados.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '')}.pdf`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -326,11 +494,11 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
     }
   };
   const enviar = async () => {
-    if (!texto || !window.confirm('Enviar esta versão do pré-projeto ao orientador? Você pode continuar escrevendo e enviar outras depois.')) return;
+    if (!texto || !window.confirm(`Enviar esta versão ${final ? 'do trabalho final' : 'do pré-projeto'} ao orientador? Você pode continuar escrevendo e enviar outras depois.`)) return;
     setOcupado('envio');
     setErro('');
     try {
-      const r = await fetch(`/api/orientacao/${codigo}/envio`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Vide-Pin': pin }, body: JSON.stringify(texto) });
+      const r = await fetch(`/api/orientacao/${codigo}/envio`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Vide-Pin': pin }, body: JSON.stringify({ ...comFinal(), formatoEnvio: final ? 'final' : 'pre' }) });
       if (!r.ok) throw new Error(String(r.status));
       const { em } = (await r.json()) as { em: string };
       pendente.current = null;
@@ -350,9 +518,9 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
     <section className="pp">
       <div className="pp-topo">
         <div>
-          <h2>Meu pré-projeto</h2>
+          <h2>{final ? 'Meu trabalho final' : 'Meu pré-projeto'}</h2>
           <p className="ajuda" style={{ margin: 0 }}>
-            Escreva aqui as partes do projeto de pesquisa. Quando quiser, pré-visualize ou baixe o PDF (só para você): ele sai com a capa, a folha de rosto, o sumário e a formatação do manual (margens, fonte, espaçamento,
+            {final ? 'Escreva aqui as partes do trabalho final (TCC II). Ele começou com o texto do seu pré-projeto, já em cada lugar: confira e continue.' : 'Escreva aqui as partes do projeto de pesquisa.'} Quando quiser, pré-visualize ou baixe o PDF (só para você): ele sai com a capa, a folha de rosto, o sumário e a formatação do manual (margens, fonte, espaçamento,
             citações e notas de rodapé). Cada Enter começa um parágrafo novo.
           </p>
         </div>
@@ -415,7 +583,10 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
           </span>
         </div>
       )}
-      {GRUPOS.filter((g) => g.so !== 'resumo' || cfg.resumo).map((g) => (
+      {fin ? (
+        <CamposFinal fin={fin} mudar={mudarFinal} />
+      ) : (
+      GRUPOS.filter((g) => g.so !== 'resumo' || cfg.resumo).map((g) => (
         <fieldset key={g.titulo} className="proc-caixa pp-grupo">
           <legend className="proc-caixa-titulo">{g.titulo}</legend>
           <div className="pp-campos">
@@ -439,7 +610,8 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
             ))}
           </div>
         </fieldset>
-      ))}
+      ))
+      )}
       <details className="pp-dicas">
         <summary>Como marcar o texto</summary>
         <ul>
@@ -448,7 +620,14 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
           </li>
           <li>Citação longa (mais de três linhas): comece o parágrafo com "&gt; ". Sai com recuo de 4 cm, em fonte 10.</li>
           <li>Nota de rodapé: escreva [[o texto da nota]] logo depois da palavra. O número e a nota vão para o pé da página.</li>
-          <li>Na fundamentação, "## " no começo da linha cria um subtítulo (3.1, 3.2…).</li>
+          {final ? (
+            <>
+              <li>Nos capítulos, "## " no começo da linha cria um subtítulo (3.1, 3.2…) e "### ", um sub-subtítulo (3.1.1…).</li>
+              <li>"Tabela ou quadro" abre uma grade para montar a tabela; ela entra no texto entre as linhas "::: Tabela – título" e ":::". Para mudar, ponha o cursor dentro dela e clique de novo no botão.</li>
+            </>
+          ) : (
+            <li>Na fundamentação, "## " no começo da linha cria um subtítulo (3.1, 3.2…).</li>
+          )}
         </ul>
       </details>
       <div className="pp-acoes">

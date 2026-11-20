@@ -19,18 +19,24 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 - **Parte 3 — e-mails ao orientando** (pelo Gmail do professor, enviados quando o Vide estiver aberto):
   - **Lembretes de prazo:** o prazo é calculado na hora do envio (não quando o lembrete foi agendado); vários avisos atrasados viram um só; prazo vencido com o Vide fechado: aviso de "venceu em…" ou nada (o professor escolhe); cada envio fica marcado e vai para o Drive, para outro computador não repetir.
   - **Resumo da sessão para o orientando:** no registro da sessão, um **campo próprio para o resumo feito pela IA** (separado das anotações internas do professor, editável antes de enviar) e um botão para **mandar ao orientando por e-mail**, com as sugestões e os comandos e seus prazos; o envio fica registrado na linha do tempo. (A IA pode já escrever esse resumo dirigido ao orientando.)
-- **Trabalho final (TCC II):** o formulário do trabalho final pelo modelo em Word da Uniftec (capa, folha de rosto, aprovação, resumo/abstract, sumário, introdução, objetivos e justificativa, desenvolvimento, considerações finais, referências, apêndices e anexos), aproveitando o texto do pré-projeto; tabelas e figuras (o Word do pré-projeto já existe desde o pacote 27).
+- **Trabalho final (TCC II):** parte 1 (formulário, PDF e Word, capítulos com nome, tabelas e quadros) no pacote 30. **Falta (parte 2):** figuras e gráficos (imagens enviadas pelo orientando, reduzidas e guardadas no serviço) e a lista de figuras.
 - **Parte 4 — importar conversas:** e-mails trocados com o orientando direto do Gmail (o "copiar e colar" do WhatsApp e do e-mail já existe na parte 1).
 
 ## Situação
 
-**Pacote 29** aberto em 2026-11-20, a partir da versão 0.44.0 (já publicada). **Fechado e publicado como versão 0.45.0.**
+**Pacote 30** aberto em 2026-11-20, a partir da versão 0.45.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|---|---|
+| 1 | **Trabalho final (TCC II), parte 1: formulário, PDF e Word, com tabelas e quadros.** Em Compartilhar › Formulário do trabalho, o professor escolhe **Pré-projeto (TCC I)** ou **Trabalho final (TCC II)** e, no final, informa o e-mail dele e os dois avaliadores da banca. Na página do orientando, a aba vira **"Meu trabalho final"**, já com o texto do pré-projeto em cada lugar (o pré-projeto continua guardado). Partes, pelo modelo da Uniftec: identificação (título e subtítulo em português e em inglês, e-mail), dedicatória/agradecimentos/epígrafe (entram se escritos), resumo (com contagem de 150 a 500 palavras) e abstract, siglas, 1 Introdução, 2 Objetivos e justificativa (2.1, 2.1.1, 2.2), **capítulos do desenvolvimento que o orientando cria, nomeia, ordena e remove (pelo menos um)**, numerados 3, 4, 5…, com subtítulos (3.1) e sub-subtítulos (3.1.1), Considerações finais, Referências, **apêndices e anexos** com nome (Apêndice A, B…). **Tabelas e quadros** montados numa grade (título, células, fonte), numerados sozinhos, com lista automática quando há três ou mais. PDF e Word: capa, folha de rosto, folha de aprovação com a banca, dedicatória e epígrafe no pé da página, página do resumo com autor e orientador e e-mails, página do abstract, listas, sumário, seções primárias em página nova, páginas contadas desde a folha de rosto. Os envios chegam como versões "Trabalho final — enviado em…" | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 29 (publicado como 0.45.0 em 2026-11-20)
 
 | # | Ideia | Situação |
 |---|---|---|
 | 1 | **Correção: Drive no Safari em aba privada.** O Safari privado recusa guardar arquivos (PDF, imagem, Word) no banco do navegador e a sincronização parava com "Error preparing Blob/File data to be stored in object store". Agora o Vide testa isso ao abrir e, quando o navegador recusa, guarda os bytes do arquivo (formato que todo navegador aceita) e os lê de volta como arquivo normal — materiais, versões e modelos da orientação. Nos outros navegadores nada muda. Lembrete: a aba privada apaga tudo ao ser fechada; o normal (ou o ícone na tela de início) guarda os dados | Publicada (0.45.0) |
-
-## Pacotes anteriores
 
 ### Pacote 28 (publicado como 0.44.0 em 2026-11-20)
 

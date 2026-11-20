@@ -13,8 +13,11 @@ export const CAMPOS_ELEMENTOS: { campo: Exclude<keyof Elementos, 'atualizado_em'
   { campo: 'metodologia', nome: 'Metodologia' },
 ];
 
-/** Texto padrão da natureza do trabalho na folha de rosto do pré-projeto. */
-export function naturezaPadrao(c: Pick<ConfigPreProjeto, 'curso' | 'instituicao'>): string {
+/** Texto padrão da natureza do trabalho na folha de rosto (pré-projeto ou trabalho final). */
+export const naturezaDe = (c: ConfigPreProjeto): string => (c.formato === 'final' ? c.naturezaFinal : c.natureza)?.trim() || naturezaPadrao(c);
+
+export function naturezaPadrao(c: Pick<ConfigPreProjeto, 'curso' | 'instituicao'> & { formato?: ConfigPreProjeto['formato'] }): string {
   const inst = c.instituicao === 'Ftec' ? 'da Ftec Faculdades' : 'do Centro Universitário Uniftec';
+  if (c.formato === 'final') return `Trabalho apresentado para o Curso de ${c.curso || 'Xxxx'}, ${inst}, como parte dos requisitos para avaliação da unidade curricular de Trabalho de Conclusão de Curso II.`;
   return `Pré-projeto de pesquisa apresentado ao Curso de ${c.curso || 'Xxxx'} ${inst}, como parte dos requisitos para avaliação da unidade curricular de Trabalho de Conclusão de Curso I.`;
 }

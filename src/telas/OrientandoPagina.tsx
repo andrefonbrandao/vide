@@ -162,7 +162,7 @@ export function PaginaOrientando({ codigo }: { codigo: string }) {
                 Acompanhamento
               </button>
               <button type="button" className={`botao pequeno${aba === 'projeto' ? ' escuro' : ''}`} onClick={() => (setAba('projeto'), history.replaceState(null, '', '#pre-projeto'))}>
-                Meu pré-projeto
+                {dados.preProjeto.formato === 'final' ? 'Meu trabalho final' : 'Meu pré-projeto'}
               </button>
             </nav>
           )}
