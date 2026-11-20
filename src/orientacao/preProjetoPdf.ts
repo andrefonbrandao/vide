@@ -34,9 +34,14 @@ const CM = 28.3465;
 const A4 = { w: 595.28, h: 841.89 };
 const M = { esq: 3 * CM, dir: 2 * CM, topo: 3 * CM, base: 2 * CM };
 const LARG = A4.w - M.esq - M.dir;
-const CORPO = { tam: 12, linha: 18 }; // 1,5
-const SIMPLES12 = 14;
-const PEQ = { tam: 10, linha: 11.6 }; // citação longa, notas, quadros
+const CORPO_PDF = { tam: 12, linha: 18 }; // 1,5
+const SIMPLES12_PDF = 14;
+const PEQ_PDF = { tam: 10, linha: 11.6 }; // citação longa, notas, quadros
+// As linhas do Word são mais altas: "1,5" no Word é 1,5 × a altura natural da Arial (≈ 1,15 × o
+// tamanho da letra). Usadas só para calcular as páginas do sumário do Word.
+const CORPO_WORD = { tam: 12, linha: 20.7 };
+const SIMPLES12_WORD = 13.8;
+const PEQ_WORD = { tam: 10, linha: 11.5 };
 const RECUO_PAR = 1.25 * CM;
 const RECUO_CIT = 4 * CM;
 
@@ -63,8 +68,12 @@ export interface PaginasDoPdf {
   inicio: number;
 }
 
-/** `aoSumario` recebe os títulos com as páginas (o Word usa para já trazer o sumário numerado). */
-export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (itens: ItemSumario[], extra: PaginasDoPdf) => void): Promise<Blob> {
+/** `aoSumario` recebe os títulos com as páginas (o Word usa para já trazer o sumário numerado);
+ * `medidasDoWord` monta com as alturas de linha do Word, para essas páginas baterem com as do Word. */
+export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (itens: ItemSumario[], extra: PaginasDoPdf) => void, medidasDoWord = false): Promise<Blob> {
+  const CORPO = medidasDoWord ? CORPO_WORD : CORPO_PDF;
+  const SIMPLES12 = medidasDoWord ? SIMPLES12_WORD : SIMPLES12_PDF;
+  const PEQ = medidasDoWord ? PEQ_WORD : PEQ_PDF;
   const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
   const pdf = await PDFDocument.create();
   const t = { ...TEXTO_VAZIO, ...e.texto };

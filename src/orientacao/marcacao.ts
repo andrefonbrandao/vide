@@ -131,12 +131,15 @@ export function textoPuro(s: string): string {
     .trim();
 }
 
-/** Referências em ordem alfabética (ignorando marcações e acentos). */
+/** Linha que é só o título "Referências" (colado junto com a lista, às vezes numerado: "5. REFERÊNCIAS"). */
+const SO_TITULO_REFERENCIAS = /^\d*[.\s–-]*refer[êe]ncias(\s+bibliogr[áa]ficas)?[:.]?$/i;
+
+/** Referências em ordem alfabética (ignorando marcações e acentos e o título colado por engano). */
 export function ordenarReferencias(texto: string): string[] {
   return texto
     .replace(/\r/g, '')
     .split('\n')
     .map((l) => l.trim())
-    .filter(Boolean)
+    .filter((l) => l && !SO_TITULO_REFERENCIAS.test(textoPuro(l).trim()))
     .sort((a, b) => textoPuro(a).localeCompare(textoPuro(b), 'pt-BR', { sensitivity: 'base' }));
 }
