@@ -23,7 +23,7 @@ const RE_SALA = /^\/api\/sala\/([A-Z0-9]{6,16})$/;
 const RE_JOGO = /^\/api\/jogo\/(\d{6})$/;
 const RE_TREINO = /^\/api\/treino(?:\/([A-Za-z0-9]{10,24}))?$/;
 const RE_PROCESSO = /^\/api\/processo(?:\/([A-Za-z0-9]{10,24}))?$/;
-const RE_ORIENTACAO = /^\/api\/orientacao(?:\/([A-Za-z0-9]{10,24})(?:\/(entrar|projeto|envio|envios|arquivo\/[A-Za-z0-9-]{8,48}|imagem\/[A-Za-z0-9-]{8,48}))?)?$/;
+const RE_ORIENTACAO = /^\/api\/orientacao(?:\/([A-Za-z0-9]{10,24})(?:\/(entrar|projeto|envio|envios|arquivo\/[A-Za-z0-9-]{8,48}|imagem\/[A-Za-z0-9-]{8,48}|apontamentos))?)?$/;
 const RE_ARQUIVO_PROCESSO = /^\/api\/processo\/([A-Za-z0-9]{10,24})\/arquivo\/([A-Za-z0-9-]{8,48})$/;
 /** Mensagens maiores que isso são descartadas (as do Vide têm poucos KB). */
 const TAMANHO_MAXIMO = 256 * 1024;
@@ -439,6 +439,20 @@ export class Processo extends DurableObject<Env> {
 // do código de 6 números; erros seguidos bloqueiam por 15 minutos.
 
 const MAX_TENTATIVAS = 8;
+/** Apontamento do orientador num trecho do texto do orientando. */
+interface Apontamento {
+  id: string;
+  /** Qual campo do formulário ("final.introducao", "final.cap.<id>", "pre.problema"…). */
+  campo: string;
+  /** O trecho comentado e o que vem logo antes dele (para achar o lugar certo). */
+  trecho: string;
+  prefixo: string;
+  texto: string;
+  em: string;
+  respostas: { autor: 'professor' | 'aluno'; texto: string; em: string }[];
+  resolvido: { por: 'professor' | 'aluno'; em: string } | null;
+}
+const MAX_APONTAMENTOS = 500;
 /** Figuras do trabalho final: cada imagem até 900 KB (o Vide reduz antes de enviar), no máximo 150. */
 const MAX_IMAGEM = 900 * 1024;
 const MAX_IMAGENS = 150;
@@ -558,6 +572,44 @@ export class Orientacao extends DurableObject<Env> {
       const lista = await this.ctx.storage.list<string>({ prefix: 'envio:', start: `envio:${depois}` });
       const envios = [...lista].filter(([k]) => k.slice(6) > depois).map(([k, v]) => ({ em: k.slice(6), projeto: JSON.parse(v) }));
       return jsonResp({ envios });
+    }
+    // ----- apontamentos do orientador no texto (o orientando responde e marca como resolvido) -----
+    if (partes[1] === 'apontamentos') {
+      const comChave = !!req.headers.get('X-Vide-Chave');
+      const erro = comChave ? await this.donoOuErro(req) : await this.conferirPin(id, req.headers.get('X-Vide-Pin') ?? '');
+      if (erro) return erro;
+      const lista = (await this.ctx.storage.get<Apontamento[]>('apontamentos')) ?? [];
+      if (req.method === 'GET') return jsonResp({ apontamentos: lista });
+      if (req.method !== 'POST') return new Response('Método não permitido', { status: 405 });
+      const c = (await req.json().catch(() => ({}))) as { acao?: string; id?: string; campo?: string; trecho?: string; prefixo?: string; texto?: string; resolvido?: boolean };
+      const autor = comChave ? 'professor' : 'aluno';
+      const agora = new Date().toISOString();
+      const corta = (x: unknown, n: number) => String(x ?? '').slice(0, n);
+      const achar = () => lista.find((a) => a.id === c.id);
+      if (c.acao === 'criar' && comChave) {
+        if (!c.texto?.trim() || !c.trecho?.trim() || !c.campo) return jsonResp({ erro: 'incompleto' }, 400);
+        if (lista.length >= MAX_APONTAMENTOS) return jsonResp({ erro: 'apontamentos demais' }, 413);
+        lista.push({ id: crypto.randomUUID().slice(0, 12), campo: corta(c.campo, 80), trecho: corta(c.trecho, 2000), prefixo: corta(c.prefixo, 80), texto: corta(c.texto, 4000), em: agora, respostas: [], resolvido: null });
+      } else if (c.acao === 'responder') {
+        const a = achar();
+        if (!a || !c.texto?.trim()) return jsonResp({ erro: 'não encontrado' }, 404);
+        if (a.respostas.length >= 50) return jsonResp({ erro: 'respostas demais' }, 413);
+        a.respostas.push({ autor, texto: corta(c.texto, 4000), em: agora });
+      } else if (c.acao === 'resolver') {
+        const a = achar();
+        if (!a) return jsonResp({ erro: 'não encontrado' }, 404);
+        a.resolvido = c.resolvido ? { por: autor, em: agora } : null;
+      } else if (c.acao === 'editar' && comChave) {
+        const a = achar();
+        if (!a || !c.texto?.trim()) return jsonResp({ erro: 'não encontrado' }, 404);
+        a.texto = corta(c.texto, 4000);
+      } else if (c.acao === 'apagar' && comChave) {
+        const k = lista.findIndex((a) => a.id === c.id);
+        if (k < 0) return jsonResp({ erro: 'não encontrado' }, 404);
+        lista.splice(k, 1);
+      } else return jsonResp({ erro: 'ação inválida' }, 400);
+      await this.ctx.storage.put('apontamentos', lista);
+      return jsonResp({ apontamentos: lista });
     }
     // ----- imagens das figuras do trabalho final (o orientando envia; ele e o professor leem) -----
     if (partes[1] === 'imagem') {

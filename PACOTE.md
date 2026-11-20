@@ -20,20 +20,25 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
   - **Lembretes de prazo:** o prazo é calculado na hora do envio (não quando o lembrete foi agendado); vários avisos atrasados viram um só; prazo vencido com o Vide fechado: aviso de "venceu em…" ou nada (o professor escolhe); cada envio fica marcado e vai para o Drive, para outro computador não repetir.
   - **Resumo da sessão para o orientando:** no registro da sessão, um **campo próprio para o resumo feito pela IA** (separado das anotações internas do professor, editável antes de enviar) e um botão para **mandar ao orientando por e-mail**, com as sugestões e os comandos e seus prazos; o envio fica registrado na linha do tempo. (A IA pode já escrever esse resumo dirigido ao orientando.)
 - **Trabalho final (TCC II):** parte 1 (formulário, PDF e Word, capítulos com nome, tabelas e quadros) no pacote 31; parte 2 (figuras e gráficos) no pacote 32.
-- **Apontamentos do orientador no texto do orientando** (aprovado; próximo pacote): "Ler e comentar" na aba Trabalho, selecionar um trecho e escrever o apontamento; o orientando vê o trecho destacado com o comentário, pode **responder** e marcar como resolvido; trecho reescrito vai para "trecho alterado" com a citação original.
 - **Parte 4 — importar conversas:** e-mails trocados com o orientando direto do Gmail (o "copiar e colar" do WhatsApp e do e-mail já existe na parte 1).
 
 ## Situação
 
-**Pacote 32** aberto em 2026-11-20, a partir da versão 0.47.0 (já publicada). **Fechado e publicado como versão 0.48.0.**
+**Pacote 33** aberto em 2026-11-20, a partir da versão 0.48.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|---|---|
+| 1 | **Apontamentos do orientador no texto do orientando.** Na aba Trabalho, o cartão do formulário mostra quantos apontamentos estão em aberto (e quantos têm resposta do orientando) e o botão **"Ler e comentar"**: abre o texto atual do orientando já formatado, campo por campo; o professor **seleciona um trecho e clica em "Comentar"**. À direita, os apontamentos (em aberto ou todos), com a conversa; o professor responde, edita, apaga, marca como resolvido ou reabre; clicar num apontamento leva ao trecho. Na página do orientando: um **painel "Apontamentos do orientador"** no alto (com atalho para cada um), o **trecho em amarelo no texto** e, logo abaixo do campo, o cartão com o comentário, onde ele **responde** e **marca como resolvido**. Se o orientando reescrever o trecho, o apontamento continua no cartão como "trecho alterado"; se a parte (capítulo, apêndice) for apagada, ele aparece no painel. Os apontamentos ficam guardados na página do orientando, à parte do texto: não vão para o PDF nem para o Word | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 32 (publicado como 0.48.0 em 2026-11-20)
 
 | # | Ideia | Situação |
 |---|---|---|
 | 1 | **Trabalho final (TCC II), parte 2: figuras e gráficos.** Botão **"Figura ou gráfico"** nos capítulos, na introdução, nos apêndices e nos anexos: o orientando escolhe a imagem (PNG ou JPEG, do computador ou do celular), dá o título e a fonte e escolhe a largura (inteira, três quartos ou metade). O Vide **reduz a imagem no navegador** (no máximo 1600 px; gráficos em PNG continuam nítidos) e a guarda na página do orientando; no texto fica só o código. Abaixo do campo, **miniaturas** das figuras e tabelas, que abrem a edição com um clique. Figuras e gráficos numerados (Figura 1, Gráfico 1…), com **lista de figuras e lista de gráficos** quando há três ou mais (na ordem do modelo: figuras, quadros, gráficos, tabelas). No PDF e no Word: título em cima, imagem centralizada, fonte embaixo; no Word a imagem vai dentro do arquivo e a numeração é campo do Word. O professor vê as imagens nos PDFs e Words (rascunho e envios). Limites: 900 KB por imagem (depois de reduzida) e 150 imagens por trabalho. Se a página for desativada, as imagens são apagadas (os PDFs já recebidos continuam com elas) | Publicada (0.48.0) |
 | 2 | **Ampliar o campo de escrita:** nos campos de texto longos (capítulos, introdução, considerações, apêndices…), o botão **⤢ Ampliar** abre o campo na tela toda, com letra maior e a mesma barra (negrito, subtítulo, tabela, figura…); **Fechar (Esc)** volta. O texto continua sendo salvo sozinho | Publicada (0.48.0) |
 | 3 | **Texto já formatado enquanto se escreve (como no Obsidian):** os campos de texto do formulário (pré-projeto e trabalho final) viraram um editor com visualização ao vivo — subtítulos grandes e em negrito, **negrito** e _itálico_ formatados, citação longa recuada e menor, nota de rodapé como um selo "nota" (o texto aparece ao passar o mouse), **tabelas e quadros desenhados** e **figuras e gráficos com a imagem** (um clique abre a edição). As marcações (##, **, _, >, [[ ]], :::) só aparecem, em cinza, na linha em que está o cursor. **Colar do Word** traz o negrito, o itálico e os parágrafos; Ctrl+B e Ctrl+I. Usa o CodeMirror (o motor do Obsidian), carregado só na página do orientando (cerca de 90 KB) | Publicada (0.48.0) |
-
-## Pacotes anteriores
 
 ### Pacote 31 (publicado como 0.47.0 em 2026-11-20)
 

@@ -32,6 +32,11 @@ interface Props {
   /** Clique numa tabela/figura desenhada: abre a edição do bloco que começa em `pos`. */
   aoEditarBloco: (pos: number) => void;
   controle: (c: Controle | null) => void;
+  /** Só leitura (o professor lendo): tudo sempre formatado, sem mudar o texto. */
+  somenteLeitura?: boolean;
+  /** Trechos destacados (apontamentos). */
+  marcas?: MarcaTrecho[];
+  aoClicarMarca?: (id: string) => void;
 }
 
 // ---------- Marcas de uma linha (o mesmo que lerTrechos entende, com as posições) ----------
@@ -73,11 +78,11 @@ export function marcasDaLinha(l: string): Marca[] {
 
 // ---------- Desenhos (widgets) ----------
 const urls = new Map<string, Promise<string>>();
-function urlDaImagem(codigo: string, pin: string, id: string): Promise<string> {
-  let p = urls.get(id);
+function urlDaImagem(codigo: string, cabecalho: Record<string, string>, id: string): Promise<string> {
+  let p = urls.get(`${codigo}/${id}`);
   if (!p) {
-    p = imagemDaPagina(codigo, id, { 'X-Vide-Pin': pin }).then((b) => (b ? URL.createObjectURL(new Blob([b as BlobPart])) : ''));
-    urls.set(id, p);
+    p = imagemDaPagina(codigo, id, cabecalho).then((b) => (b ? URL.createObjectURL(new Blob([b as BlobPart])) : ''));
+    urls.set(`${codigo}/${id}`, p);
   }
   return p;
 }
@@ -104,7 +109,7 @@ class NotaWidget extends WidgetType {
 class BlocoWidget extends WidgetType {
   constructor(
     readonly texto: string,
-    readonly pagina: { codigo: string; pin: string } | null,
+    readonly pagina: { codigo: string; cabecalho: Record<string, string> } | null,
     readonly editar: (pos: number) => void,
   ) {
     super();
@@ -145,7 +150,7 @@ class BlocoWidget extends WidgetType {
       img.alt = f.titulo;
       img.style.width = `${f.largura}%`;
       if (this.pagina && f.imagem)
-        void urlDaImagem(this.pagina.codigo, this.pagina.pin, f.imagem).then((u) => {
+        void urlDaImagem(this.pagina.codigo, this.pagina.cabecalho, f.imagem).then((u) => {
           if (u) img.src = u;
           else img.replaceWith(Object.assign(document.createElement('div'), { className: 'cm-figura-falta', textContent: '[imagem não encontrada]' }));
         });
@@ -166,7 +171,25 @@ class BlocoWidget extends WidgetType {
 const RE_BLOCO = /^:::\s*(tabela|quadro|figura|gr[áa]fico)(?![\p{L}\d])/iu;
 
 /** Monta a aparência do texto (o que esconder, o que formatar, o que desenhar). */
-function decoracoes(estado: EditorState, subtitulos: boolean, pagina: { codigo: string; pin: string } | null, editar: (pos: number) => void): DecorationSet {
+/** Trecho destacado (apontamento do orientador). */
+export interface MarcaTrecho {
+  id: string;
+  de: number;
+  ate: number;
+  resolvido: boolean;
+  ativo?: boolean;
+}
+const defMarcas = StateEffect.define<MarcaTrecho[]>();
+const campoMarcas = StateField.define<MarcaTrecho[]>({
+  create: () => [],
+  update: (v, tr) => {
+    for (const e of tr.effects) if (e.is(defMarcas)) return e.value;
+    // O texto mudou: os trechos andam junto.
+    return tr.docChanged ? v.map((m) => ({ ...m, de: tr.changes.mapPos(m.de, 1), ate: tr.changes.mapPos(m.ate, -1) })).filter((m) => m.ate > m.de) : v;
+  },
+});
+
+function decoracoes(estado: EditorState, subtitulos: boolean, pagina: { codigo: string; cabecalho: Record<string, string> } | null, editar: (pos: number) => void, semMarcas = false): DecorationSet {
   const doc = estado.doc;
   const ativas = new Set<number>();
   for (const r of estado.selection.ranges) {
@@ -174,7 +197,7 @@ function decoracoes(estado: EditorState, subtitulos: boolean, pagina: { codigo: 
     const b = doc.lineAt(r.to).number;
     for (let n = a; n <= b; n++) ativas.add(n);
   }
-  const focado = estado.field(campoFoco, false) ?? false;
+  const focado = !semMarcas && (estado.field(campoFoco, false) ?? false);
   const ativa = (n: number) => focado && ativas.has(n);
   const out: Range<Decoration>[] = [];
   const esconder = Decoration.replace({});
@@ -219,6 +242,9 @@ function decoracoes(estado: EditorState, subtitulos: boolean, pagina: { codigo: 
       if (ate > de) out.push(Decoration.mark({ class: m.tipo === 'b' ? 'cm-b' : 'cm-i' }).range(de, ate));
       for (const [a, b] of m.marcas) out.push((mostrar ? Decoration.mark({ class: 'cm-marca' }) : esconder).range(linha.from + ini + a, linha.from + ini + b));
     }
+  }
+  for (const m of estado.field(campoMarcas, false) ?? []) {
+    if (m.ate > m.de && m.ate <= doc.length) out.push(Decoration.mark({ class: `cm-apont${m.resolvido ? ' resolvido' : ''}${m.ativo ? ' ativo' : ''}`, attributes: { 'data-apont': m.id } }).range(m.de, m.ate));
   }
   return Decoration.set(out, true);
 }
@@ -278,18 +304,18 @@ export function htmlParaMarcacao(html: string): string {
     .trim();
 }
 
-export default function EditorVivo({ id, rotulo, valor, aoMudar, linhas, subtitulos, aoEditarBloco, controle }: Props) {
+export default function EditorVivo({ id, rotulo, valor, aoMudar, linhas, subtitulos, aoEditarBloco, controle, somenteLeitura = false, marcas, aoClicarMarca }: Props) {
   const caixa = useRef<HTMLDivElement>(null);
   const vista = useRef<EditorView | null>(null);
   const pagina = useContext(ContextoPagina);
-  const cb = useRef({ aoMudar, aoEditarBloco });
-  cb.current = { aoMudar, aoEditarBloco };
+  const cb = useRef({ aoMudar, aoEditarBloco, aoClicarMarca });
+  cb.current = { aoMudar, aoEditarBloco, aoClicarMarca };
 
   useEffect(() => {
     const editar = (pos: number) => cb.current.aoEditarBloco(pos);
     const aparencia = StateField.define<DecorationSet>({
-      create: (s) => decoracoes(s, subtitulos, pagina, editar),
-      update: (d, tr) => (tr.docChanged || tr.selection || tr.effects.some((e) => e.is(mudouFoco)) ? decoracoes(tr.state, subtitulos, pagina, editar) : d),
+      create: (s) => decoracoes(s, subtitulos, pagina, editar, somenteLeitura),
+      update: (d, tr) => (tr.docChanged || tr.selection || tr.effects.some((e) => e.is(mudouFoco) || e.is(defMarcas)) ? decoracoes(tr.state, subtitulos, pagina, editar, somenteLeitura) : d),
       provide: (f) => EditorView.decorations.from(f),
     });
     const envolverAtalho = (marca: string) => (v: EditorView) => {
@@ -307,13 +333,21 @@ export default function EditorVivo({ id, rotulo, valor, aoMudar, linhas, subtitu
           keymap.of([{ key: 'Mod-b', run: envolverAtalho('**') }, { key: 'Mod-i', run: envolverAtalho('_') }, ...defaultKeymap, ...historyKeymap]),
           EditorView.lineWrapping,
           campoFoco,
+          campoMarcas,
           aparencia,
+          EditorState.readOnly.of(somenteLeitura),
           EditorView.contentAttributes.of({ spellcheck: 'true', lang: 'pt-BR', autocorrect: 'on', autocapitalize: 'sentences', 'aria-label': rotulo, id }),
           EditorView.updateListener.of((u) => {
             if (u.docChanged) cb.current.aoMudar(u.state.doc.toString());
             if (u.focusChanged) setTimeout(() => u.view.dispatch({ effects: mudouFoco.of(u.view.hasFocus) }));
           }),
           EditorView.domEventHandlers({
+            click: (e) => {
+              const alvo = (e.target as HTMLElement).closest?.('[data-apont]');
+              const idA = alvo?.getAttribute('data-apont');
+              if (idA && cb.current.aoClicarMarca) cb.current.aoClicarMarca(idA);
+              return false;
+            },
             paste: (e, view) => {
               const html = e.clipboardData?.getData('text/html');
               if (!html || !/<(b|strong|i|em|span|p)\b/i.test(html)) return false;
@@ -344,7 +378,14 @@ export default function EditorVivo({ id, rotulo, valor, aoMudar, linhas, subtitu
     };
     // O editor é criado uma vez; o texto que muda por fora entra pelo efeito abaixo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subtitulos, pagina]);
+  }, [subtitulos, pagina, somenteLeitura]);
+
+  // Trechos destacados (apontamentos).
+  const chaveMarcas = JSON.stringify(marcas ?? []);
+  useEffect(() => {
+    vista.current?.dispatch({ effects: defMarcas.of(marcas ?? []) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chaveMarcas, subtitulos, pagina, somenteLeitura]);
 
   // Texto mudado por fora (tabela inserida, texto de outro aparelho): atualiza o editor.
   useEffect(() => {

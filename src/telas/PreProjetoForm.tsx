@@ -3,6 +3,8 @@
 // "Enviar ao orientador" manda uma cópia datada (vira uma versão no caderno do professor).
 import { lazy, Suspense, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { Controle } from './EditorVivo';
+import { ApontamentosDoCampo, CartaoApontamento, ContextoApontamentos, irPara, marcasDoCampo } from './Apontamentos';
+import { camposDoTrabalho, emAberto, lerApontamentos, mudarApontamento, type AcaoApontamento, type Apontamento } from '../orientacao/apontamentos';
 
 const EditorVivo = lazy(() => import('./EditorVivo'));
 import { ContextoPagina } from './contextoPagina';
@@ -38,6 +40,8 @@ function inicial(d: DadosOrientando): TextoProjeto {
 
 export interface DefCampo {
   campo: string;
+  /** Chave do campo para os apontamentos do orientador ("final.introducao", "pre.problema"…). */
+  chave?: string;
   nome: string;
   ajuda: string;
   linhas: number;
@@ -79,7 +83,7 @@ function Miniatura({ id, className }: { id: string; className?: string }) {
     if (!pg || !id) return;
     let u = '';
     let vivo = true;
-    void imagemDaPagina(pg.codigo, id, { 'X-Vide-Pin': pg.pin }).then((b) => {
+    void imagemDaPagina(pg.codigo, id, pg.cabecalho).then((b) => {
       if (!b || !vivo) return;
       u = URL.createObjectURL(new Blob([b as BlobPart]));
       setUrl(u);
@@ -126,7 +130,7 @@ function EditorFigura({ inicial, aoFechar, aoConfirmar }: { inicial: FiguraTexto
     try {
       const id = novoIdImagem();
       const bytes = new Uint8Array(await nova.blob.arrayBuffer());
-      const r = await fetch(`/api/orientacao/${pg.codigo}/imagem/${id}`, { method: 'PUT', headers: { 'Content-Type': nova.blob.type, 'X-Vide-Pin': pg.pin }, body: bytes });
+      const r = await fetch(`/api/orientacao/${pg.codigo}/imagem/${id}`, { method: 'PUT', headers: { 'Content-Type': nova.blob.type, ...pg.cabecalho }, body: bytes });
       if (!r.ok) throw new Error(r.status === 413 ? 'a imagem é grande demais, ou o trabalho já tem imagens demais' : `erro ${r.status}`);
       lembrarImagem(pg.codigo, id, bytes);
       aoConfirmar({ ...f, imagem: id });
@@ -384,6 +388,8 @@ export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; val
   };
   const vivo = def.linhas > 1 && !def.simples;
   const pg = useContext(ContextoPagina);
+  const ap = useContext(ContextoApontamentos);
+  const marcas = ap ? marcasDoCampo(ap.lista, def.chave, valor, ap.ativo) : [];
   const [editando, setEditando] = useState<{ ini: number; fim: number; tipo: 'tabela' | 'figura'; tabela?: TabelaTexto; figura?: FiguraTexto } | null>(null);
   /** Campo ampliado: ocupa a tela toda, para escrever textos longos com conforto. */
   const [cheio, setCheio] = useState(false);
@@ -511,6 +517,8 @@ export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; val
                 linhas={cheio ? 20 : def.linhas}
                 subtitulos={!!def.subtitulos}
                 controle={(c) => (editor.current = c)}
+                marcas={marcas}
+                aoClicarMarca={(id) => ap && irPara(id, ap.setAtivo)}
                 aoEditarBloco={(pos) => {
                   const b = blocosDoTexto(valor).find((x) => pos >= x.ini && pos <= x.fim);
                   if (b) editarBloco(b);
@@ -522,6 +530,7 @@ export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; val
           )}
         </>
       )}
+      <ApontamentosDoCampo chave={def.chave} valor={valor} />
       {editando?.tipo === 'tabela' && <EditorTabela inicial={editando.tabela ?? null} aoFechar={() => setEditando(null)} aoConfirmar={(t) => colocar(textoDaTabela(t))} />}
       {editando?.tipo === 'figura' && <EditorFigura inicial={editando.figura ?? null} aoFechar={() => setEditando(null)} aoConfirmar={(f) => colocar(textoDaFigura(f))} />}
     </div>
@@ -618,7 +627,26 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
   const final = dados.preProjeto?.formato === 'final';
   /** O trabalho final começa com o texto do pré-projeto (que continua guardado ao lado). */
   const fin: TextoFinal | null = texto && final ? (texto.final ?? finalDoPreProjeto(texto)) : null;
-  const pagina = useMemo(() => ({ codigo, pin }), [codigo, pin]);
+  const pagina = useMemo(() => ({ codigo, cabecalho: { 'X-Vide-Pin': pin } }), [codigo, pin]);
+  // Apontamentos do orientador: lidos ao abrir e ao voltar para a aba.
+  const [aponts, setAponts] = useState<Apontamento[]>([]);
+  const [ativo, setAtivo] = useState<string | null>(null);
+  useEffect(() => {
+    const ler = () => document.visibilityState === 'visible' && void lerApontamentos(codigo, { 'X-Vide-Pin': pin }).then(setAponts, () => undefined);
+    ler();
+    document.addEventListener('visibilitychange', ler);
+    return () => document.removeEventListener('visibilitychange', ler);
+  }, [codigo, pin]);
+  const estadoAp = useMemo(
+    () => ({
+      lista: aponts,
+      autor: 'aluno' as const,
+      agir: async (c: AcaoApontamento) => setAponts(await mudarApontamento(codigo, { 'X-Vide-Pin': pin }, c)),
+      ativo,
+      setAtivo,
+    }),
+    [aponts, ativo, codigo, pin],
+  );
   // Fixa o texto inicial do trabalho final (senão os capítulos ganhariam ids novos a cada desenho).
   useEffect(() => {
     if (final && texto && !texto.final) setTexto({ ...texto, final: finalDoPreProjeto(texto) });
@@ -716,6 +744,8 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
   };
 
   if (!texto) return <p className="ajuda" style={{ padding: 14 }}>Abrindo o seu rascunho…</p>;
+  const nomesCampos = new Map(camposDoTrabalho(comFinal(), final ? 'final' : 'pre').map((c) => [c.chave, c.nome]));
+  const perdidos = aponts.filter((a) => !nomesCampos.has(a.campo));
   const cfg = dados.preProjeto!;
   return (
     <section className="pp">
@@ -786,10 +816,40 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
           </span>
         </div>
       )}
+      <ContextoPagina.Provider value={pagina}>
+      <ContextoApontamentos.Provider value={estadoAp}>
+      {aponts.length > 0 && (
+        <section className="apont-painel" aria-label="Apontamentos do orientador">
+          <div className="apont-painel-cab">
+            <strong>Apontamentos do orientador</strong>
+            <span className="ajuda" style={{ margin: 0 }}>
+              {emAberto(aponts).length} em aberto · {aponts.length - emAberto(aponts).length} resolvido(s). Os trechos comentados aparecem em amarelo no texto; responda ou marque como resolvido.
+            </span>
+          </div>
+          {emAberto(aponts).length > 0 && (
+            <ul className="apont-painel-lista">
+              {emAberto(aponts).map((a) => (
+                <li key={a.id}>
+                  <button type="button" className="ori-link" onClick={() => irPara(a.id, setAtivo)}>
+                    {nomesCampos.get(a.campo) ?? 'Campo removido'}
+                  </button>{' '}
+                  <span className="ajuda">“{a.trecho.length > 70 ? `${a.trecho.slice(0, 70)}…` : a.trecho}” — {a.texto.length > 90 ? `${a.texto.slice(0, 90)}…` : a.texto}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {perdidos.length > 0 && (
+            <div className="apont-lista">
+              <span className="ajuda">Em partes que não existem mais:</span>
+              {perdidos.map((a) => (
+                <CartaoApontamento key={a.id} a={a} alterado />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
       {fin ? (
-        <ContextoPagina.Provider value={pagina}>
           <CamposFinal fin={fin} mudar={mudarFinal} />
-        </ContextoPagina.Provider>
       ) : (
       GRUPOS.filter((g) => g.so !== 'resumo' || cfg.resumo).map((g) => (
         <fieldset key={g.titulo} className="proc-caixa pp-grupo">
@@ -811,12 +871,14 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
               </div>
             )}
             {g.campos.map((c) => (
-              <CampoTexto key={c.campo} def={c} valor={texto[c.campo] ?? ''} aoMudar={(v) => mudar(c.campo, v)} />
+              <CampoTexto key={c.campo} def={{ ...c, chave: `pre.${c.campo}` }} valor={texto[c.campo] ?? ''} aoMudar={(v) => mudar(c.campo, v)} />
             ))}
           </div>
         </fieldset>
       ))
       )}
+      </ContextoApontamentos.Provider>
+      </ContextoPagina.Provider>
       <details className="pp-dicas">
         <summary>Como marcar o texto</summary>
         <ul>

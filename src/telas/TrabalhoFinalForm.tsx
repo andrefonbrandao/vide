@@ -55,11 +55,14 @@ function Partes({
   rotuloNovo,
   ajudaTexto,
   exemplo,
+  prefixo,
 }: {
   partes: ParteNomeada[];
   mudar: (p: ParteNomeada[]) => void;
   minimo: number;
   numero: (k: number) => string;
+  /** Prefixo da chave dos apontamentos: "cap", "ap" ou "an". */
+  prefixo: string;
   rotuloNovo: string;
   ajudaTexto: string;
   exemplo: string;
@@ -75,7 +78,7 @@ function Partes({
       {partes.map((c, k) => (
         <div key={c.id} className="pp-parte">
           <CampoTexto
-            def={{ campo: `parte-${c.id}`, nome: c.titulo, ajuda: ajudaTexto, linhas: 10, subtitulos: true, subsub: true, tabelas: true }}
+            def={{ campo: `parte-${c.id}`, chave: `final.${prefixo}.${c.id}`, nome: c.titulo, ajuda: ajudaTexto, linhas: 10, subtitulos: true, subsub: true, tabelas: true }}
             valor={c.texto}
             aoMudar={(v) => trocar(k, { texto: v })}
             rotulo={
@@ -110,7 +113,7 @@ function Partes({
 }
 
 export function CamposFinal({ fin, mudar }: { fin: TextoFinal; mudar: (p: Partial<TextoFinal>) => void }) {
-  const campo = (d: Def) => <CampoTexto key={d.campo} def={d} valor={fin[d.campo] ?? ''} aoMudar={(v) => mudar({ [d.campo]: v })} />;
+  const campo = (d: Def) => <CampoTexto key={d.campo} def={{ ...d, chave: `final.${d.campo}` }} valor={fin[d.campo] ?? ''} aoMudar={(v) => mudar({ [d.campo]: v })} />;
   const capitulos = fin.capitulos.length ? fin.capitulos : [novaParte()];
   const palavras = contar(fin.resumo);
   const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -162,6 +165,7 @@ export function CamposFinal({ fin, mudar }: { fin: TextoFinal; mudar: (p: Partia
             partes={capitulos}
             mudar={(l) => mudar({ capitulos: l })}
             minimo={1}
+            prefixo="cap"
             numero={(k) => String(k + 3)}
             rotuloNovo="Adicionar capítulo"
             ajudaTexto='Use "Subtítulo" para dividir o capítulo (3.1, 3.2…), "Tabela ou quadro" para uma tabela e "Figura ou gráfico" para uma imagem.'
@@ -197,6 +201,7 @@ export function CamposFinal({ fin, mudar }: { fin: TextoFinal; mudar: (p: Partia
             partes={fin.apendices}
             mudar={(l) => mudar({ apendices: l })}
             minimo={0}
+            prefixo="ap"
             numero={(k) => `Apêndice ${LETRAS[k] ?? k + 1}`}
             rotuloNovo="Adicionar apêndice"
             ajudaTexto=""
@@ -207,6 +212,7 @@ export function CamposFinal({ fin, mudar }: { fin: TextoFinal; mudar: (p: Partia
             partes={fin.anexos}
             mudar={(l) => mudar({ anexos: l })}
             minimo={0}
+            prefixo="an"
             numero={(k) => `Anexo ${LETRAS[k] ?? k + 1}`}
             rotuloNovo="Adicionar anexo"
             ajudaTexto=""

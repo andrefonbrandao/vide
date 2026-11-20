@@ -30,6 +30,8 @@ import {
 import { analisarColagem, type Colagem } from '../orientacao/colar';
 import { pendenciasVencidas } from '../orientacao/alertas';
 import { naturezaPadrao } from '../orientacao/campos';
+import { emAberto, lerApontamentos, type Apontamento } from '../orientacao/apontamentos';
+import { LerEComentar } from './LerEComentar';
 import { lerEncaminhamentos, lerRespostaIA, pedidoRegistroIA } from '../orientacao/ia';
 import type { OpcoesRelatorio } from '../orientacao/relatorioPdf';
 import { assinarPublicacao, buscarEnvios, configPreProjetoPadrao, desativarOrientacao, estadoPublicacao, formatoDoTexto, guardarRascunho, lerRascunho, MAX_MODELO, pdfDoPreProjeto, publicarOrientacao, urlDoOrientando, wordDoPreProjeto } from '../orientacao/publicar';
@@ -2254,6 +2256,21 @@ function PreProjetoCartao({ trabalho, orientando, aoCompartilhar }: { trabalho: 
   const [ocupado, setOcupado] = useState('');
   const pub = trabalho.publicacao;
   const ativo = !!trabalho.preProjeto?.ativo;
+  const [lendo, setLendo] = useState(false);
+  const [aponts, setAponts] = useState<Apontamento[] | null>(null);
+  useEffect(() => {
+    if (!pub || !ativo || lendo) return;
+    let vivo = true;
+    void lerApontamentos(pub.codigo, { 'X-Vide-Chave': pub.chave }).then(
+      (l) => vivo && setAponts(l),
+      () => undefined,
+    );
+    return () => {
+      vivo = false;
+    };
+  }, [pub, ativo, lendo]);
+  const abertos = aponts ? emAberto(aponts) : [];
+  const comResposta = abertos.filter((a) => a.respostas.at(-1)?.autor === 'aluno').length;
   return (
     <section className="ori-card" style={{ marginTop: 18 }}>
       <div className="ori-card-cab">
@@ -2282,6 +2299,18 @@ function PreProjetoCartao({ trabalho, orientando, aoCompartilhar }: { trabalho: 
         </p>
       ) : (
         <>
+          <div className="ori-info">
+            <span>Apontamentos no texto</span>
+            <span className="ori-info-acoes">
+              <strong>
+                {aponts === null ? '…' : `${abertos.length} em aberto${comResposta ? ` · ${comResposta} com resposta` : ''}`}
+              </strong>
+              <button type="button" className="botao pequeno escuro" onClick={() => setLendo(true)}>
+                Ler e comentar
+              </button>
+            </span>
+          </div>
+          {lendo && <LerEComentar trabalho={trabalho} orientando={orientando} aoFechar={() => setLendo(false)} />}
           <div className="ori-info">
             <span>Último envio</span>
             <strong>{pub.ultimoEnvio ? new Date(pub.ultimoEnvio).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'nenhum ainda'}</strong>

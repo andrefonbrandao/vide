@@ -2,4 +2,5 @@
 // entre o formulário e o editor.
 import { createContext } from 'react';
 
-export const ContextoPagina = createContext<{ codigo: string; pin: string } | null>(null);
+/** `cabecalho`: o código do orientando (X-Vide-Pin) ou a chave do professor (X-Vide-Chave). */
+export const ContextoPagina = createContext<{ codigo: string; cabecalho: Record<string, string> } | null>(null);
