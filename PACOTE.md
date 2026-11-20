@@ -24,11 +24,11 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 30** aberto em 2026-11-20, a partir da versão 0.45.0 (já publicada). Ainda não publicado.
+**Pacote 30** aberto em 2026-11-20, a partir da versão 0.45.0 (já publicada). **Fechado e publicado como versão 0.46.0.**
 
 | # | Ideia | Situação |
 |---|---|---|
-| 1 | **Correção: sumário do pré-projeto em Word com as páginas certas.** (a) A capa e a folha de rosto passavam um pouco do tamanho da página no Word, e o parágrafo da quebra escorregava para a página seguinte: apareciam **duas páginas em branco** antes do sumário. Agora a página nova começa no próprio título da página seguinte, e os espaços da capa, da folha de rosto e da folha de aprovação se ajustam ao tamanho do título, do subtítulo e da natureza do trabalho, para caber sempre numa página. (b) Os números que o sumário do Word já traz eram calculados com as linhas do PDF, mais baixas que o "1,5" do Word; em trabalhos longos, os títulos caíam em páginas posteriores às indicadas. Agora a conta usa a altura de linha do Word (ao atualizar o sumário, o Word confirma os números). (c) Nas Referências, a linha que é só o título colado junto com a lista ("5. REFERÊNCIAS", "Referências") é descartada (no Word e no PDF) | Feita |
+| 1 | **Correção: sumário do pré-projeto em Word com as páginas certas.** (a) A capa e a folha de rosto passavam um pouco do tamanho da página no Word, e o parágrafo da quebra escorregava para a página seguinte: apareciam **duas páginas em branco** antes do sumário. Agora a página nova começa no próprio título da página seguinte, e os espaços da capa, da folha de rosto e da folha de aprovação se ajustam ao tamanho do título, do subtítulo e da natureza do trabalho, para caber sempre numa página. (b) Os números que o sumário do Word já traz eram calculados com as linhas do PDF, mais baixas que o "1,5" do Word; em trabalhos longos, os títulos caíam em páginas posteriores às indicadas. Agora a conta usa a altura de linha do Word (ao atualizar o sumário, o Word confirma os números). (c) Nas Referências, a linha que é só o título colado junto com a lista ("5. REFERÊNCIAS", "Referências") é descartada (no Word e no PDF) | Publicada (0.46.0) |
 
 ## Pacotes anteriores
 
