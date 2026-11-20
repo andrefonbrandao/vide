@@ -1529,3 +1529,4 @@ button.ori-tipo-enc { cursor: pointer; }
 }
 .oa-modelos li > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .oa-modelos li > .botao { flex: none; }
+.ori-msg-bloco { font-size: 14px; font-weight: 700; color: #2f6b4f; }

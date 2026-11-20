@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { analisarColagem, dataDeEmail } from './colar';
-import { lerRespostaIA, pedidoRegistroIA } from './ia';
+import { lerEncaminhamentos, lerRespostaIA, pedidoRegistroIA } from './ia';
 import { cronogramaModelo, diasEntre, etapaAtual, pendencias, rotuloDias, situacaoEtapa } from './prazos';
 import type { Interacao } from './tipos';
 
@@ -99,5 +99,41 @@ PENDÊNCIAS ANTERIORES CUMPRIDAS:
     ]);
     expect(r.cumpridas).toEqual([1, 3]);
     expect(lerRespostaIA('RESUMO: curto\nPENDÊNCIAS ANTERIORES CUMPRIDAS: nenhuma').cumpridas).toEqual([]);
+  });
+});
+
+describe('sugestões e comandos colados em bloco', () => {
+  test('marcados pela IA', () => {
+    const r = lerEncaminhamentos(`Aqui estão as tarefas:
+- [comando] Reescrever a introdução | até 21/11/2026
+- [sugestão] Ler Taruffo.
+- Comando: Enviar o sumário (prazo: 28/11/2026)
+- Sugestão – Trocar o título`);
+    expect(r.itens).toEqual([
+      { tipo: 'comando', texto: 'Reescrever a introdução', prazo: '2026-11-21' },
+      { tipo: 'sugestao', texto: 'Ler Taruffo', prazo: undefined },
+      { tipo: 'comando', texto: 'Enviar o sumário', prazo: '2026-11-28' },
+      { tipo: 'sugestao', texto: 'Trocar o título', prazo: undefined },
+    ]);
+  });
+  test('por seções "Comandos" e "Sugestões"', () => {
+    const r = lerEncaminhamentos(`## COMANDOS:
+1. Revisar as citações
+2. Mandar o capítulo 2 até 05/12/2026
+
+**Sugestões:**
+- Ler Marinoni
+- Ver o REsp 1.234`);
+    expect(r.itens.map((x) => [x.tipo, x.texto])).toEqual([
+      ['comando', 'Revisar as citações'],
+      ['comando', 'Mandar o capítulo 2 até 05/12/2026'],
+      ['sugestao', 'Ler Marinoni'],
+      ['sugestao', 'Ver o REsp 1.234'],
+    ]);
+  });
+  test('sem marcação vale o tipo escolhido; resumo e cumpridas ficam de fora', () => {
+    expect(lerEncaminhamentos('Reler o projeto\nMarcar nova reunião', 'comando').itens.map((x) => x.tipo)).toEqual(['comando', 'comando']);
+    const r = lerEncaminhamentos('RESUMO:\nFoi bom.\n\nSUGESTÕES E COMANDOS:\n- [comando] Fazer X\n\nPENDÊNCIAS ANTERIORES CUMPRIDAS:\n- 1');
+    expect(r).toEqual({ comResumo: true, itens: [{ tipo: 'comando', texto: 'Fazer X', prazo: undefined }] });
   });
 });

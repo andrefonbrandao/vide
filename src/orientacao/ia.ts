@@ -92,20 +92,52 @@ export function lerRespostaIA(texto: string): RespostaIA {
     }
     if (atual) secoes[atual].push(bruta);
   }
-  const encaminhamentos: RespostaIA['encaminhamentos'] = [];
-  for (const l of secoes.tarefas) {
-    const m = /^\s*(?:[-*•]|\d+[.)])\s*(?:\[\s*(comando|sugest[ãa]o)\s*\]|(comando|sugest[ãa]o)\s*:)?\s*(.+)$/i.exec(l);
+  const encaminhamentos = lerEncaminhamentos(secoes.tarefas.join('\n')).itens;
+  const cumpridas = [...new Set(secoes.cumpridas.join(' ').match(/\d+/g)?.map(Number) ?? [])];
+  return { resumo: secoes.resumo.join('\n').trim(), encaminhamentos, cumpridas };
+}
+
+type Enc = Pick<Encaminhamento, 'tipo' | 'texto' | 'prazo'>;
+
+/**
+ * Lê sugestões e comandos colados em bloco (como a IA formata):
+ * "- [comando] Reescrever… | até 21/11/2026", "Sugestão: Ler…", ou listas sob títulos
+ * "COMANDOS:" / "SUGESTÕES:". Sem marcação nem título, vale o tipo `padrao`.
+ */
+export function lerEncaminhamentos(texto: string, padrao: Enc['tipo'] = 'sugestao'): { itens: Enc[]; comResumo: boolean } {
+  const itens: Enc[] = [];
+  /** Seção em que a linha está: só comandos, só sugestões, mista, ou fora (resumo, pendências cumpridas). */
+  let secao: 'comando' | 'sugestao' | 'misto' | 'fora' = 'misto';
+  let comResumo = false;
+  const MARCADOR = /^(?:[-*•–]|\d+[.)]|[a-z][.)])\s|^(?:[-*•–]\s*)?(?:\[\s*(?:comando|sugest[ãa]o)\s*\]|\(\s*(?:comando|sugest[ãa]o)\s*\)|(?:comando|sugest[ãa]o)\s*[:–-])/i;
+  const linhas = texto.replace(/\r/g, '').replace(/\*\*/g, '').split('\n');
+  // Com lista marcada, frases soltas ("Aqui estão as tarefas:") não viram tarefa.
+  const soMarcadas = linhas.some((x) => MARCADOR.test(x.trim()));
+  for (const bruta of linhas) {
+    const l = bruta.replace(/^#+\s*/, '').trim();
+    if (!l) continue;
+    const tit = /^(resumo|pend[êe]ncias anteriores cumpridas|pend[êe]ncias cumpridas|sugest[õo]es e comandos|comandos e sugest[õo]es|tarefas|encaminhamentos|comandos?|sugest[õo]es|sugest[ãa]o)\s*:?\s*$/i.exec(l);
+    if (tit) {
+      const t = tit[1].toLowerCase();
+      if (t === 'resumo') comResumo = true;
+      secao = t === 'resumo' || t.includes('cumpridas') ? 'fora' : t.startsWith('comando') && !t.includes(' e ') ? 'comando' : t.startsWith('sugest') && !t.includes(' e ') ? 'sugestao' : 'misto';
+      continue;
+    }
+    if (secao === 'fora') continue;
+    if (soMarcadas && !MARCADOR.test(l)) continue;
+    const m = /^(?:[-*•–]|\d+[.)]|[a-z][.)])?\s*(?:\[\s*(comando|sugest[ãa]o)\s*\]|\(\s*(comando|sugest[ãa]o)\s*\)|(comando|sugest[ãa]o)\s*[:–-])?\s*(.+)$/i.exec(l);
     if (!m) continue;
-    const tipo = /sugest/i.test(m[1] ?? m[2] ?? '') ? 'sugestao' : (m[1] ?? m[2]) ? 'comando' : 'sugestao';
-    let corpo = m[3].trim();
+    const marca = m[1] ?? m[2] ?? m[3];
+    const tipo: Enc['tipo'] = marca ? (/sugest/i.test(marca) ? 'sugestao' : 'comando') : secao === 'misto' ? padrao : secao;
+    let corpo = m[4].trim();
     let prazo: string | undefined;
     const p = /\s*[|(–—-]\s*(?:at[ée]|prazo:?)\s*(\d{1,2}\/\d{1,2}\/\d{2,4})\)?\s*$/i.exec(corpo);
     if (p) {
       prazo = data(p[1]);
       corpo = corpo.slice(0, p.index).trim();
     }
-    if (corpo && !/^nenhum/i.test(corpo)) encaminhamentos.push({ tipo, texto: corpo.replace(/[.;]$/, ''), prazo });
+    corpo = corpo.replace(/[.;]$/, '').trim();
+    if (corpo && !/^nenhum/i.test(corpo)) itens.push({ tipo, texto: corpo, prazo });
   }
-  const cumpridas = [...new Set(secoes.cumpridas.join(' ').match(/\d+/g)?.map(Number) ?? [])];
-  return { resumo: secoes.resumo.join('\n').trim(), encaminhamentos, cumpridas };
+  return { itens, comResumo };
 }

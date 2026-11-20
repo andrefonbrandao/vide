@@ -28,7 +28,7 @@ import {
   salvarVersao,
 } from '../orientacao/banco';
 import { analisarColagem, type Colagem } from '../orientacao/colar';
-import { lerRespostaIA, pedidoRegistroIA } from '../orientacao/ia';
+import { lerEncaminhamentos, lerRespostaIA, pedidoRegistroIA } from '../orientacao/ia';
 import type { OpcoesRelatorio } from '../orientacao/relatorioPdf';
 import { assinarPublicacao, desativarOrientacao, estadoPublicacao, MAX_MODELO, publicarOrientacao, urlDoOrientando } from '../orientacao/publicar';
 import { LinkEQr } from './CompartilharTreino';
@@ -963,6 +963,45 @@ function FormInteracao({ inicial, trabalho, interacoes, versoes, aoFechar }: { i
       resumo: x.resumo.trim() ? x.resumo : c.resumo,
     }));
   };
+  /** Acrescenta sugestões e comandos sem repetir os que já estão. Devolve quantos entraram. */
+  const juntar = (base: Interacao, lista: Pick<Encaminhamento, 'tipo' | 'texto' | 'prazo'>[]): [Interacao, number] => {
+    const ja = new Set(base.encaminhamentos.map((e) => e.texto.trim().toLowerCase()));
+    const novos = lista.filter((e) => !ja.has(e.texto.trim().toLowerCase())).map((e) => ({ id: novoId(), ...e, situacao: 'pendente' as const, resolvido_em: null }));
+    return [{ ...base, encaminhamentos: [...base.encaminhamentos, ...novos] }, novos.length];
+  };
+  const contar = (l: Pick<Encaminhamento, 'tipo'>[]) => {
+    const c = l.filter((e) => e.tipo === 'comando').length;
+    const sg = l.length - c;
+    return [c ? `${c} ${c === 1 ? 'comando' : 'comandos'}` : '', sg ? `${sg} ${sg === 1 ? 'sugestão' : 'sugestões'}` : ''].filter(Boolean).join(' e ');
+  };
+  /** Resposta inteira da IA (resumo, sugestões e comandos, pendências cumpridas). */
+  const usarResposta = (texto: string): string => {
+    const r = lerRespostaIA(texto);
+    if (!r.resumo && !r.encaminhamentos.length && !r.cumpridas.length) return 'Não reconheci a resposta. Ela precisa ter as partes "RESUMO:" e "SUGESTÕES E COMANDOS:".';
+    const [comTarefas, n] = juntar({ ...i, resumo: r.resumo || i.resumo }, r.encaminhamentos);
+    setI(comTarefas);
+    const marcadas = r.cumpridas.map((k) => anteriores[k - 1]?.enc.id).filter((x): x is string => !!x);
+    setCumpridas([...new Set([...cumpridas, ...marcadas])]);
+    const entraram = comTarefas.encaminhamentos.slice(-n);
+    const partes = [r.resumo ? 'o resumo' : '', n ? contar(entraram) : '', marcadas.length ? `${marcadas.length} ${marcadas.length === 1 ? 'pendência marcada' : 'pendências marcadas'} como cumprida${marcadas.length === 1 ? '' : 's'}` : ''].filter(Boolean);
+    return `Preenchido: ${partes.join(', ')}. Confira e clique em ${novo ? '"Registrar"' : '"Salvar"'}.`;
+  };
+  const [msgBloco, setMsgBloco] = useState('');
+  /** Várias linhas coladas no campo: separa e classifica cada sugestão ou comando. */
+  const colarBloco = (texto: string): boolean => {
+    if (!/\n/.test(texto.trim())) return false;
+    const r = lerEncaminhamentos(texto, novoTipo);
+    if (r.comResumo) {
+      setMsgBloco(usarResposta(texto));
+      return true;
+    }
+    if (!r.itens.length) return false;
+    const [com, n] = juntar(i, r.itens);
+    setI(com);
+    const repetidas = r.itens.length - n;
+    setMsgBloco(n ? `Entraram ${contar(com.encaminhamentos.slice(-n))}${repetidas ? ` (${repetidas} já ${repetidas === 1 ? 'estava' : 'estavam'} na lista)` : ''}. Confira o tipo de cada um: clique na etiqueta para trocar.` : 'Essas já estavam na lista.');
+    return true;
+  };
   const acrescentar = () => {
     if (!novoTexto.trim()) return;
     setI({ ...i, encaminhamentos: [...i.encaminhamentos, { id: novoId(), tipo: novoTipo, texto: novoTexto.trim(), situacao: 'pendente', prazo: novoPrazo || undefined, resolvido_em: null }] });
@@ -1035,17 +1074,7 @@ function FormInteracao({ inicial, trabalho, interacoes, versoes, aoFechar }: { i
       <OrganizarComIA
         temMaterial={!!(i.transcricao?.trim() || i.texto.trim() || i.resumo.trim())}
         pedido={() => pedidoRegistroIA({ trabalho, interacao: i, anteriores, versao: versoes.find((v) => v.id === i.versaoId), hoje: hojeISO() })}
-        aoUsar={(texto) => {
-          const r = lerRespostaIA(texto);
-          if (!r.resumo && !r.encaminhamentos.length && !r.cumpridas.length) return 'Não reconheci a resposta. Ela precisa ter as partes "RESUMO:" e "SUGESTÕES E COMANDOS:".';
-          const ja = new Set(i.encaminhamentos.map((e) => e.texto.trim().toLowerCase()));
-          const novos = r.encaminhamentos.filter((e) => !ja.has(e.texto.trim().toLowerCase())).map((e) => ({ id: novoId(), ...e, situacao: 'pendente' as const, resolvido_em: null }));
-          setI({ ...i, resumo: r.resumo || i.resumo, encaminhamentos: [...i.encaminhamentos, ...novos] });
-          const marcadas = r.cumpridas.map((n) => anteriores[n - 1]?.enc.id).filter((x): x is string => !!x);
-          setCumpridas([...new Set([...cumpridas, ...marcadas])]);
-          const partes = [r.resumo ? 'o resumo' : '', novos.length ? `${novos.length} ${novos.length === 1 ? 'sugestão ou comando' : 'sugestões e comandos'}` : '', marcadas.length ? `${marcadas.length} ${marcadas.length === 1 ? 'pendência marcada' : 'pendências marcadas'} como cumprida${marcadas.length === 1 ? '' : 's'}` : ''].filter(Boolean);
-          return `Preenchido: ${partes.join(', ')}. Confira e clique em ${novo ? '"Registrar"' : '"Salvar"'}.`;
-        }}
+        aoUsar={usarResposta}
       />
       <div className="campo">
         <label htmlFor="int-resumo">{ehSessao ? 'O que foi conversado' : 'Resumo'}</label>
@@ -1085,6 +1114,9 @@ function FormInteracao({ inicial, trabalho, interacoes, versoes, aoFechar }: { i
             value={novoTexto}
             placeholder="ex.: Reescrever a introdução com o problema de pesquisa"
             onChange={(e) => setNovoTexto(e.target.value)}
+            onPaste={(e) => {
+              if (colarBloco(e.clipboardData.getData('text'))) e.preventDefault();
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -1098,8 +1130,10 @@ function FormInteracao({ inicial, trabalho, interacoes, versoes, aoFechar }: { i
           </button>
         </div>
         <span className="ajuda" style={{ margin: 0 }}>
-          Enter acrescenta. Ficam como pendências do orientando até você marcá-las como cumpridas.
+          Enter acrescenta. Dá para colar várias de uma vez (uma por linha, como a IA formata: "[comando]", "[sugestão]", "| até 30/11/2026", ou listas sob "Comandos:" e
+          "Sugestões:"); sem marcação, vale o tipo escolhido ao lado. Ficam como pendências do orientando até você marcá-las como cumpridas.
         </span>
+        {msgBloco && <span className="ori-msg-bloco">{msgBloco}</span>}
       </div>
 
       {anteriores.length > 0 && (
