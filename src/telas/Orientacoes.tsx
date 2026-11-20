@@ -75,6 +75,17 @@ function useRecarga(carregar: () => void) {
   }, [carregar]);
 }
 
+/** Silhueta humana neutra (cabeça e ombros), ao lado do nome do orientando. */
+function Silhueta() {
+  return (
+    <svg className="ori-silhueta" viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+      <circle cx="16" cy="16" r="16" className="ori-silhueta-fundo" />
+      <circle cx="16" cy="12.5" r="5.5" className="ori-silhueta-figura" />
+      <path d="M6.5 27.5c1.2-5.4 5-8.3 9.5-8.3s8.3 2.9 9.5 8.3A15.9 15.9 0 0 1 16 32a15.9 15.9 0 0 1-9.5-4.5z" className="ori-silhueta-figura" />
+    </svg>
+  );
+}
+
 // ---------- Página ----------
 
 export function Orientacoes() {
@@ -132,6 +143,7 @@ export function Orientacoes() {
     return (
       <button key={t.id} type="button" className="cartao ori-cartao" onClick={() => abrir(t.id)}>
         <span className="ori-cartao-cab">
+          <Silhueta />
           <strong>{o?.nome ?? 'Orientando'}</strong>
           <span className="ori-selo">{t.tipo}</span>
           {t.situacao !== 'andamento' && <span className="ori-selo">{t.situacao === 'concluido' ? 'concluído' : 'interrompido'}</span>}

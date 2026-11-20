@@ -1537,3 +1537,6 @@ button.ori-tipo-enc { cursor: pointer; }
 .barra-celular .sinal-vencidas.ponto { top: 4px; right: calc(50% - 18px); }
 .ori-vencidas { font-size: 12px; font-weight: 800; color: #fff; background: #d8452b; border-radius: 999px; padding: 2px 8px; }
 .ori-pend-vencida { color: #a2361f; font-weight: 700; }
+.ori-silhueta { flex: none; border-radius: 50%; }
+.ori-silhueta-fundo { fill: #dfe3dd; }
+.ori-silhueta-figura { fill: #9aa59f; }
