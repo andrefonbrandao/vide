@@ -7,6 +7,7 @@
 // Regra: para cada item, vale a versão alterada por último (atualizado_em).
 // Exclusões são marcas (excluido_em), para chegarem aos outros computadores.
 import type { BancoVide } from '../dados/db';
+import { prepararArquivo } from '../dados/arquivoSeguro';
 import type { Diploma, EventoRegistro, Item, Material } from '../dados/modelo';
 import type { Questao, Questionario, ResultadoJogo } from '../jogo/tipos';
 import type { LinkTreino } from '../treino/tipos';
@@ -173,7 +174,7 @@ export async function sincronizar(banco: BancoVide, remoto: ArmazemRemoto, aviso
         } else {
           aviso(`baixando ${rotulo(r)}…`);
           const conteudo = await remoto.baixar(arq.id);
-          await tabela.put({ ...r, arquivo: new Blob([conteudo], { type: r.mime }) } as T);
+          await tabela.put({ ...r, arquivo: await prepararArquivo(new Blob([conteudo], { type: r.mime })) } as T);
           resumo.baixados.push(rotulo(r));
         }
       }
@@ -263,7 +264,7 @@ export async function sincronizar(banco: BancoVide, remoto: ArmazemRemoto, aviso
       }
       aviso(`baixando "${r.nome}"…`);
       const conteudo = await remoto.baixar(arq.id);
-      await banco.materiais.put({ ...r, arquivo: new Blob([conteudo], { type: r.mime }) });
+      await banco.materiais.put({ ...r, arquivo: await prepararArquivo(new Blob([conteudo], { type: r.mime })) });
       resumo.baixados.push(`material "${r.nome}"`);
     }
     resumo.mudou.add('materiais');

@@ -9,6 +9,7 @@ import type { Processo } from '../processo/tipos';
 import type { Disciplina, Turma } from '../turmas/tipos';
 import type { Interacao, Modelo, Orientando, Trabalho, Versao } from '../orientacao/tipos';
 import { agoraISO } from './modelo';
+import { ligarArquivoSeguro } from './arquivoSeguro';
 
 export class BancoVide extends Dexie {
   itens!: Table<Item, string>;
@@ -86,6 +87,8 @@ export class BancoVide extends Dexie {
     });
     // Versão 11: modelos e orientações gerais da orientação.
     this.version(11).stores({ modelos: 'id, trabalhoId, atualizado_em, excluido_em' });
+    // Arquivos guardados em bytes quando o navegador recusa Blob (Safari em aba privada).
+    ligarArquivoSeguro(this, ['materiais', 'versoes', 'modelos']);
   }
 }
 

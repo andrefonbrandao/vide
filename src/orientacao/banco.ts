@@ -1,5 +1,6 @@
 // Orientandos, trabalhos, interações e versões no banco local (e no Drive, pela sincronização).
 import { db } from '../dados/db';
+import { prepararArquivo } from '../dados/arquivoSeguro';
 import { agoraISO, novoId } from '../dados/modelo';
 import { cronogramaModelo, hojeISO } from './prazos';
 import type { Interacao, Modelo, Orientando, Trabalho, TipoTrabalho, Versao } from './tipos';
@@ -133,7 +134,7 @@ export async function excluirInteracao(i: Interacao): Promise<void> {
 }
 
 export async function adicionarVersao(trabalhoId: string, arquivo: File, dados: Pick<Versao, 'rotulo' | 'recebida_em' | 'etapaId' | 'notas' | 'projeto'>): Promise<Versao> {
-  const v: Versao = { ...base(), trabalhoId, ...dados, nomeArquivo: arquivo.name, mime: arquivo.type || 'application/octet-stream', tamanho: arquivo.size, arquivo };
+  const v: Versao = { ...base(), trabalhoId, ...dados, nomeArquivo: arquivo.name, mime: arquivo.type || 'application/octet-stream', tamanho: arquivo.size, arquivo: await prepararArquivo(arquivo) };
   await db.versoes.put(v);
   avisarMudancaOrientacao();
   return v;
@@ -170,7 +171,7 @@ export async function adicionarModelo(dados: Pick<Modelo, 'titulo' | 'descricao'
     nomeArquivo: arquivo?.name ?? '',
     mime: arquivo?.type || (arquivo ? 'application/octet-stream' : ''),
     tamanho: arquivo?.size ?? 0,
-    arquivo: arquivo ?? new Blob([]),
+    arquivo: arquivo ? await prepararArquivo(arquivo) : new Blob([]),
   };
   await db.modelos.put(m);
   avisarMudancaOrientacao();
@@ -179,7 +180,7 @@ export async function adicionarModelo(dados: Pick<Modelo, 'titulo' | 'descricao'
 }
 
 export async function salvarModelo(m: Modelo): Promise<Modelo> {
-  const novo = { ...m, atualizado_em: agoraISO() };
+  const novo = { ...m, arquivo: await prepararArquivo(m.arquivo), atualizado_em: agoraISO() };
   await db.modelos.put(novo);
   avisarMudancaOrientacao();
   publicavel(m.trabalhoId);

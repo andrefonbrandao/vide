@@ -1,6 +1,7 @@
 // Leitura e desenho do material (PDF ou imagem) num <canvas>.
 // O PDF é desenhado pelo pdf.js, carregado só quando é usado (o app abre mais rápido).
 import { pertenceConteudo, vinculoConteudoNovo } from '../turmas/filtro';
+import { prepararArquivo } from '../dados/arquivoSeguro';
 import { db } from '../dados/db';
 import type { Material } from '../dados/modelo';
 import { agoraISO, novoId } from '../dados/modelo';
@@ -139,7 +140,7 @@ export async function importarMaterial(arquivo: File, org: { pasta?: string; eti
     mime: arquivo.type || (tipo === 'pdf' ? 'application/pdf' : 'image/*'),
     tamanho: arquivo.size,
     paginas: doc.paginas,
-    arquivo,
+    arquivo: await prepararArquivo(arquivo),
     pasta: limparPasta(org.pasta ?? ''),
     etiquetas: limparEtiquetas(org.etiquetas ?? []),
   };

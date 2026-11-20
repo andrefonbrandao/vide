@@ -24,14 +24,20 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 28** aberto em 2026-11-20, a partir da versão 0.43.0 (já publicada). **Fechado e publicado como versão 0.44.0.**
+**Pacote 29** aberto em 2026-11-20, a partir da versão 0.44.0 (já publicada). **Fechado e publicado como versão 0.45.0.**
+
+| # | Ideia | Situação |
+|---|---|---|
+| 1 | **Correção: Drive no Safari em aba privada.** O Safari privado recusa guardar arquivos (PDF, imagem, Word) no banco do navegador e a sincronização parava com "Error preparing Blob/File data to be stored in object store". Agora o Vide testa isso ao abrir e, quando o navegador recusa, guarda os bytes do arquivo (formato que todo navegador aceita) e os lê de volta como arquivo normal — materiais, versões e modelos da orientação. Nos outros navegadores nada muda. Lembrete: a aba privada apaga tudo ao ser fechada; o normal (ou o ícone na tela de início) guarda os dados | Publicada (0.45.0) |
+
+## Pacotes anteriores
+
+### Pacote 28 (publicado como 0.44.0 em 2026-11-20)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | **Celular: Drive e Orientação à vista.** (a) No alto da tela do celular, ao lado da busca, um ícone de **nuvem com a luz de situação do Google Drive** (cinza desligado, verde sincronizado, amarelo sincronizando, vermelho reconectar/erro); tocar abre a janela do Drive (entrar, sincronizar). (b) Na barra de baixo, **Orientação** entra no lugar de Aula (no celular a aula não é conduzida; ele vira controle pelo QR da tela do computador), com o ponto vermelho das pendências vencidas. No computador, nada muda | Publicada (0.44.0) |
 | 2 | **Logo do Vide na tela de início do celular:** ícones PNG quadrados gerados a partir do logo (180 px para iPhone/iPad, 192 e 512 px para Android, com a versão "maskable" para os recortes do Android) e o manifesto do app (nome "Vide", cores do Vide). Antes, só havia o ícone em SVG, que o iPhone não usa na tela de início — por isso aparecia um "V" genérico. O atalho continua abrindo o Vide no navegador (para o login do Google Drive funcionar) | Publicada (0.44.0) |
-
-## Pacotes anteriores
 
 ### Pacote 27 (publicado como 0.43.0 em 2026-11-20)
 
