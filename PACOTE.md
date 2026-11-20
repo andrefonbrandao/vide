@@ -29,6 +29,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 |---|-------|----------|
 | 1 | **Alerta de pendência vencida:** quando passa o prazo de uma sugestão ou comando de orientação sem baixa, aparece um **círculo vermelho com o número** ao lado de "Orientandos" na barra lateral (um ponto vermelho no ícone, com a barra recolhida na aula, e na aba "Turma" do celular); some quando você marca como cumprida ou descarta. Também: selo "N vencidas" no cartão do orientando e o prazo vencido em vermelho nas pendências. Contam só os trabalhos em andamento; o alerta se atualiza com as mudanças, ao voltar para a aba e ao virar o dia | No pacote |
 | 2 | **Silhueta do orientando:** nos quadros de "Orientandos", uma silhueta humana em tom neutro (cinza, cabeça e ombros num círculo) ao lado do nome | No pacote |
+| 3 | **Relatório em PDF mais bem formatado:** uma família de fontes só (Helvetica: normal, negrito e itálico) em tamanhos padronizados; cabeçalho com ficha em duas colunas (curso, e-mail, orientador, início, defesa, situação, data); títulos de seção em verde com fio; **pendências em tabela** (Tipo — COMANDO/SUGESTÃO —, Descrição com a data em que foi combinada, Prazo com "venceu há…" em vermelho, Check com caixinha para marcar); cronograma, sugestões e comandos de cada sessão e versões também em tabela; rodapé com "página X de Y". Na linha do tempo, o que foi cumprido ou descartado mostra a data | No pacote |
 
 ## Pacotes anteriores
 

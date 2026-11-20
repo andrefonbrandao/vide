@@ -766,7 +766,8 @@ function ItemInteracao({ i, versoes, aoEditar }: { i: Interacao; versoes: Versao
                 {e.prazo ? (
                   <span className={e.situacao === 'pendente' && situacaoEtapa({ id: '', nome: '', prazo: e.prazo }).tipo === 'atrasada' ? 'ori-pend-vencida' : 'ajuda'}> · até {dataBR(e.prazo)}</span>
                 ) : null}
-                {e.situacao === 'descartado' ? <span className="ajuda"> · descartado</span> : null}
+                {e.situacao === 'cumprido' ? <span className="ajuda"> · cumprido{e.resolvido_em ? ` em ${dataBR(e.resolvido_em)}` : ''}</span> : null}
+                {e.situacao === 'descartado' ? <span className="ajuda"> · descartado{e.resolvido_em ? ` em ${dataBR(e.resolvido_em)}` : ''}</span> : null}
               </span>
             </li>
           ))}
