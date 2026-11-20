@@ -358,11 +358,13 @@ function AulaNoCelular() {
 function BarraCelular({ rota }: { rota: Rota }) {
   const vencidas = useVencidas();
   const itens: [Rota, string, ReactNode, Rota[]][] = [
-    ['inicio', 'Início', <IcInicio key="i" />, ['inicio']],
-    ['aula', 'Aula', <IcProjecao key="a" />, ['aula']],
+    // No celular, a aula não é conduzida (ele vira controle pelo QR da tela do computador):
+    // a Orientação ocupa o lugar da Aula na barra.
+    ['inicio', 'Início', <IcInicio key="i" />, ['inicio', 'aula']],
     ['materiais', 'Biblioteca', <IcPasta key="b" />, ['leis', 'materiais']],
     ['questoes', 'Atividades', <IcPerguntas key="q" />, ['questoes', 'casos', 'processos', 'links']],
-    ['turmas', 'Turma', <IcTurmas key="t" />, ['turmas', 'resultados', 'registro', 'orientacoes']],
+    ['turmas', 'Turma', <IcTurmas key="t" />, ['turmas', 'resultados', 'registro']],
+    ['orientacoes', 'Orientação', <IcOrientacao key="o" />, ['orientacoes']],
   ];
   return (
     <nav className="barra-celular" aria-label="Seções" data-ui>
@@ -370,7 +372,7 @@ function BarraCelular({ rota }: { rota: Rota }) {
         <a key={r} href={`#${r}`} aria-current={grupo.includes(rota) ? 'page' : undefined}>
           {ic}
           <span>{rot}</span>
-          {r === 'turmas' && <SinalVencidas n={vencidas} ponto />}
+          {r === 'orientacoes' && <SinalVencidas n={vencidas} ponto />}
         </a>
       ))}
     </nav>
@@ -415,6 +417,9 @@ export function Casca() {
               <kbd>Ctrl K</kbd>
             </button>
             <span className="espaco" />
+            <span className="topo-drive-caixa">
+              <BotaoDrive compacto />
+            </span>
             <a href="#ajustes" className="topo-ajustes" onClick={(e) => (e.preventDefault(), irPara('ajustes'))} aria-label="Ajustes">
               <IcAjustes />
             </a>

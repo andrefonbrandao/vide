@@ -2,6 +2,7 @@
 import { confirmar } from '../comum/avisos';
 import { useState, useSyncExternalStore } from 'react';
 import { servicoDrive, type EstadoDrive } from '../drive/servico';
+import { IcNuvem } from '../comum/Icones';
 
 function useDrive(): EstadoDrive {
   const s = servicoDrive();
@@ -12,7 +13,8 @@ function hora(ms: number): string {
   return new Date(ms).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
-export function BotaoDrive() {
+/** `compacto`: só o ícone de nuvem com a luz de situação (no alto da tela do celular). */
+export function BotaoDrive({ compacto = false }: { compacto?: boolean }) {
   const d = useDrive();
   const [aberto, setAberto] = useState(false);
   const texto =
@@ -28,6 +30,21 @@ export function BotaoDrive() {
               ? 'Drive: erro'
               : `Drive ✓${d.ultima ? ` ${hora(d.ultima)}` : ''}`;
   const classe = d.status === 'ok' ? 'ok' : d.status === 'precisa-entrar' || d.status === 'erro' ? 'alerta' : '';
+  const abrir = () => {
+    // Reconectar direto no clique (o navegador só deixa abrir o login num clique).
+    if (d.status === 'precisa-entrar') void servicoDrive().entrar();
+    setAberto(true);
+  };
+  if (compacto)
+    return (
+      <>
+        <button type="button" className={`topo-drive ${classe} ${d.status}`} onClick={abrir} aria-label={texto} title={texto}>
+          <IcNuvem tamanho={22} />
+          <span className="luz" />
+        </button>
+        {aberto && <JanelaDrive aoFechar={() => setAberto(false)} />}
+      </>
+    );
   return (
     <>
       <button

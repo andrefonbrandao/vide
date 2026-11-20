@@ -327,3 +327,10 @@ export const IcX = (p: P) => (
     <path d="M6 6l12 12M18 6L6 18" />
   </Svg>
 );
+
+/** Nuvem (Google Drive). */
+export const IcNuvem = (p: P) => (
+  <Svg {...p}>
+    <path d="M7 18h10a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.2 9.2 4.4 4.4 0 0 0 7 18z" />
+  </Svg>
+);

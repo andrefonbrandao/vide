@@ -24,7 +24,15 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 27** aberto em 2026-11-20, a partir da versão 0.42.0 (já publicada). **Fechado e publicado como versão 0.43.0.**
+**Pacote 28** aberto em 2026-11-20, a partir da versão 0.43.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | **Celular: Drive e Orientação à vista.** (a) No alto da tela do celular, ao lado da busca, um ícone de **nuvem com a luz de situação do Google Drive** (cinza desligado, verde sincronizado, amarelo sincronizando, vermelho reconectar/erro); tocar abre a janela do Drive (entrar, sincronizar). (b) Na barra de baixo, **Orientação** entra no lugar de Aula (no celular a aula não é conduzida; ele vira controle pelo QR da tela do computador), com o ponto vermelho das pendências vencidas. No computador, nada muda | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 27 (publicado como 0.43.0 em 2026-11-20)
 
 | # | Ideia | Situação |
 |---|-------|----------|
@@ -32,8 +40,6 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 | 2 | **Correção: as Referências começam em página nova** (elemento pós-textual), no PDF e no Word | Publicada (0.43.0) |
 | 3 | **Cronograma sugerido com os prazos usuais do TCC I e TCC II** (trabalho novo do tipo TCC ou monografia): Definição do tema; Entrega do pré-projeto (Grau A); Entrega do Capítulo 1 (Grau B); Revisão do Capítulo 1; Entrega do Capítulo 2 (Grau A); Revisão do Capítulo 2; Trabalho completo; Revisão final; Depósito da versão impressa; Defesa — com os prazos espalhados do começo da orientação até a defesa prevista (editáveis). Trabalhos já cadastrados ficam como estão | Publicada (0.43.0) |
 | 4 | **Prazo das etapas sem data completa:** cada etapa do cronograma pode ter **data**, só **mês/ano**, só **o ano** ou ficar **a definir** (escolha ao lado do prazo). Sem data completa: "previsto para 03/2027", "previsto para 2027" ou "a definir", sem contagem nem alerta; na ordem, entram pelo que se sabe (depois das datas completas do mesmo mês ou ano) e as "a definir" vão para o fim. Vale na visão geral, na lista, na página do orientando, no relatório, no PDF e no Word do pré-projeto e no pedido à IA. **Editar o cronograma** agora abre numa janela larga (os nomes das etapas aparecem inteiros) | Publicada (0.43.0) |
-
-## Pacotes anteriores
 
 ### Pacote 26 (publicado como 0.42.0 em 2026-11-20)
 
