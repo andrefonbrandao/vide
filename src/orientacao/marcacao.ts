@@ -8,6 +8,12 @@
 //   valor | valor
 //   Fonte: o autor.
 //   :::
+// Figura ou gráfico (a imagem fica guardada na página do orientando; aqui vai só o código dela):
+//   ::: Figura – Título da figura
+//   imagem: a1b2c3d4e5
+//   largura: 75
+//   Fonte: o autor.
+//   :::
 
 export type Trecho = { t: string; negrito?: boolean; italico?: boolean } | { nota: string };
 
@@ -26,26 +32,52 @@ export interface TabelaTexto {
   linhas: string[][];
 }
 
-export type Pedaco = { tipo: 'texto'; texto: string } | { tipo: 'tabela'; tabela: TabelaTexto };
+export interface FiguraTexto {
+  tipo: 'figura' | 'grafico';
+  titulo: string;
+  fonte: string;
+  /** Código da imagem guardada na página do orientando. */
+  imagem: string;
+  /** Largura em % da largura do texto (50, 75 ou 100). */
+  largura: number;
+}
 
-const RE_INICIO_TABELA = /^:::\s*(tabela|quadro)\b\s*[–—-]?\s*(.*)$/i;
+export type Pedaco = { tipo: 'texto'; texto: string } | { tipo: 'tabela'; tabela: TabelaTexto } | { tipo: 'figura'; figura: FiguraTexto };
+
+const RE_INICIO_TABELA = /^:::\s*(tabela|quadro|figura|gr[áa]fico)(?![\p{L}\d])\s*[–—-]?\s*(.*)$/iu;
+const tipoBloco = (x: string) => {
+  const t = x.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return t as 'tabela' | 'quadro' | 'figura' | 'grafico';
+};
 
 /** Separa o texto em trechos corridos e tabelas/quadros. */
 export function separarTabelas(texto: string): Pedaco[] {
   const out: Pedaco[] = [];
   let buf: string[] = [];
   let tab: TabelaTexto | null = null;
+  let fig: FiguraTexto | null = null;
   const soltarTexto = () => {
     if (buf.length) out.push({ tipo: 'texto', texto: buf.join('\n') });
     buf = [];
   };
   for (const bruta of texto.replace(/\r/g, '').split('\n')) {
     const l = bruta.trim();
+    if (fig) {
+      if (l === ':::') {
+        out.push({ tipo: 'figura', figura: fig });
+        fig = null;
+      } else if (/^fonte\s*:/i.test(l)) fig.fonte = l.replace(/^fonte\s*:\s*/i, '');
+      else if (/^imagem\s*:/i.test(l)) fig.imagem = l.replace(/^imagem\s*:\s*/i, '').trim();
+      else if (/^largura\s*:/i.test(l)) fig.largura = Math.min(100, Math.max(20, parseInt(l.replace(/\D+/g, ''), 10) || 100));
+      continue;
+    }
     if (!tab) {
       const m = RE_INICIO_TABELA.exec(l);
       if (m) {
         soltarTexto();
-        tab = { tipo: m[1].toLowerCase() === 'quadro' ? 'quadro' : 'tabela', titulo: m[2].trim(), fonte: '', linhas: [] };
+        const tp = tipoBloco(m[1]);
+        if (tp === 'figura' || tp === 'grafico') fig = { tipo: tp, titulo: m[2].trim(), fonte: '', imagem: '', largura: 100 };
+        else tab = { tipo: tp, titulo: m[2].trim(), fonte: '', linhas: [] };
       } else buf.push(bruta);
       continue;
     }
@@ -56,8 +88,19 @@ export function separarTabelas(texto: string): Pedaco[] {
     else if (l) tab.linhas.push(l.split('|').map((c) => c.trim()));
   }
   if (tab) out.push({ tipo: 'tabela', tabela: tab });
+  if (fig) out.push({ tipo: 'figura', figura: fig });
   soltarTexto();
   return out;
+}
+
+/** O texto de uma figura/gráfico, como fica no campo. */
+export function textoDaFigura(f: FiguraTexto): string {
+  return [`::: ${f.tipo === 'grafico' ? 'Gráfico' : 'Figura'} – ${f.titulo.trim()}`, `imagem: ${f.imagem}`, `largura: ${f.largura}`, `Fonte: ${f.fonte.trim() || 'o autor.'}`, ':::'].join('\n');
+}
+
+/** Os códigos das imagens usadas num texto. */
+export function imagensDoTexto(texto: string): string[] {
+  return separarTabelas(texto).flatMap((p) => (p.tipo === 'figura' && p.figura.imagem ? [p.figura.imagem] : []));
 }
 
 /** O texto de uma tabela/quadro, como fica no campo. */

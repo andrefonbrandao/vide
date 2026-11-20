@@ -8,8 +8,9 @@
 import type { PDFFont, PDFPage } from 'pdf-lib';
 import { lerParagrafos, lerTrechos, type Paragrafo, type Trecho } from './marcacao';
 import { estruturaPreProjeto, type Bloco } from './preProjetoEstrutura';
-import { estruturaFinal, FINAL_VAZIO, finalDoPreProjeto, legendaTabela, siglasDe } from './trabalhoFinalEstrutura';
-import { textoPuro, type TabelaTexto } from './marcacao';
+import { estruturaFinal, FINAL_VAZIO, finalDoPreProjeto, legendaFigura, legendaTabela, LISTAS, siglasDe, type TipoIlustracao } from './trabalhoFinalEstrutura';
+import type { Imagem } from './imagens';
+import { textoPuro, type FiguraTexto, type TabelaTexto } from './marcacao';
 import { rotuloPrazo } from './prazos';
 import type { ConfigPreProjeto, Etapa, TextoProjeto } from './tipos';
 import { naturezaDe, naturezaPadrao } from './campos';
@@ -22,6 +23,8 @@ export interface EntradaPreProjeto {
   etapas: Etapa[];
   /** PNG do logotipo da instituição (capa). */
   logo?: Uint8Array;
+  /** Imagens das figuras e gráficos do trabalho final, pelo código. */
+  imagens?: Map<string, Imagem>;
 }
 
 export const TEXTO_VAZIO: TextoProjeto = {
@@ -388,6 +391,53 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (iten
     y -= 10;
   };
 
+  // ---------- Figuras e gráficos (título em cima, a imagem centralizada, fonte embaixo) ----------
+  const embutidas = new Map<string, Awaited<ReturnType<typeof pdf.embedPng>>>();
+  const desenharFigura = async (fig: FiguraTexto, legenda: string, aoComecar: (pagina: number) => void) => {
+    const img = e.imagens?.get(fig.imagem);
+    let emb = img ? embutidas.get(fig.imagem) : undefined;
+    if (img && !emb) {
+      try {
+        emb = img.tipo === 'png' ? await pdf.embedPng(img.bytes) : await pdf.embedJpg(img.bytes);
+        embutidas.set(fig.imagem, emb);
+      } catch {
+        emb = undefined;
+      }
+    }
+    let w = (LARG * fig.largura) / 100;
+    let h = emb ? (w * emb.height) / emb.width : w * 0.4;
+    const maxH = (A4.h - M.topo - M.base) * 0.62;
+    if (h > maxH) {
+      w = (w * maxH) / h;
+      h = maxH;
+    }
+    const legendaLinhas = quebrarSimples(legenda, f.b, PEQ.tam, LARG);
+    const fonteLinhas = quebrarSimples(`Fonte: ${fig.fonte.trim() || 'o autor.'}`, f.n, PEQ.tam, LARG);
+    const precisa = (legendaLinhas.length + fonteLinhas.length) * PEQ.linha + h + 16;
+    if (y - precisa < M.base + alturaNotas) novaPagina();
+    if (!topoDaPagina()) y -= 10;
+    aoComecar(pdf.getPageCount() - 1);
+    for (const l of legendaLinhas) {
+      reservar(PEQ.linha, []);
+      centro(l, f.b, PEQ.tam, y + 3);
+    }
+    y -= 7;
+    const x = M.esq + (LARG - w) / 2;
+    y -= h;
+    if (emb) pagina.drawImage(emb, { x, y, width: w, height: h });
+    else {
+      pagina.drawRectangle({ x, y, width: w, height: h, borderColor: rgb(0.6, 0.6, 0.6), borderWidth: 0.8 });
+      const aviso = '[imagem não encontrada]';
+      centro(aviso, f.i, PEQ.tam, y + h / 2 - 3);
+    }
+    y -= 2;
+    for (const l of fonteLinhas) {
+      reservar(PEQ.linha, []);
+      pagina.drawText(l, { x, y: y + 3, size: PEQ.tam, font: f.n, color: preto });
+    }
+    y -= 10;
+  };
+
   // ---------- Capa ----------
   novaPagina();
   const alto = A4.h - M.topo;
@@ -544,13 +594,14 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (iten
   // ---------- Parte textual ----------
   novaPagina();
   const primeiraTextual = pdf.getPageCount() - 1;
-  const tabelasNoTexto: { tipo: 'tabela' | 'quadro'; item: ItemSumario }[] = [];
+  const tabelasNoTexto: { tipo: TipoIlustracao; item: ItemSumario }[] = [];
   const blocos: Bloco[] = tf ? estruturaFinal(tf) : estruturaPreProjeto(t, e.etapas);
   for (const bl of blocos) {
     if (bl.tipo === 'titulo') {
       if (bl.novaPagina && !topoDaPagina()) novaPagina();
       titulo(bl.rotulo, bl.texto, bl.nivel);
     } else if (bl.tipo === 'tabela') desenharTabela(bl.tabela, legendaTabela(bl), (pg) => tabelasNoTexto.push({ tipo: bl.tabela.tipo, item: { rotulo: '', titulo: legendaTabela(bl), nivel: 2, pagina: pg } }));
+    else if (bl.tipo === 'figura') await desenharFigura(bl.figura, legendaFigura(bl), (pg) => tabelasNoTexto.push({ tipo: bl.figura.tipo, item: { rotulo: '', titulo: legendaFigura(bl), nivel: 2, pagina: pg } }));
     else if (bl.tipo === 'par') desenharParagrafo(bl.p, '', () => 0);
     else if (bl.tipo === 'cronograma') {
       const etapas = bl.etapas;
@@ -596,8 +647,7 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (iten
   const LINHA_SUM = CORPO.linha;
   const porPagina = Math.floor((A4.h - M.topo - M.base - CORPO.linha * 3) / LINHA_SUM);
   const paginasDe = (n: number) => Math.max(1, Math.ceil(n / porPagina));
-  const listas = (['quadro', 'tabela'] as const)
-    .map((tipo) => ({ titulo: tipo === 'quadro' ? 'LISTA DE QUADROS' : 'LISTA DE TABELAS', itens: tabelasNoTexto.filter((x) => x.tipo === tipo).map((x) => x.item) }))
+  const listas = LISTAS.map((l) => ({ titulo: l.titulo, itens: tabelasNoTexto.filter((x) => x.tipo === l.tipo).map((x) => x.item) }))
     .filter((l) => tf && l.itens.length >= 3);
   const desloc = listas.reduce((s2, l) => s2 + paginasDe(l.itens.length), 0) + paginasDe(sumario.length);
   /** Insere as páginas de uma lista (títulos com pontilhado e página) a partir de `pos`; devolve quantas. */

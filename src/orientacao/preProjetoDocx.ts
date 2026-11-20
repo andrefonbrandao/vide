@@ -5,9 +5,10 @@
 // folha de rosto; números de página no canto superior direito a partir da introdução
 // (contando desde a folha de rosto); referências em página nova.
 // Sem bibliotecas: o .docx (um ZIP de XMLs) é montado aqui.
-import { lerParagrafos, lerTrechos, textoPuro, type TabelaTexto, type Trecho } from './marcacao';
+import { lerParagrafos, lerTrechos, textoPuro, type FiguraTexto, type TabelaTexto, type Trecho } from './marcacao';
 import { estruturaPreProjeto, type Bloco } from './preProjetoEstrutura';
-import { estruturaFinal, FINAL_VAZIO, finalDoPreProjeto, siglasDe } from './trabalhoFinalEstrutura';
+import { estruturaFinal, FINAL_VAZIO, finalDoPreProjeto, LISTAS, siglasDe } from './trabalhoFinalEstrutura';
+import type { Imagem } from './imagens';
 import { naturezaDe } from './campos';
 import { rotuloPrazo } from './prazos';
 import type { ConfigPreProjeto, Etapa, TextoProjeto } from './tipos';
@@ -19,6 +20,8 @@ export interface EntradaDocx {
   texto: TextoProjeto;
   etapas: Etapa[];
   logo?: Uint8Array;
+  /** Imagens das figuras e gráficos do trabalho final, pelo código. */
+  imagens?: Map<string, Imagem>;
 }
 
 const TW = 567; // twips por centímetro
@@ -90,6 +93,9 @@ export function zip(arquivos: { nome: string; dados: Uint8Array }[]): Uint8Array
   }
   return out;
 }
+
+/** Nome do campo SEQ do Word (sem acento): "Gráfico" → "Grafico". */
+const seqDe = (rotulo: string) => rotulo.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 // ---------- Tabelas e quadros ----------
 function tabelaXml(tab: TabelaTexto, numero: number): string[] {
@@ -232,7 +238,7 @@ export async function gerarPreProjetoDocx(e: EntradaDocx): Promise<Blob> {
   let extra: PaginasDoPdf = { listas: [], inicio: 2 + (c.aprovacao || tf ? 1 : 0) + (c.resumo && !tf ? 1 : 0) + 1 };
   try {
     const { gerarPreProjetoPdf } = await import('./preProjetoPdf');
-    await gerarPreProjetoPdf({ nome: e.nome, config: c, texto: t, etapas: e.etapas, logo: e.logo }, (x, ex) => ((paginas = x), (extra = ex)), true);
+    await gerarPreProjetoPdf({ nome: e.nome, config: c, texto: t, etapas: e.etapas, logo: e.logo, imagens: e.imagens }, (x, ex) => ((paginas = x), (extra = ex)), true);
   } catch {
     paginas = [];
   }
@@ -274,7 +280,7 @@ export async function gerarPreProjetoDocx(e: EntradaDocx): Promise<Blob> {
     paginaResumo({ titulo: tf.tituloIngles || 'Title of work', sub: tf.subtituloIngles, autor: 'Author', advisor: 'Advisor', rotulo: 'Abstract', texto: tf.abstract, rotuloPalavras: 'Keywords', palavras: tf.keywords });
     // Listas de quadros e de tabelas (campos do Word, já numerados).
     for (const l of extra.listas) {
-      const rotulo = l.titulo.includes('QUADROS') ? 'Quadro' : 'Tabela';
+      const rotulo = seqDe(LISTAS.find((x) => x.titulo === l.titulo)?.rotulo ?? 'Tabela');
       corpo.push(par('Centro', run(l.titulo, { b: true })));
       corpo.push(
         `<w:p><w:pPr><w:pStyle w:val="Sumrio1"/>${antes(360)}</w:pPr><w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\h \\z \\c "${rotulo}" </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>`,
@@ -299,6 +305,38 @@ export async function gerarPreProjetoDocx(e: EntradaDocx): Promise<Blob> {
 
   // ----- Sumário (campo do Word; atualiza ao abrir) -----
   const blocos: Bloco[] = tf ? estruturaFinal(tf) : estruturaPreProjeto(t, e.etapas);
+  // ----- Figuras e gráficos: a imagem vai dentro do .docx (word/media) -----
+  const midias: { nome: string; rid: string; dados: Uint8Array }[] = [];
+  const midiaDe = new Map<string, { rid: string; img: Imagem }>();
+  let docPr = 10;
+  const figuraXml = (fig: FiguraTexto, numero: number): string[] => {
+    const rotulo = fig.tipo === 'grafico' ? 'Gráfico' : 'Figura';
+    const r = (x: string, b = false) => `<w:r>${b ? '<w:rPr><w:b/></w:rPr>' : ''}<w:t xml:space="preserve">${esc(x)}</w:t></w:r>`;
+    const legenda = `<w:p><w:pPr><w:pStyle w:val="Legenda"/><w:keepNext/></w:pPr>${r(`${rotulo} `, true)}<w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:b/></w:rPr><w:instrText xml:space="preserve"> SEQ ${seqDe(rotulo)} \\* ARABIC </w:instrText></w:r><w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r>${r(String(numero), true)}<w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="end"/></w:r>${r(` – ${fig.titulo.trim() || 'sem título'}`, true)}</w:p>`;
+    // Fonte alinhada à margem esquerda da imagem.
+    const fonteAqui = (cx: number) => `<w:p><w:pPr><w:pStyle w:val="Quadro"/><w:spacing w:before="60" w:after="240"/><w:ind w:left="${Math.max(0, Math.round((LARGURA - cx / 635) / 2))}"/></w:pPr>${r(`Fonte: ${fig.fonte.trim() || 'o autor.'}`)}</w:p>`;
+    const fonte = fonteAqui(LARGURA * 635);
+    const img = e.imagens?.get(fig.imagem);
+    if (!img) return [legenda, `<w:p><w:pPr><w:pStyle w:val="Centro"/><w:keepNext/></w:pPr><w:r><w:rPr><w:i/></w:rPr><w:t>[imagem não encontrada]</w:t></w:r></w:p>`, fonte];
+    let m = midiaDe.get(fig.imagem);
+    if (!m) {
+      const n = midias.length + 1;
+      m = { rid: `rIdImg${n}`, img };
+      midias.push({ nome: `img${n}.${img.tipo === 'png' ? 'png' : 'jpg'}`, rid: m.rid, dados: img.bytes });
+      midiaDe.set(fig.imagem, m);
+    }
+    // EMU: 1 twip = 635. Altura no máximo 62% da página útil.
+    let cx = Math.round((LARGURA * fig.largura) / 100) * 635;
+    let cy = Math.round((cx * img.altura) / Math.max(1, img.largura));
+    const maxCy = Math.round(24.7 * TW * 0.62) * 635;
+    if (cy > maxCy) {
+      cx = Math.round((cx * maxCy) / cy);
+      cy = maxCy;
+    }
+    const id = ++docPr;
+    const desenho = `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="${rotulo} ${numero}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${id}" name="${rotulo} ${numero}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${m.rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
+    return [legenda, `<w:p><w:pPr><w:pStyle w:val="Centro"/><w:keepNext/></w:pPr>${desenho}</w:p>`, fonteAqui(cx)];
+  };
   corpo.push(par('Centro', run('SUMÁRIO', { b: true })));
   corpo.push(
     `<w:p><w:pPr><w:pStyle w:val="Sumrio1"/>${antes(360)}</w:pPr><w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h \\z \\u </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>`,
@@ -323,6 +361,7 @@ export async function gerarPreProjetoDocx(e: EntradaDocx): Promise<Blob> {
     if (b.tipo === 'titulo')
       corpo.push(par(b.nivel <= 1 ? 'Ttulo1' : b.nivel === 2 ? 'Ttulo2' : 'Ttulo3', run(nomeTitulo(b)), `${b.novaPagina ? '<w:pageBreakBefore/>' : ''}${b.nivel === 0 ? '<w:jc w:val="center"/>' : ''}`));
     else if (b.tipo === 'tabela') corpo.push(...tabelaXml(b.tabela, b.numero));
+    else if (b.tipo === 'figura') corpo.push(...figuraXml(b.figura, b.numero));
     else if (b.tipo === 'par') corpo.push(par(b.p.tipo === 'citacao' ? 'Citao' : 'Normal', runsDe(b.p.trechos)));
     else if (b.tipo === 'cronograma') {
       corpo.push(par('Legenda', run('Quadro 1 – Cronograma das atividades', { b: true })));
@@ -384,9 +423,9 @@ ${estilo('Cabealho', 'header', `${simples}${semRecuo}<w:jc w:val="right"/>`, '<w
   const ajustes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:settings ${W}><w:updateFields w:val="true"/><w:defaultTabStop w:val="709"/><w:footnotePr><w:footnote w:id="0"/><w:footnote w:id="1"/></w:footnotePr><w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat></w:settings>`;
   const relsDoc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdEstilos" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rIdAjustes" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/><Relationship Id="rIdNotas" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/><Relationship Id="rIdCab" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>${logo ? '<Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/>' : ''}</Relationships>`;
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdEstilos" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rIdAjustes" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/><Relationship Id="rIdNotas" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/><Relationship Id="rIdCab" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>${logo ? '<Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/>' : ''}${midias.map((x) => `<Relationship Id="${x.rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${x.nome}"/>`).join('')}</Relationships>`;
   const tipos = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/word/footnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/><Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`;
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="jpg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/word/footnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/><Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`;
   const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`;
   const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -403,6 +442,7 @@ ${estilo('Cabealho', 'header', `${simples}${semRecuo}<w:jc w:val="right"/>`, '<w
     { nome: 'word/header1.xml', dados: enc.encode(cabecalho) },
     { nome: 'word/_rels/document.xml.rels', dados: enc.encode(relsDoc) },
     ...(logo ? [{ nome: 'word/media/logo.png', dados: logo }] : []),
+    ...midias.map((x) => ({ nome: `word/media/${x.nome}`, dados: x.dados })),
   ];
   return new Blob([zip(arquivos) as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 }

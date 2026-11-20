@@ -2226,7 +2226,7 @@ function JanelaCompartilhar({ trabalho, orientando, aoFechar }: { trabalho: Trab
               if (
                 await confirmar({
                   titulo: 'Desativar a página do orientando?',
-                  texto: `O link deixa de funcionar e o serviço apaga o que está na página${trabalho.preProjeto?.ativo ? ', inclusive o rascunho do pré-projeto que ele está escrevendo. Antes, o Vide guarda uma cópia do rascunho aqui e no seu Drive; se você criar uma página nova depois, o rascunho volta para ela' : ''}. As versões enviadas, as sessões e o resto continuam guardados aqui.`,
+                  texto: `O link deixa de funcionar e o serviço apaga o que está na página${trabalho.preProjeto?.ativo ? ', inclusive o rascunho que ele está escrevendo. Antes, o Vide guarda uma cópia do texto aqui e no seu Drive; se você criar uma página nova depois, o texto volta para ela (as imagens das figuras, não: elas teriam de ser enviadas de novo; as versões já recebidas em PDF continuam com elas)' : ''}. As versões enviadas, as sessões e o resto continuam guardados aqui.`,
                   botao: 'Desativar',
                   perigo: true,
                 })

@@ -23,7 +23,7 @@ const RE_SALA = /^\/api\/sala\/([A-Z0-9]{6,16})$/;
 const RE_JOGO = /^\/api\/jogo\/(\d{6})$/;
 const RE_TREINO = /^\/api\/treino(?:\/([A-Za-z0-9]{10,24}))?$/;
 const RE_PROCESSO = /^\/api\/processo(?:\/([A-Za-z0-9]{10,24}))?$/;
-const RE_ORIENTACAO = /^\/api\/orientacao(?:\/([A-Za-z0-9]{10,24})(?:\/(entrar|projeto|envio|envios|arquivo\/[A-Za-z0-9-]{8,48}))?)?$/;
+const RE_ORIENTACAO = /^\/api\/orientacao(?:\/([A-Za-z0-9]{10,24})(?:\/(entrar|projeto|envio|envios|arquivo\/[A-Za-z0-9-]{8,48}|imagem\/[A-Za-z0-9-]{8,48}))?)?$/;
 const RE_ARQUIVO_PROCESSO = /^\/api\/processo\/([A-Za-z0-9]{10,24})\/arquivo\/([A-Za-z0-9-]{8,48})$/;
 /** Mensagens maiores que isso são descartadas (as do Vide têm poucos KB). */
 const TAMANHO_MAXIMO = 256 * 1024;
@@ -439,6 +439,9 @@ export class Processo extends DurableObject<Env> {
 // do código de 6 números; erros seguidos bloqueiam por 15 minutos.
 
 const MAX_TENTATIVAS = 8;
+/** Figuras do trabalho final: cada imagem até 900 KB (o Vide reduz antes de enviar), no máximo 150. */
+const MAX_IMAGEM = 900 * 1024;
+const MAX_IMAGENS = 150;
 const BLOQUEIO_MS = 15 * 60_000;
 
 async function tratarOrientacao(req: Request, env: Env, url: URL, id: string | undefined, resto: string | undefined): Promise<Response> {
@@ -555,6 +558,41 @@ export class Orientacao extends DurableObject<Env> {
       const lista = await this.ctx.storage.list<string>({ prefix: 'envio:', start: `envio:${depois}` });
       const envios = [...lista].filter(([k]) => k.slice(6) > depois).map(([k, v]) => ({ em: k.slice(6), projeto: JSON.parse(v) }));
       return jsonResp({ envios });
+    }
+    // ----- imagens das figuras do trabalho final (o orientando envia; ele e o professor leem) -----
+    if (partes[1] === 'imagem') {
+      const img = partes[2];
+      const comChave = !!req.headers.get('X-Vide-Chave');
+      const erro = comChave ? await this.donoOuErro(req) : await this.conferirPin(id, req.headers.get('X-Vide-Pin') ?? '');
+      if (erro) return erro;
+      if (req.method === 'GET') {
+        const meta = await this.ctx.storage.get<{ partes: number; tamanho: number; mime: string }>(`imgmeta:${img}`);
+        if (!meta) return jsonResp({ erro: 'não encontrado' }, 404);
+        const chaves = Array.from({ length: meta.partes }, (_, i) => `img:${img}:${i}`);
+        const pedacos = await this.ctx.storage.get<ArrayBuffer>(chaves);
+        const tudo = new Uint8Array(meta.tamanho);
+        let pos = 0;
+        for (const k of chaves) {
+          const b = new Uint8Array(pedacos.get(k) ?? new ArrayBuffer(0));
+          tudo.set(b, pos);
+          pos += b.byteLength;
+        }
+        return new Response(tudo, { headers: { 'Content-Type': meta.mime, 'Cache-Control': 'private, max-age=86400' } });
+      }
+      if (req.method === 'PUT' && !comChave) {
+        const corpo = await req.arrayBuffer();
+        if (corpo.byteLength > MAX_IMAGEM) return jsonResp({ erro: 'grande demais' }, 413);
+        const b = new Uint8Array(corpo.slice(0, 4));
+        const mime = b[0] === 0x89 && b[1] === 0x50 ? 'image/png' : b[0] === 0xff && b[1] === 0xd8 ? 'image/jpeg' : '';
+        if (!mime) return jsonResp({ erro: 'formato' }, 415);
+        const lista = (await this.ctx.storage.get<string[]>('imagens')) ?? [];
+        if (!lista.includes(img) && lista.length >= MAX_IMAGENS) return jsonResp({ erro: 'imagens demais' }, 413);
+        const n = Math.max(1, Math.ceil(corpo.byteLength / PEDACO));
+        for (let i = 0; i < n; i++) await this.ctx.storage.put(`img:${img}:${i}`, corpo.slice(i * PEDACO, (i + 1) * PEDACO));
+        await this.ctx.storage.put({ [`imgmeta:${img}`]: { partes: n, tamanho: corpo.byteLength, mime }, imagens: lista.includes(img) ? lista : [...lista, img] });
+        return jsonResp({ ok: true });
+      }
+      return new Response('Método não permitido', { status: 405 });
     }
     // ----- arquivos (modelos) -----
     if (partes[1] === 'arquivo') {

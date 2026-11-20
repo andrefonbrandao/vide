@@ -182,16 +182,25 @@ function configDoTexto(t: Trabalho, o: Orientando | undefined, texto: TextoProje
   return { ...(t.preProjeto ?? configPreProjetoPadrao(o)), formato: formatoDoTexto(t, texto) };
 }
 
+/** As imagens das figuras do trabalho final (lidas da página do orientando com a chave do professor). */
+async function imagensDoTexto(t: Trabalho, texto: TextoProjeto) {
+  if (formatoDoTexto(t, texto) !== 'final' || !t.publicacao) return undefined;
+  const { imagensDoFinal, finalDoPreProjeto } = await import('./trabalhoFinalEstrutura');
+  const { buscarImagens, imagemDaPagina } = await import('./imagens');
+  const pub = t.publicacao;
+  return buscarImagens(imagensDoFinal(texto.final ?? finalDoPreProjeto(texto)), (id) => imagemDaPagina(pub.codigo, id, { 'X-Vide-Chave': pub.chave }));
+}
+
 /** PDF do pré-projeto (ou do trabalho final) a partir de um texto (do rascunho ou de um envio). */
 export async function pdfDoPreProjeto(t: Trabalho, o: Orientando | undefined, texto: TextoProjeto): Promise<Blob> {
   const { gerarPreProjetoPdf } = await import('./preProjetoPdf');
-  return gerarPreProjetoPdf({ nome: o?.nome ?? '', config: configDoTexto(t, o, texto), texto, etapas: t.etapas, logo: await logoUniftec() });
+  return gerarPreProjetoPdf({ nome: o?.nome ?? '', config: configDoTexto(t, o, texto), texto, etapas: t.etapas, logo: await logoUniftec(), imagens: await imagensDoTexto(t, texto) });
 }
 
 /** Word (.docx) do pré-projeto a partir de um texto. */
 export async function wordDoPreProjeto(t: Trabalho, o: Orientando | undefined, texto: TextoProjeto): Promise<Blob> {
   const { gerarPreProjetoDocx } = await import('./preProjetoDocx');
-  return gerarPreProjetoDocx({ nome: o?.nome ?? '', config: configDoTexto(t, o, texto), texto, etapas: t.etapas, logo: await logoUniftec() });
+  return gerarPreProjetoDocx({ nome: o?.nome ?? '', config: configDoTexto(t, o, texto), texto, etapas: t.etapas, logo: await logoUniftec(), imagens: await imagensDoTexto(t, texto) });
 }
 
 /** O rascunho atual do orientando (o que está escrito agora na página dele). */

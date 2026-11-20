@@ -99,3 +99,53 @@ test('PDF e Word do trabalho final', async () => {
   expect(xml).toContain('Professor(a) Avaliador(a): Me. A');
   expect(xml).toContain('w:start="10"');
 });
+
+/** Um PNG de verdade (w×h, cinza), montado aqui. */
+async function pngFalso(w: number, h: number): Promise<Uint8Array> {
+  const { deflateSync, crc32 } = await import('node:zlib');
+  const pedaco = (tipo: string, dados: Uint8Array) => {
+    const b = Buffer.alloc(12 + dados.length);
+    b.writeUInt32BE(dados.length, 0);
+    b.write(tipo, 4, 'latin1');
+    Buffer.from(dados).copy(b, 8);
+    b.writeUInt32BE(crc32(b.subarray(4, 8 + dados.length)) >>> 0, 8 + dados.length);
+    return b;
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(w, 0);
+  ihdr.writeUInt32BE(h, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 0;
+  const cru = Buffer.alloc((w + 1) * h, 128);
+  for (let y = 0; y < h; y++) cru[y * (w + 1)] = 0;
+  return new Uint8Array(Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), pedaco('IHDR', ihdr), pedaco('IDAT', deflateSync(cru)), pedaco('IEND', new Uint8Array())]));
+}
+
+test('figuras e gráficos: lidos do texto, numerados, no PDF e no Word (com a imagem dentro)', async () => {
+  const { lerImagem } = await import('./imagens');
+  const { textoDaFigura } = await import('./marcacao');
+  const fig = (n: number, tipo: 'figura' | 'grafico' = 'figura') => textoDaFigura({ tipo, titulo: `Imagem ${n}`, fonte: 'o autor.', imagem: `img${n}abcdef`, largura: n === 1 ? 50 : 100 });
+  const p = separarTabelas(`Texto.\n${fig(1)}\nMais.`);
+  expect(p[1]).toEqual({ tipo: 'figura', figura: { tipo: 'figura', titulo: 'Imagem 1', fonte: 'o autor.', imagem: 'img1abcdef', largura: 50 } });
+  const png = await pngFalso(40, 20);
+  expect(lerImagem(png)).toMatchObject({ tipo: 'png', largura: 40, altura: 20 });
+  const final: TextoFinal = { ...FINAL, capitulos: [novaParte('Cap', `Texto.\n${fig(1)}\n${fig(2)}\n${fig(3)}\n${fig(4, 'grafico')}`)], apendices: [], anexos: [] };
+  const b = estruturaFinal(final);
+  expect(tabelasDe(b).map((x) => `${x.tipo} ${x.numero}`)).toEqual(['figura 1', 'figura 2', 'figura 3', 'grafico 1']);
+  const { imagensDoFinal } = await import('./trabalhoFinalEstrutura');
+  expect(imagensDoFinal(final)).toEqual(['img1abcdef', 'img2abcdef', 'img3abcdef', 'img4abcdef']);
+  // A imagem 3 falta: no lugar, um aviso (o PDF sai do mesmo jeito).
+  const imagens = new Map([1, 2, 4].map((n) => [`img${n}abcdef`, lerImagem(png)!]));
+  const { gerarPreProjetoPdf } = await import('./preProjetoPdf');
+  let listas: string[] = [];
+  const pdf = await gerarPreProjetoPdf({ nome: 'A', config: CFG, texto: { ...TEXTO_VAZIO, final }, etapas: [], imagens }, (_, ex) => (listas = ex.listas.map((l) => `${l.titulo}:${l.itens.length}`)));
+  expect(pdf.size).toBeGreaterThan(1000);
+  expect(listas).toEqual(['LISTA DE FIGURAS:3']);
+  const { gerarPreProjetoDocx } = await import('./preProjetoDocx');
+  const docx = new TextDecoder().decode(new Uint8Array(await (await gerarPreProjetoDocx({ nome: 'A', config: CFG, texto: { ...TEXTO_VAZIO, final }, etapas: [], imagens })).arrayBuffer()));
+  expect(docx).toContain('word/media/img1.png');
+  expect(docx).toContain('word/media/img3.png'); // a 3ª imagem que existe (a do gráfico)
+  expect(docx).toContain('SEQ Grafico \\* ARABIC');
+  expect(docx).toContain('TOC \\h \\z \\c "Figura"');
+  expect(docx).toContain('[imagem não encontrada]');
+});

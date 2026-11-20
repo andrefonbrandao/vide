@@ -1,6 +1,7 @@
 // "Meu trabalho final" (TCC II) na página do orientando: as partes do modelo da Uniftec.
 // O desenvolvimento é feito de capítulos que o orientando cria, nomeia, ordena e remove
-// (fica pelo menos um); apêndices e anexos também, com o nome que ele quiser.
+// (fica pelo menos um); apêndices e anexos também, com o nome que ele quiser. Tabelas, quadros,
+// figuras e gráficos entram no texto pelos botões da barra.
 import { novaParte } from '../orientacao/trabalhoFinalEstrutura';
 import type { ParteNomeada, TextoFinal } from '../orientacao/tipos';
 import { CampoTexto, type DefCampo } from './PreProjetoForm';
@@ -163,7 +164,7 @@ export function CamposFinal({ fin, mudar }: { fin: TextoFinal; mudar: (p: Partia
             minimo={1}
             numero={(k) => String(k + 3)}
             rotuloNovo="Adicionar capítulo"
-            ajudaTexto='Use "Subtítulo" para dividir o capítulo (3.1, 3.2…) e "Tabela ou quadro" para inserir uma tabela.'
+            ajudaTexto='Use "Subtítulo" para dividir o capítulo (3.1, 3.2…), "Tabela ou quadro" para uma tabela e "Figura ou gráfico" para uma imagem.'
             exemplo="Nome do capítulo"
           />
         </div>

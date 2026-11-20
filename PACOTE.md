@@ -19,18 +19,24 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 - **Parte 3 — e-mails ao orientando** (pelo Gmail do professor, enviados quando o Vide estiver aberto):
   - **Lembretes de prazo:** o prazo é calculado na hora do envio (não quando o lembrete foi agendado); vários avisos atrasados viram um só; prazo vencido com o Vide fechado: aviso de "venceu em…" ou nada (o professor escolhe); cada envio fica marcado e vai para o Drive, para outro computador não repetir.
   - **Resumo da sessão para o orientando:** no registro da sessão, um **campo próprio para o resumo feito pela IA** (separado das anotações internas do professor, editável antes de enviar) e um botão para **mandar ao orientando por e-mail**, com as sugestões e os comandos e seus prazos; o envio fica registrado na linha do tempo. (A IA pode já escrever esse resumo dirigido ao orientando.)
-- **Trabalho final (TCC II):** parte 1 (formulário, PDF e Word, capítulos com nome, tabelas e quadros) no pacote 31. **Falta (parte 2):** figuras e gráficos (imagens enviadas pelo orientando, reduzidas e guardadas no serviço) e a lista de figuras.
+- **Trabalho final (TCC II):** parte 1 (formulário, PDF e Word, capítulos com nome, tabelas e quadros) no pacote 31; parte 2 (figuras e gráficos) no pacote 32.
 - **Parte 4 — importar conversas:** e-mails trocados com o orientando direto do Gmail (o "copiar e colar" do WhatsApp e do e-mail já existe na parte 1).
 
 ## Situação
 
-**Pacote 31** aberto em 2026-11-20, a partir da versão 0.46.0 (já publicada). **Fechado e publicado como versão 0.47.0.**
+**Pacote 32** aberto em 2026-11-20, a partir da versão 0.47.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|---|---|
+| 1 | **Trabalho final (TCC II), parte 2: figuras e gráficos.** Botão **"Figura ou gráfico"** nos capítulos, na introdução, nos apêndices e nos anexos: o orientando escolhe a imagem (PNG ou JPEG, do computador ou do celular), dá o título e a fonte e escolhe a largura (inteira, três quartos ou metade). O Vide **reduz a imagem no navegador** (no máximo 1600 px; gráficos em PNG continuam nítidos) e a guarda na página do orientando; no texto fica só o código. Abaixo do campo, **miniaturas** das figuras e tabelas, que abrem a edição com um clique. Figuras e gráficos numerados (Figura 1, Gráfico 1…), com **lista de figuras e lista de gráficos** quando há três ou mais (na ordem do modelo: figuras, quadros, gráficos, tabelas). No PDF e no Word: título em cima, imagem centralizada, fonte embaixo; no Word a imagem vai dentro do arquivo e a numeração é campo do Word. O professor vê as imagens nos PDFs e Words (rascunho e envios). Limites: 900 KB por imagem (depois de reduzida) e 150 imagens por trabalho. Se a página for desativada, as imagens são apagadas (os PDFs já recebidos continuam com elas) | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 31 (publicado como 0.47.0 em 2026-11-20)
 
 | # | Ideia | Situação |
 |---|---|---|
 | 1 | **Trabalho final (TCC II), parte 1: formulário, PDF e Word, com tabelas e quadros.** Em Compartilhar › Formulário do trabalho, o professor escolhe **Pré-projeto (TCC I)** ou **Trabalho final (TCC II)** e, no final, informa o e-mail dele e os dois avaliadores da banca. Na página do orientando, a aba vira **"Meu trabalho final"**, já com o texto do pré-projeto em cada lugar (o pré-projeto continua guardado). Partes, pelo modelo da Uniftec: identificação (título e subtítulo em português e em inglês, e-mail), dedicatória/agradecimentos/epígrafe (entram se escritos), resumo (com contagem de 150 a 500 palavras) e abstract, siglas, 1 Introdução, 2 Objetivos e justificativa (2.1, 2.1.1, 2.2), **capítulos do desenvolvimento que o orientando cria, nomeia, ordena e remove (pelo menos um)**, numerados 3, 4, 5…, com subtítulos (3.1) e sub-subtítulos (3.1.1), Considerações finais, Referências, **apêndices e anexos** com nome (Apêndice A, B…). **Tabelas e quadros** montados numa grade (título, células, fonte), numerados sozinhos, com lista automática quando há três ou mais. PDF e Word: capa, folha de rosto, folha de aprovação com a banca, dedicatória e epígrafe no pé da página, página do resumo com autor e orientador e e-mails, página do abstract, listas, sumário, seções primárias em página nova, páginas contadas desde a folha de rosto. Os envios chegam como versões "Trabalho final — enviado em…" | Publicada (0.47.0) |
-
-## Pacotes anteriores
 
 ### Pacote 30 (publicado como 0.46.0 em 2026-11-20)
 

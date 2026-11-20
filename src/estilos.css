@@ -1579,6 +1579,16 @@ button.ori-tipo-enc { cursor: pointer; }
 .pp-grade input { font: inherit; font-size: 14px; padding: 5px 7px; min-width: 0; border: 1px solid var(--linha); border-radius: 6px; }
 .pp-grade input.pp-grade-cab { font-weight: 700; background: var(--papel); }
 @media (max-width: 560px) { .pp-parte-cab input { flex-basis: calc(100% - 36px); } }
+.pp-blocos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.pp-bloco { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; font: inherit; font-size: 13px; padding: 4px 10px 4px 4px; border: 1px solid var(--linha); border-radius: 8px; background: #fff; color: var(--tinta); cursor: pointer; text-align: left; }
+.pp-bloco:hover { border-color: var(--tinta); }
+.pp-bloco > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+.pp-mini { width: 40px; height: 30px; object-fit: cover; border-radius: 4px; background: var(--papel); display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.pp-mini-tab { font-size: 18px; color: var(--tinta-2, #667); }
+.pp-mini-vazia { color: #999; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; background: var(--papel); }
+.pp-fig-imagem { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.pp-fig-previa { width: 220px; max-width: 100%; height: 150px; object-fit: contain; border: 1px solid var(--linha); border-radius: 8px; background: #fff; }
+.pp-fig-escolher { display: flex; flex-direction: column; gap: 6px; flex: 1 1 200px; }
 
 /* ---------- Orientação: nova organização (lista, visão geral, compartilhar) ---------- */
 .ori-filtros { display: flex; align-items: center; gap: 6px; margin: 4px 0 14px; flex-wrap: wrap; }

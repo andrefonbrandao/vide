@@ -1,10 +1,11 @@
 // "Meu pré-projeto" na página do orientando: os campos do projeto de pesquisa (como no
 // manual), guardados sozinhos no serviço; "Ver o PDF" monta o pré-projeto formatado e
 // "Enviar ao orientador" manda uma cópia datada (vira uma versão no caderno do professor).
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { rotuloPrazo } from '../orientacao/prazos';
-import { separarTabelas, textoDaTabela, type TabelaTexto } from '../orientacao/marcacao';
-import { finalDoPreProjeto } from '../orientacao/trabalhoFinalEstrutura';
+import { separarTabelas, textoDaFigura, textoDaTabela, type FiguraTexto, type Pedaco, type TabelaTexto } from '../orientacao/marcacao';
+import { buscarImagens, imagemDaPagina, lembrarImagem, reduzirImagem } from '../orientacao/imagens';
+import { finalDoPreProjeto, imagensDoFinal } from '../orientacao/trabalhoFinalEstrutura';
 import type { DadosOrientando, TextoFinal, TextoProjeto } from '../orientacao/tipos';
 import { CamposFinal } from './TrabalhoFinalForm';
 
@@ -39,30 +40,158 @@ export interface DefCampo {
   subtitulos?: boolean;
   /** Também "### " (3.1.1). */
   subsub?: boolean;
-  /** Botão de tabela/quadro. */
+  /** Botões de tabela/quadro e de figura/gráfico. */
   tabelas?: boolean;
   simples?: boolean;
 }
 
-/** Onde está a tabela/quadro que contém a posição `pos` do texto (início e fim do bloco), se houver. */
-function tabelaNaPosicao(texto: string, pos: number): { ini: number; fim: number; tabela: TabelaTexto } | null {
-  const linhas = texto.split('\n');
+/** As tabelas, quadros, figuras e gráficos de um texto, com onde começam e terminam. */
+function blocosDoTexto(texto: string): { ini: number; fim: number; pedaco: Pedaco }[] {
+  const out: { ini: number; fim: number; pedaco: Pedaco }[] = [];
   let ofs = 0;
-  let aberta: { ini: number } | null = null;
-  for (const l of linhas) {
+  let aberta: number | null = null;
+  for (const l of texto.split('\n')) {
     const fimLinha = ofs + l.length;
-    if (!aberta && /^:::\s*(tabela|quadro)\b/i.test(l.trim())) aberta = { ini: ofs };
-    else if (aberta && l.trim() === ':::') {
-      if (pos >= aberta.ini && pos <= fimLinha) {
-        const bloco = texto.slice(aberta.ini, fimLinha);
-        const p = separarTabelas(bloco).find((x) => x.tipo === 'tabela');
-        if (p && p.tipo === 'tabela') return { ini: aberta.ini, fim: fimLinha, tabela: p.tabela };
-      }
+    if (aberta === null && /^:::\s*(tabela|quadro|figura|gr[áa]fico)/i.test(l.trim())) aberta = ofs;
+    else if (aberta !== null && l.trim() === ':::') {
+      const p = separarTabelas(texto.slice(aberta, fimLinha)).find((x) => x.tipo !== 'texto');
+      if (p) out.push({ ini: aberta, fim: fimLinha, pedaco: p });
       aberta = null;
     }
     ofs = fimLinha + 1;
   }
-  return null;
+  return out;
+}
+
+/** Código da página do orientando (para enviar e ver as imagens das figuras). */
+export const ContextoPagina = createContext<{ codigo: string; pin: string } | null>(null);
+
+const novoIdImagem = () => Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
+
+/** Miniatura de uma imagem da página. */
+function Miniatura({ id, className }: { id: string; className?: string }) {
+  const pg = useContext(ContextoPagina);
+  const [url, setUrl] = useState('');
+  useEffect(() => {
+    if (!pg || !id) return;
+    let u = '';
+    let vivo = true;
+    void imagemDaPagina(pg.codigo, id, { 'X-Vide-Pin': pg.pin }).then((b) => {
+      if (!b || !vivo) return;
+      u = URL.createObjectURL(new Blob([b as BlobPart]));
+      setUrl(u);
+    });
+    return () => {
+      vivo = false;
+      if (u) URL.revokeObjectURL(u);
+    };
+  }, [pg, id]);
+  return url ? <img src={url} alt="" className={className} /> : <span className={`${className ?? ''} pp-mini-vazia`}>…</span>;
+}
+
+/** Janela para escolher a imagem de uma figura ou gráfico (reduzida e enviada à página). */
+function EditorFigura({ inicial, aoFechar, aoConfirmar }: { inicial: FiguraTexto | null; aoFechar: () => void; aoConfirmar: (f: FiguraTexto) => void }) {
+  const pg = useContext(ContextoPagina);
+  const [f, setF] = useState<FiguraTexto>(() => inicial ?? { tipo: 'figura', titulo: '', fonte: 'o autor.', imagem: '', largura: 100 });
+  const [nova, setNova] = useState<{ blob: Blob; url: string } | null>(null);
+  const [estado, setEstado] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  useEffect(
+    () => () => {
+      if (nova) URL.revokeObjectURL(nova.url);
+    },
+    [nova],
+  );
+  const escolher = async (arq: File | undefined) => {
+    if (!arq) return;
+    if (!/^image\/(png|jpeg|webp|gif)$/.test(arq.type)) return setEstado('Escolha uma imagem PNG ou JPEG.');
+    setEstado('Preparando a imagem…');
+    try {
+      const blob = await reduzirImagem(arq);
+      setNova({ blob, url: URL.createObjectURL(blob) });
+      setEstado(`Pronta (${Math.max(1, Math.round(blob.size / 1024))} KB).`);
+    } catch (e) {
+      setEstado(`Não foi possível ler a imagem: ${(e as Error).message}`);
+    }
+  };
+  const confirmar = async () => {
+    if (!nova && !f.imagem) return setEstado('Escolha a imagem.');
+    if (!nova) return aoConfirmar(f);
+    if (!pg) return;
+    setOcupado(true);
+    setEstado('Enviando a imagem…');
+    try {
+      const id = novoIdImagem();
+      const bytes = new Uint8Array(await nova.blob.arrayBuffer());
+      const r = await fetch(`/api/orientacao/${pg.codigo}/imagem/${id}`, { method: 'PUT', headers: { 'Content-Type': nova.blob.type, 'X-Vide-Pin': pg.pin }, body: bytes });
+      if (!r.ok) throw new Error(r.status === 413 ? 'a imagem é grande demais, ou o trabalho já tem imagens demais' : `erro ${r.status}`);
+      lembrarImagem(pg.codigo, id, bytes);
+      aoConfirmar({ ...f, imagem: id });
+    } catch (e) {
+      setEstado(`Não foi possível enviar: ${(e as Error).message}. Confira a internet e tente de novo.`);
+      setOcupado(false);
+    }
+  };
+  return (
+    <div className="modal-fundo" onMouseDown={(e) => e.target === e.currentTarget && !ocupado && aoFechar()}>
+      <div className="modal pp-tabela-janela" role="dialog" aria-label={inicial ? 'Editar figura ou gráfico' : 'Nova figura ou gráfico'}>
+        <h2>
+          {inicial ? 'Editar' : 'Inserir'} {f.tipo === 'grafico' ? 'gráfico' : 'figura'}
+        </h2>
+        <div className="linha-opcoes">
+          <label className="ori-opcao">
+            <input type="radio" checked={f.tipo === 'figura'} onChange={() => setF({ ...f, tipo: 'figura' })} /> Figura (foto, esquema, imagem)
+          </label>
+          <label className="ori-opcao">
+            <input type="radio" checked={f.tipo === 'grafico'} onChange={() => setF({ ...f, tipo: 'grafico' })} /> Gráfico
+          </label>
+        </div>
+        <p className="ajuda" style={{ margin: '4px 0 10px' }}>
+          O Vide numera sozinho ({f.tipo === 'grafico' ? 'Gráfico' : 'Figura'} 1, 2…) e, com três ou mais, faz a lista no começo do trabalho. Gráfico: faça no Excel ou no Google Planilhas e salve
+          como imagem (ou tire um print).
+        </p>
+        <div className="campo">
+          <label htmlFor="pp-fig-titulo">Título</label>
+          <input id="pp-fig-titulo" value={f.titulo} onChange={(e) => setF({ ...f, titulo: e.target.value })} placeholder="ex.: Número de decisões por ano" autoFocus />
+        </div>
+        <div className="pp-fig-imagem">
+          {nova ? <img src={nova.url} alt="" className="pp-fig-previa" /> : f.imagem ? <Miniatura id={f.imagem} className="pp-fig-previa" /> : <span className="pp-fig-previa pp-mini-vazia">sem imagem</span>}
+          <span className="pp-fig-escolher">
+            <label className="botao">
+              {f.imagem || nova ? 'Trocar a imagem' : 'Escolher a imagem'}
+              <input type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={(e) => void escolher(e.target.files?.[0])} />
+            </label>
+            <span className="ajuda" style={{ margin: 0 }}>
+              PNG ou JPEG. O Vide reduz a imagem antes de enviar.
+            </span>
+          </span>
+        </div>
+        <div className="grade-2" style={{ marginTop: 10 }}>
+          <div className="campo">
+            <label htmlFor="pp-fig-larg">Largura na página</label>
+            <select id="pp-fig-larg" className="seletor" value={f.largura} onChange={(e) => setF({ ...f, largura: Number(e.target.value) })}>
+              <option value={100}>Inteira</option>
+              <option value={75}>Três quartos</option>
+              <option value={50}>Metade</option>
+            </select>
+          </div>
+          <div className="campo">
+            <label htmlFor="pp-fig-fonte">Fonte</label>
+            <input id="pp-fig-fonte" value={f.fonte} onChange={(e) => setF({ ...f, fonte: e.target.value })} placeholder="ex.: o autor (2026), com dados do CNJ." />
+          </div>
+        </div>
+        {estado && <p className="ajuda">{estado}</p>}
+        <div className="modal-botoes">
+          <button type="button" className="botao primario" disabled={ocupado} onClick={() => void confirmar()}>
+            {ocupado ? 'Enviando…' : inicial ? 'Salvar' : 'Inserir no texto'}
+          </button>
+          <button type="button" className="botao" disabled={ocupado} onClick={aoFechar}>
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /** Tira as linhas (menos o cabeçalho) e as colunas que ficaram em branco. */
@@ -232,18 +361,30 @@ const GRUPOS: { titulo: string; campos: (DefCampo & { campo: Campo })[]; so?: 'r
 /** Campo de texto com a barra de marcações (negrito, itálico, citação longa, nota de rodapé, subtítulo). */
 export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; valor: string; aoMudar: (v: string) => void; rotulo?: React.ReactNode }) {
   const ref = useRef<HTMLTextAreaElement>(null);
-  const [tabela, setTabela] = useState<{ ini: number; fim: number; tabela: TabelaTexto | null } | null>(null);
-  const abrirTabela = () => {
+  const pg = useContext(ContextoPagina);
+  const [editando, setEditando] = useState<{ ini: number; fim: number; tipo: 'tabela' | 'figura'; tabela?: TabelaTexto; figura?: FiguraTexto } | null>(null);
+  const blocos = def.tabelas ? blocosDoTexto(valor) : [];
+  const abrir = (tipo: 'tabela' | 'figura') => {
     const el = ref.current;
     const pos = el?.selectionStart ?? valor.length;
-    const achada = tabelaNaPosicao(valor, pos);
-    if (achada) setTabela(achada);
-    else {
-      // Nova: entra depois da linha em que está o cursor.
-      const fimLinha = valor.indexOf('\n', pos);
-      const onde = fimLinha < 0 ? valor.length : fimLinha;
-      setTabela({ ini: onde, fim: onde, tabela: null });
-    }
+    const achado = blocos.find((b) => pos >= b.ini && pos < b.fim && (b.pedaco.tipo === 'figura') === (tipo === 'figura'));
+    if (achado) return editarBloco(achado);
+    // Novo: entra depois da linha em que está o cursor.
+    const fimLinha = valor.indexOf('\n', pos);
+    const onde = fimLinha < 0 ? valor.length : fimLinha;
+    setEditando({ ini: onde, fim: onde, tipo });
+  };
+  const editarBloco = (b: { ini: number; fim: number; pedaco: Pedaco }) => {
+    if (b.pedaco.tipo === 'tabela') setEditando({ ini: b.ini, fim: b.fim, tipo: 'tabela', tabela: b.pedaco.tabela });
+    else if (b.pedaco.tipo === 'figura') setEditando({ ini: b.ini, fim: b.fim, tipo: 'figura', figura: b.pedaco.figura });
+  };
+  const colocar = (bloco: string) => {
+    if (!editando) return;
+    const antes = valor.slice(0, editando.ini);
+    const depois = valor.slice(editando.fim);
+    const existente = editando.ini !== editando.fim;
+    aoMudar(existente ? antes + bloco + depois : `${antes}${antes && !antes.endsWith('\n') ? '\n' : ''}${bloco}${depois && !depois.startsWith('\n') ? '\n' : ''}${depois}`);
+    setEditando(null);
   };
   const envolver = (antes: string, depois: string, exemplo: string) => {
     const el = ref.current;
@@ -300,8 +441,13 @@ export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; val
                 </button>
               )}
               {def.tabelas && (
-                <button type="button" title="Insere uma tabela ou um quadro depois da linha do cursor. Com o cursor dentro de uma tabela, edita a tabela." onClick={abrirTabela}>
+                <button type="button" title="Insere uma tabela ou um quadro depois da linha do cursor. Com o cursor dentro de uma tabela, edita a tabela." onClick={() => abrir('tabela')}>
                   Tabela ou quadro
+                </button>
+              )}
+              {def.tabelas && pg && (
+                <button type="button" title="Insere uma figura ou um gráfico (imagem) depois da linha do cursor." onClick={() => abrir('figura')}>
+                  Figura ou gráfico
                 </button>
               )}
             </div>
@@ -309,20 +455,22 @@ export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; val
           <textarea id={`pp-${def.campo}`} ref={ref} rows={def.linhas} value={valor} onChange={(e) => aoMudar(e.target.value)} />
         </>
       )}
-      {tabela && (
-        <EditorTabela
-          inicial={tabela.tabela}
-          aoFechar={() => setTabela(null)}
-          aoConfirmar={(t) => {
-            const bloco = textoDaTabela(t);
-            const antes = valor.slice(0, tabela.ini);
-            const depois = valor.slice(tabela.fim);
-            const novo = tabela.tabela ? antes + bloco + depois : `${antes}${antes && !antes.endsWith('\n') ? '\n' : ''}${bloco}${depois && !depois.startsWith('\n') ? '\n' : ''}${depois}`;
-            aoMudar(novo);
-            setTabela(null);
-          }}
-        />
+      {blocos.length > 0 && (
+        <div className="pp-blocos" aria-label="Tabelas e figuras deste campo">
+          {blocos.map((b, k) => (
+            <button key={k} type="button" className="pp-bloco" onClick={() => editarBloco(b)} title="Editar">
+              {b.pedaco.tipo === 'figura' ? <Miniatura id={b.pedaco.figura.imagem} className="pp-mini" /> : <span className="pp-mini pp-mini-tab">▦</span>}
+              <span>
+                {b.pedaco.tipo === 'figura' ? (b.pedaco.figura.tipo === 'grafico' ? 'Gráfico' : 'Figura') : b.pedaco.tipo === 'tabela' ? (b.pedaco.tabela.tipo === 'quadro' ? 'Quadro' : 'Tabela') : ''}
+                {': '}
+                {(b.pedaco.tipo === 'figura' ? b.pedaco.figura.titulo : b.pedaco.tipo === 'tabela' ? b.pedaco.tabela.titulo : '') || 'sem título'}
+              </span>
+            </button>
+          ))}
+        </div>
       )}
+      {editando?.tipo === 'tabela' && <EditorTabela inicial={editando.tabela ?? null} aoFechar={() => setEditando(null)} aoConfirmar={(t) => colocar(textoDaTabela(t))} />}
+      {editando?.tipo === 'figura' && <EditorFigura inicial={editando.figura ?? null} aoFechar={() => setEditando(null)} aoConfirmar={(f) => colocar(textoDaFigura(f))} />}
     </div>
   );
 }
@@ -417,6 +565,7 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
   const final = dados.preProjeto?.formato === 'final';
   /** O trabalho final começa com o texto do pré-projeto (que continua guardado ao lado). */
   const fin: TextoFinal | null = texto && final ? (texto.final ?? finalDoPreProjeto(texto)) : null;
+  const pagina = useMemo(() => ({ codigo, pin }), [codigo, pin]);
   // Fixa o texto inicial do trabalho final (senão os capítulos ganhariam ids novos a cada desenho).
   useEffect(() => {
     if (final && texto && !texto.final) setTexto({ ...texto, final: finalDoPreProjeto(texto) });
@@ -437,12 +586,13 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
   };
 
   const comFinal = (): TextoProjeto => (fin ? { ...texto!, final: fin } : texto!);
+  const imagens = () => (fin ? buscarImagens(imagensDoFinal(fin), (id) => imagemDaPagina(codigo, id, { 'X-Vide-Pin': pin })) : Promise.resolve(undefined));
   const gerarPdf = async (): Promise<Blob> => {
     const { gerarPreProjetoPdf } = await import('../orientacao/preProjetoPdf');
     const logo = await fetch('/logo-uniftec.png')
       .then(async (r) => (r.ok ? new Uint8Array(await r.arrayBuffer()) : undefined))
       .catch(() => undefined);
-    return gerarPreProjetoPdf({ nome: dados.nome, config: dados.preProjeto!, texto: comFinal(), etapas: dados.etapas, logo });
+    return gerarPreProjetoPdf({ nome: dados.nome, config: dados.preProjeto!, texto: comFinal(), etapas: dados.etapas, logo, imagens: await imagens() });
   };
   /** Pré-visualizar (abre numa aba nova) ou baixar: só para o orientando, nada vai ao orientador. */
   const baixarWord = async () => {
@@ -453,7 +603,7 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
       const logo = await fetch('/logo-uniftec.png')
         .then(async (r) => (r.ok ? new Uint8Array(await r.arrayBuffer()) : undefined))
         .catch(() => undefined);
-      const blob = await gerarPreProjetoDocx({ nome: dados.nome, config: dados.preProjeto!, texto: comFinal(), etapas: dados.etapas, logo });
+      const blob = await gerarPreProjetoDocx({ nome: dados.nome, config: dados.preProjeto!, texto: comFinal(), etapas: dados.etapas, logo, imagens: await imagens() });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = nomeArquivoPreProjetoDocx(dados.nome, final ? 'final' : 'pre');
@@ -584,7 +734,9 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
         </div>
       )}
       {fin ? (
-        <CamposFinal fin={fin} mudar={mudarFinal} />
+        <ContextoPagina.Provider value={pagina}>
+          <CamposFinal fin={fin} mudar={mudarFinal} />
+        </ContextoPagina.Provider>
       ) : (
       GRUPOS.filter((g) => g.so !== 'resumo' || cfg.resumo).map((g) => (
         <fieldset key={g.titulo} className="proc-caixa pp-grupo">
@@ -623,7 +775,8 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
           {final ? (
             <>
               <li>Nos capítulos, "## " no começo da linha cria um subtítulo (3.1, 3.2…) e "### ", um sub-subtítulo (3.1.1…).</li>
-              <li>"Tabela ou quadro" abre uma grade para montar a tabela; ela entra no texto entre as linhas "::: Tabela – título" e ":::". Para mudar, ponha o cursor dentro dela e clique de novo no botão.</li>
+              <li>"Tabela ou quadro" abre uma grade para montar a tabela; ela entra no texto entre as linhas "::: Tabela – título" e ":::". Para mudar, clique nela na lista abaixo do campo (ou ponha o cursor dentro dela e clique de novo no botão).</li>
+              <li>"Figura ou gráfico" envia uma imagem (PNG ou JPEG; o Vide reduz antes) e põe no texto as linhas "::: Figura – título" … ":::" com o código da imagem. Não apague essas linhas; para trocar a imagem, o título ou a largura, clique na miniatura abaixo do campo.</li>
             </>
           ) : (
             <li>Na fundamentação, "## " no começo da linha cria um subtítulo (3.1, 3.2…).</li>
