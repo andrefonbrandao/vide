@@ -1910,3 +1910,24 @@ body:has(.ori-foco) .avisos-rapidos { bottom: 84px; }
   .topo-drive.sincronizando .luz, .topo-drive.entrando .luz { background: #c9a514; }
   .topo-drive.desligado { color: var(--tinta-3); }
 }
+
+/* Página do orientando: "Como usar" e passeio de boas-vindas */
+.oa-ajuda { margin-left: auto; width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--tinta); background: #fff; color: var(--tinta); font: inherit; font-weight: 800; font-size: 15px; cursor: pointer; line-height: 1; }
+.oa-ajuda + .link-discreto { margin-left: 10px; }
+.manual { display: flex; flex-direction: column; gap: 12px; }
+.manual-topo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
+.manual-topo h2 { margin: 0; font-size: 22px; }
+.manual-busca { font: inherit; font-size: 15px; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 10px; background: #fff; }
+.manual-secao { padding-bottom: 6px; }
+.manual-pergunta { border-top: 1px solid #edf0ea; padding: 0 14px; }
+.manual-pergunta summary { cursor: pointer; font-weight: 700; padding: 10px 0; }
+.manual-pergunta p { margin: 0 0 10px; line-height: 1.55; }
+.passeio { position: fixed; inset: 0; z-index: 200; }
+.passeio-fundo { position: fixed; inset: 0; background: rgba(20, 35, 30, 0.55); }
+.passeio-destaque { position: fixed; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(20, 35, 30, 0.55); outline: 3px solid #f2c94c; pointer-events: none; }
+.passeio-balao { position: fixed; width: min(340px, calc(100vw - 24px)); background: #fff; border-radius: 14px; padding: 14px 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; gap: 6px; }
+.passeio-balao strong { font-size: 16px; }
+.passeio-balao p { margin: 0; line-height: 1.5; }
+.passeio-pe { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.passeio-pe .ajuda { margin-right: auto !important; }
+.oa-abas { flex-wrap: wrap; }

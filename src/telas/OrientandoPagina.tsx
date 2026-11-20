@@ -6,8 +6,10 @@ import { dataBR, etapaAtual, hojeISO, rotuloDias, rotuloPrazo, rotuloSituacao, s
 import { CAMPOS_ELEMENTOS } from '../orientacao/campos';
 import type { DadosOrientando } from '../orientacao/tipos';
 import { MeuPreProjeto } from './PreProjetoForm';
+import { ManualAluno, Passeio, passosDoPasseio } from './ComoUsar';
 
 const chavePin = (codigo: string) => `vide.orientacao.pin.${codigo}`;
+const chavePasseio = (codigo: string) => `vide.orientacao.passeio.${codigo}`;
 
 function tamanho(n?: number): string {
   if (!n) return '';
@@ -35,7 +37,34 @@ export function PaginaOrientando({ codigo }: { codigo: string }) {
   const [erro, setErro] = useState<string | null>(null);
   const [abrindo, setAbrindo] = useState(false);
   const [baixando, setBaixando] = useState<string | null>(null);
-  const [aba, setAba] = useState<'acompanhamento' | 'projeto'>(() => (location.hash === '#pre-projeto' ? 'projeto' : 'acompanhamento'));
+  const [aba, setAba] = useState<'acompanhamento' | 'projeto' | 'ajuda'>(() => (location.hash === '#pre-projeto' ? 'projeto' : location.hash === '#como-usar' ? 'ajuda' : 'acompanhamento'));
+  const [passeio, setPasseio] = useState(false);
+  const formulario = dados?.preProjeto?.ativo ? (dados.preProjeto.formato ?? 'pre') : null;
+  const verPasseio = () => {
+    setAba('acompanhamento');
+    history.replaceState(null, '', '#');
+    window.setTimeout(() => setPasseio(true), 60);
+  };
+  const fecharPasseio = () => {
+    setPasseio(false);
+    try {
+      localStorage.setItem(chavePasseio(codigo), '1');
+    } catch {
+      /* ignore */
+    }
+  };
+  // Primeiro acesso neste aparelho: o passeio de boas-vindas.
+  useEffect(() => {
+    if (!dados) return;
+    let visto = true;
+    try {
+      visto = !!localStorage.getItem(chavePasseio(codigo));
+    } catch {
+      visto = true;
+    }
+    if (!visto) verPasseio();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!dados, codigo]);
 
   const abrir = async (p: string, guardar: boolean) => {
     setAbrindo(true);
@@ -101,6 +130,11 @@ export function PaginaOrientando({ codigo }: { codigo: string }) {
         <Logo altura={22} />
         <span>Orientação</span>
         {dados && (
+          <button type="button" className="oa-ajuda" data-passeio="ajuda" title="Passeio de boas-vindas" aria-label="Ver o passeio de boas-vindas" onClick={verPasseio}>
+            ?
+          </button>
+        )}
+        {dados && (
           <button
             type="button"
             className="link-discreto"
@@ -156,17 +190,23 @@ export function PaginaOrientando({ codigo }: { codigo: string }) {
             </p>
           </section>
           {erro && <p className="oa-erro">{erro}</p>}
-          {dados.preProjeto?.ativo && (
-            <nav className="oa-abas" aria-label="Partes da página">
-              <button type="button" className={`botao pequeno${aba === 'acompanhamento' ? ' escuro' : ''}`} onClick={() => (setAba('acompanhamento'), history.replaceState(null, '', '#'))}>
-                Acompanhamento
+          <nav className="oa-abas" aria-label="Partes da página">
+            <button type="button" className={`botao pequeno${aba === 'acompanhamento' ? ' escuro' : ''}`} onClick={() => (setAba('acompanhamento'), history.replaceState(null, '', '#'))}>
+              Acompanhamento
+            </button>
+            {formulario && (
+              <button type="button" data-passeio="formulario" className={`botao pequeno${aba === 'projeto' ? ' escuro' : ''}`} onClick={() => (setAba('projeto'), history.replaceState(null, '', '#pre-projeto'))}>
+                {formulario === 'final' ? 'Meu trabalho final' : 'Meu pré-projeto'}
               </button>
-              <button type="button" className={`botao pequeno${aba === 'projeto' ? ' escuro' : ''}`} onClick={() => (setAba('projeto'), history.replaceState(null, '', '#pre-projeto'))}>
-                {dados.preProjeto.formato === 'final' ? 'Meu trabalho final' : 'Meu pré-projeto'}
-              </button>
-            </nav>
-          )}
-          {aba === 'projeto' && dados.preProjeto?.ativo ? (
+            )}
+            <button type="button" data-passeio="comousar" className={`botao pequeno${aba === 'ajuda' ? ' escuro' : ''}`} onClick={() => (setAba('ajuda'), history.replaceState(null, '', '#como-usar'))}>
+              Como usar
+            </button>
+          </nav>
+          {passeio && <Passeio passos={passosDoPasseio(dados.nome, formulario)} aoFechar={fecharPasseio} />}
+          {aba === 'ajuda' ? (
+            <ManualAluno formulario={formulario} aoPasseio={verPasseio} />
+          ) : aba === 'projeto' && dados.preProjeto?.ativo ? (
             <MeuPreProjeto codigo={codigo} pin={pin} dados={dados} />
           ) : (
           <>
@@ -175,7 +215,7 @@ export function PaginaOrientando({ codigo }: { codigo: string }) {
             if (!e || dados.trabalho.situacao !== 'andamento') return null;
             const s = situacaoEtapa(e, hoje);
             return (
-              <section className={`oa-agora ${s.tipo}`}>
+              <section className={`oa-agora ${s.tipo}`} data-passeio="agora">
                 <span>Etapa da vez</span>
                 <strong>{e.nome}</strong>
                 <span>
@@ -185,7 +225,7 @@ export function PaginaOrientando({ codigo }: { codigo: string }) {
             );
           })()}
 
-          <section className="proc-caixa">
+          <section className="proc-caixa" data-passeio="pendencias">
             <h2 className="proc-caixa-titulo">Pendências</h2>
             {!dados.pendencias.length ? (
               <p className="oa-vazio">Nenhuma pendência em aberto.</p>
@@ -208,7 +248,7 @@ export function PaginaOrientando({ codigo }: { codigo: string }) {
             )}
           </section>
 
-          <section className="proc-caixa">
+          <section className="proc-caixa" data-passeio="cronograma">
             <h2 className="proc-caixa-titulo">Cronograma</h2>
             {!dados.etapas.length ? (
               <p className="oa-vazio">Sem etapas ainda.</p>
@@ -258,7 +298,7 @@ export function PaginaOrientando({ codigo }: { codigo: string }) {
             </section>
           )}
 
-          <section className="proc-caixa">
+          <section className="proc-caixa" data-passeio="modelos">
             <h2 className="proc-caixa-titulo">Modelos e orientações</h2>
             {!dados.modelos.length ? (
               <p className="oa-vazio">Nenhum modelo ainda.</p>
