@@ -29,13 +29,14 @@ import {
 } from '../orientacao/banco';
 import { analisarColagem, type Colagem } from '../orientacao/colar';
 import { pendenciasVencidas } from '../orientacao/alertas';
+import { naturezaPadrao } from '../orientacao/campos';
 import { lerEncaminhamentos, lerRespostaIA, pedidoRegistroIA } from '../orientacao/ia';
 import type { OpcoesRelatorio } from '../orientacao/relatorioPdf';
-import { assinarPublicacao, desativarOrientacao, estadoPublicacao, MAX_MODELO, publicarOrientacao, urlDoOrientando } from '../orientacao/publicar';
+import { assinarPublicacao, buscarEnvios, configPreProjetoPadrao, desativarOrientacao, estadoPublicacao, lerRascunho, MAX_MODELO, pdfDoPreProjeto, publicarOrientacao, urlDoOrientando } from '../orientacao/publicar';
 import { LinkEQr } from './CompartilharTreino';
 import { copiar } from './ProcessoTexto';
 import { agoraLocal, dataBR, dataHoraBR, emOrdem, etapaAtual, hojeISO, pendencias, rotuloDias, situacaoEtapa, type Pendencia } from '../orientacao/prazos';
-import { CANAIS, ELEMENTOS_VAZIOS, TIPOS_TRABALHO, type Elementos, type Canal, type Encaminhamento, type Interacao, type Modelo, type Orientando, type Trabalho, type TipoTrabalho, type Versao } from '../orientacao/tipos';
+import { CANAIS, ELEMENTOS_VAZIOS, TIPOS_TRABALHO, type Elementos, type Canal, type ConfigPreProjeto, type Encaminhamento, type Interacao, type Modelo, type Orientando, type Trabalho, type TipoTrabalho, type Versao } from '../orientacao/tipos';
 import { Reconhecedor, obterConstrutor, type StatusVoz } from '../voz/reconhecedor';
 import { controlador } from './controlador';
 import { Figura } from './ConsultaTela';
@@ -136,6 +137,24 @@ export function Orientacoes() {
     });
   }, []);
   useRecarga(carregar);
+  // Envios do pré-projeto feitos pelos orientandos: chegam como versões (ao abrir, ao voltar à aba e a cada 5 minutos).
+  useEffect(() => {
+    const buscar = async () => {
+      const ts = (await listarTrabalhos()).filter((t) => t.publicacao && t.preProjeto?.ativo);
+      const nomes = await listarOrientandos();
+      for (const t of ts) {
+        const n = await buscarEnvios(t.id).catch(() => 0);
+        if (n) avisar(`${nomes.find((o) => o.id === t.orientandoId)?.nome ?? 'Um orientando'} enviou ${n === 1 ? 'uma versão' : `${n} versões`} do pré-projeto (está em Versões).`);
+      }
+    };
+    void buscar();
+    window.addEventListener('focus', buscar);
+    const t = window.setInterval(() => void buscar(), 5 * 60_000);
+    return () => {
+      window.removeEventListener('focus', buscar);
+      window.clearInterval(t);
+    };
+  }, []);
   const abrir = (id: string | null) => {
     setAberto(id);
     try {
@@ -1604,6 +1623,7 @@ function PaginaDoOrientando({ trabalho, orientando }: { trabalho: Trabalho; orie
           </>
         )}
       </section>
+      <ConfigPreProjetoForm trabalho={trabalho} orientando={orientando} />
       <section className="cartao" style={{ marginTop: 12 }}>
         <h3 style={{ marginTop: 0 }}>Modelos só deste orientando</h3>
         <p className="ajuda">
@@ -1614,6 +1634,135 @@ function PaginaDoOrientando({ trabalho, orientando }: { trabalho: Trabalho; orie
     </>
   );
 }
+
+// ---------- Pré-projeto (formulário na página do orientando) ----------
+
+function orientadorGuardado(): string {
+  try {
+    return (JSON.parse(localStorage.getItem('vide.orientacao.relatorio') ?? '{}') as { orientador?: string }).orientador ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function ConfigPreProjetoForm({ trabalho, orientando }: { trabalho: Trabalho; orientando?: Orientando }) {
+  const [cfg, setCfg] = useState<ConfigPreProjeto>(() => ({ ...configPreProjetoPadrao(orientando, orientadorGuardado()), ...trabalho.preProjeto }));
+  const [ocupado, setOcupado] = useState('');
+  const timer = useRef<number | null>(null);
+  const mudar = (p: Partial<ConfigPreProjeto>, ja = false) => {
+    const novo = { ...cfg, ...p };
+    setCfg(novo);
+    if (timer.current) window.clearTimeout(timer.current);
+    const gravar = () => void atualizarTrabalho(trabalho.id, { preProjeto: novo });
+    if (ja) gravar();
+    else timer.current = window.setTimeout(gravar, 800);
+  };
+  const pub = trabalho.publicacao;
+  return (
+    <section className="cartao form-turma" style={{ marginTop: 12 }}>
+      <h3 style={{ marginTop: 0 }}>Pré-projeto (TCC I)</h3>
+      <label className="ori-opcao">
+        <input type="checkbox" checked={cfg.ativo} onChange={(e) => mudar({ ativo: e.target.checked }, true)} /> Mostrar o formulário <strong>"Meu pré-projeto"</strong> na página do orientando
+      </label>
+      <p className="ajuda">
+        O orientando escreve as partes do projeto de pesquisa (como no manual: introdução, problema, hipóteses, objetivos, justificativa, fundamentação teórica, metodologia, recursos e
+        referências), já começando com os elementos do trabalho que vocês definiram. O Vide monta o PDF com capa, folha de rosto, sumário e a formatação do manual; o cronograma vem
+        daqui. Cada "Enviar ao orientador" chega como uma versão (em PDF) na aba Versões.
+        {!pub && ' Crie a página do orientando acima para ele ver o formulário.'}
+      </p>
+      {cfg.ativo && (
+        <>
+          <div className="grade-3">
+            <div className="campo">
+              <label htmlFor="pp-inst">Instituição (capa)</label>
+              <select id="pp-inst" className="seletor" value={cfg.instituicao} onChange={(e) => mudar({ instituicao: e.target.value as ConfigPreProjeto['instituicao'] }, true)}>
+                <option value="Uniftec">Uniftec (com o logotipo)</option>
+                <option value="Ftec">Ftec Faculdades</option>
+              </select>
+            </div>
+            <div className="campo">
+              <label htmlFor="pp-curso">Curso</label>
+              <input id="pp-curso" value={cfg.curso} onChange={(e) => mudar({ curso: e.target.value })} placeholder="ex.: Direito" />
+            </div>
+            <div className="campo">
+              <label htmlFor="pp-cidade">Cidade e ano</label>
+              <span className="linha-opcoes" style={{ flexWrap: 'nowrap' }}>
+                <input id="pp-cidade" value={cfg.cidade} onChange={(e) => mudar({ cidade: e.target.value })} style={{ flex: 1, minWidth: 0 }} />
+                <input aria-label="Ano" value={cfg.ano} onChange={(e) => mudar({ ano: e.target.value })} style={{ width: 70 }} />
+              </span>
+            </div>
+            <div className="campo">
+              <label htmlFor="pp-orient">Orientador(a), como sai na folha de rosto</label>
+              <input id="pp-orient" value={cfg.orientador} onChange={(e) => mudar({ orientador: e.target.value })} placeholder="ex.: Prof. Me. Fulano de Tal" />
+            </div>
+            <div className="campo">
+              <label htmlFor="pp-coorient">Coorientador(a) (se houver)</label>
+              <input id="pp-coorient" value={cfg.coorientador} onChange={(e) => mudar({ coorientador: e.target.value })} />
+            </div>
+          </div>
+          <div className="campo">
+            <label htmlFor="pp-natureza">Natureza do trabalho (folha de rosto)</label>
+            <textarea id="pp-natureza" rows={2} value={cfg.natureza} onChange={(e) => mudar({ natureza: e.target.value })} placeholder={naturezaPadrao(cfg)} />
+            <span className="ajuda" style={{ margin: 0 }}>
+              Em branco, vale o texto acima (em cinza).
+            </span>
+          </div>
+          <div className="linha-opcoes">
+            <label className="ori-opcao">
+              <input type="checkbox" checked={cfg.resumo} onChange={(e) => mudar({ resumo: e.target.checked }, true)} /> Pedir resumo e palavras-chave
+            </label>
+            <label className="ori-opcao">
+              <input type="checkbox" checked={cfg.aprovacao} onChange={(e) => mudar({ aprovacao: e.target.checked }, true)} /> Incluir folha de aprovação
+            </label>
+          </div>
+          {pub && (
+            <div className="linha-opcoes" style={{ marginTop: 8 }}>
+              <button
+                type="button"
+                className="botao"
+                disabled={!!ocupado}
+                onClick={async () => {
+                  setOcupado('rascunho');
+                  try {
+                    const { projeto } = await lerRascunho(trabalho.id);
+                    if (!projeto) avisar('O orientando ainda não escreveu nada no pré-projeto.', 'erro');
+                    else baixarArquivo(await pdfDoPreProjeto({ ...trabalho, preProjeto: cfg }, orientando, projeto), `Pre-projeto (rascunho) - ${(orientando?.nome ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')}.pdf`);
+                  } catch (e) {
+                    avisar((e as Error).message, 'erro');
+                  } finally {
+                    setOcupado('');
+                  }
+                }}
+              >
+                {ocupado === 'rascunho' ? 'Montando…' : 'Ver o rascunho atual (PDF)'}
+              </button>
+              <button
+                type="button"
+                className="botao"
+                disabled={!!ocupado}
+                onClick={async () => {
+                  setOcupado('envios');
+                  try {
+                    const n = await buscarEnvios(trabalho.id);
+                    avisar(n ? `${n === 1 ? 'Chegou 1 versão' : `Chegaram ${n} versões`} (aba Versões)` : 'Nenhum envio novo');
+                  } finally {
+                    setOcupado('');
+                  }
+                }}
+              >
+                {ocupado === 'envios' ? 'Buscando…' : 'Buscar envios agora'}
+              </button>
+              <span className="ajuda" style={{ margin: 0 }}>
+                {pub.ultimoEnvio ? `Último envio recebido: ${new Date(pub.ultimoEnvio).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}` : 'Nenhum envio ainda.'}
+              </span>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
 
 // ---------- Dados ----------
 

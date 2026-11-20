@@ -3,9 +3,9 @@
 import { db } from '../dados/db';
 import { agoraISO } from '../dados/modelo';
 import { gerarToken } from '../jogo/protocolo';
-import { EVENTO_PUBLICAVEL, listarModelos, modelosDoTrabalho } from './banco';
-import { emOrdem, pendencias } from './prazos';
-import type { DadosOrientando, Interacao, Modelo, Orientando, PublicacaoOrientacao, Trabalho } from './tipos';
+import { adicionarVersao, EVENTO_PUBLICAVEL, listarModelos, modelosDoTrabalho } from './banco';
+import { emOrdem, etapaAtual, pendencias } from './prazos';
+import type { ConfigPreProjeto, DadosOrientando, Interacao, Modelo, Orientando, PublicacaoOrientacao, TextoProjeto, Trabalho } from './tipos';
 
 /** Maior arquivo aceito como modelo. */
 export const MAX_MODELO = 10 * 1024 * 1024;
@@ -29,6 +29,7 @@ export function dadosParaOrientando(t: Trabalho, o: Orientando | undefined, inte
     trabalho: { titulo: t.titulo, tipo: t.tipo, inicio: t.inicio, defesa: t.defesa, situacao: t.situacao },
     etapas: emOrdem(t.etapas),
     pendencias: pendencias(interacoes.filter((i) => i.trabalhoId === t.id)).map((p) => ({ tipo: p.enc.tipo, texto: p.enc.texto, prazo: p.enc.prazo, de: p.interacao.em.slice(0, 10) })),
+    ...(t.preProjeto?.ativo ? { preProjeto: t.preProjeto } : {}),
     ...(temElementos ? { elementos: { ...el!, objetivosEspecificos: el!.objetivosEspecificos.map((x) => x.trim()).filter(Boolean) } } : {}),
     modelos: modelosDoTrabalho(modelos, t.id).map((m) =>
       m.tipo === 'texto'
@@ -154,3 +155,68 @@ window.addEventListener(EVENTO_PUBLICAVEL, (e) => {
     timer = window.setTimeout(() => void republicarPendentes(), 3000);
   })();
 });
+
+// ---------- Pré-projeto: rascunho e envios do orientando ----------
+
+export function configPreProjetoPadrao(o?: Pick<Orientando, 'curso'>, orientador = ''): ConfigPreProjeto {
+  return { ativo: false, instituicao: 'Uniftec', curso: (o?.curso ?? '').replace(/^(gradua[çc][ãa]o em|curso de)\s+/i, '').replace(/,.*$/, '').trim(), cidade: 'Caxias do Sul', ano: String(new Date().getFullYear()), orientador, coorientador: '', natureza: '', resumo: false, aprovacao: false };
+}
+
+let logo: Promise<Uint8Array | undefined> | null = null;
+export function logoUniftec(): Promise<Uint8Array | undefined> {
+  logo ??= fetch('/logo-uniftec.png')
+    .then(async (r) => (r.ok ? new Uint8Array(await r.arrayBuffer()) : undefined))
+    .catch(() => undefined);
+  return logo;
+}
+
+/** PDF do pré-projeto a partir de um texto (do rascunho ou de um envio). */
+export async function pdfDoPreProjeto(t: Trabalho, o: Orientando | undefined, texto: TextoProjeto): Promise<Blob> {
+  const { gerarPreProjetoPdf } = await import('./preProjetoPdf');
+  return gerarPreProjetoPdf({ nome: o?.nome ?? '', config: t.preProjeto ?? configPreProjetoPadrao(o), texto, etapas: t.etapas, logo: await logoUniftec() });
+}
+
+/** O rascunho atual do orientando (o que está escrito agora na página dele). */
+export async function lerRascunho(trabalhoId: string): Promise<{ projeto: TextoProjeto | null; ultimoEnvio: string | null }> {
+  const t = await db.trabalhos.get(trabalhoId);
+  if (!t?.publicacao) throw new Error('A página do orientando não está criada.');
+  const r = await fetch(`/api/orientacao/${t.publicacao.codigo}/projeto`, { headers: { 'X-Vide-Chave': t.publicacao.chave } });
+  if (!r.ok) throw new Error(`Não foi possível ler o rascunho (${r.status}).`);
+  return (await r.json()) as { projeto: TextoProjeto | null; ultimoEnvio: string | null };
+}
+
+const buscando = new Set<string>();
+/** Traz os envios novos do orientando como versões (PDF) do trabalho. Devolve quantos chegaram. */
+export async function buscarEnvios(trabalhoId: string): Promise<number> {
+  if (buscando.has(trabalhoId)) return 0;
+  buscando.add(trabalhoId);
+  try {
+    const t = await db.trabalhos.get(trabalhoId);
+    if (!t?.publicacao || t.excluido_em) return 0;
+    const pub = t.publicacao;
+    const r = await fetch(`/api/orientacao/${pub.codigo}/envios?depois=${encodeURIComponent(pub.ultimoEnvio ?? '')}`, { headers: { 'X-Vide-Chave': pub.chave } });
+    if (!r.ok) return 0;
+    const { envios } = (await r.json()) as { envios: { em: string; projeto: TextoProjeto }[] };
+    if (!envios.length) return 0;
+    const o = await db.orientandos.get(t.orientandoId);
+    const ja = new Set((await db.versoes.where('trabalhoId').equals(t.id).toArray()).map((v) => v.rotulo));
+    let n = 0;
+    for (const e of envios) {
+      const d = new Date(e.em);
+      const quando = d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+      const rotulo = `Pré-projeto — enviado em ${quando}`;
+      if (ja.has(rotulo)) continue;
+      const blob = await pdfDoPreProjeto(t, o, e.projeto);
+      const p2 = (x: number) => String(x).padStart(2, '0');
+      const dia = `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+      const nome = `Pre-projeto - ${(o?.nome ?? 'orientando').normalize('NFD').replace(/[\u0300-\u036f]/g, '')} - ${dia} ${p2(d.getHours())}h${p2(d.getMinutes())}.pdf`;
+      await adicionarVersao(t.id, new File([blob], nome, { type: 'application/pdf' }), { rotulo, recebida_em: dia, etapaId: etapaAtual(t)?.id ?? null, notas: 'Enviado pelo orientando pela página de orientação.' });
+      n++;
+    }
+    const atual = await db.trabalhos.get(trabalhoId);
+    if (atual?.publicacao) await gravarPublicacao(trabalhoId, { ...atual.publicacao, ultimoEnvio: envios[envios.length - 1].em });
+    return n;
+  } finally {
+    buscando.delete(trabalhoId);
+  }
+}

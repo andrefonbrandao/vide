@@ -5,6 +5,7 @@ import { Logo } from '../comum/Logo';
 import { dataBR, etapaAtual, hojeISO, rotuloDias, situacaoEtapa } from '../orientacao/prazos';
 import { CAMPOS_ELEMENTOS } from '../orientacao/campos';
 import type { DadosOrientando } from '../orientacao/tipos';
+import { MeuPreProjeto } from './PreProjetoForm';
 
 const chavePin = (codigo: string) => `vide.orientacao.pin.${codigo}`;
 
@@ -34,6 +35,7 @@ export function PaginaOrientando({ codigo }: { codigo: string }) {
   const [erro, setErro] = useState<string | null>(null);
   const [abrindo, setAbrindo] = useState(false);
   const [baixando, setBaixando] = useState<string | null>(null);
+  const [aba, setAba] = useState<'acompanhamento' | 'projeto'>(() => (location.hash === '#pre-projeto' ? 'projeto' : 'acompanhamento'));
 
   const abrir = async (p: string, guardar: boolean) => {
     setAbrindo(true);
@@ -154,6 +156,20 @@ export function PaginaOrientando({ codigo }: { codigo: string }) {
             </p>
           </section>
           {erro && <p className="oa-erro">{erro}</p>}
+          {dados.preProjeto?.ativo && (
+            <nav className="oa-abas" aria-label="Partes da página">
+              <button type="button" className={`botao pequeno${aba === 'acompanhamento' ? ' escuro' : ''}`} onClick={() => (setAba('acompanhamento'), history.replaceState(null, '', '#'))}>
+                Acompanhamento
+              </button>
+              <button type="button" className={`botao pequeno${aba === 'projeto' ? ' escuro' : ''}`} onClick={() => (setAba('projeto'), history.replaceState(null, '', '#pre-projeto'))}>
+                Meu pré-projeto
+              </button>
+            </nav>
+          )}
+          {aba === 'projeto' && dados.preProjeto?.ativo ? (
+            <MeuPreProjeto codigo={codigo} pin={pin} dados={dados} />
+          ) : (
+          <>
           {(() => {
             const e = etapaAtual({ etapas: dados.etapas });
             if (!e || dados.trabalho.situacao !== 'andamento') return null;
@@ -271,6 +287,8 @@ export function PaginaOrientando({ codigo }: { codigo: string }) {
               </ul>
             )}
           </section>
+          </>
+          )}
           <p className="ajuda oa-rodape">Página atualizada pelo orientador em {new Date(dados.publicadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}.</p>
         </main>
       )}

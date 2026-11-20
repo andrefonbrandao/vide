@@ -19,17 +19,24 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 - **Parte 3 — e-mails ao orientando** (pelo Gmail do professor, enviados quando o Vide estiver aberto):
   - **Lembretes de prazo:** o prazo é calculado na hora do envio (não quando o lembrete foi agendado); vários avisos atrasados viram um só; prazo vencido com o Vide fechado: aviso de "venceu em…" ou nada (o professor escolhe); cada envio fica marcado e vai para o Drive, para outro computador não repetir.
   - **Resumo da sessão para o orientando:** no registro da sessão, um **campo próprio para o resumo feito pela IA** (separado das anotações internas do professor, editável antes de enviar) e um botão para **mandar ao orientando por e-mail**, com as sugestões e os comandos e seus prazos; o envio fica registrado na linha do tempo. (A IA pode já escrever esse resumo dirigido ao orientando.)
+- **Trabalho final (TCC II):** o formulário do trabalho final pelo modelo em Word da Uniftec (capa, folha de rosto, aprovação, resumo/abstract, sumário, introdução, objetivos e justificativa, desenvolvimento, considerações finais, referências, apêndices e anexos), aproveitando o texto do pré-projeto; **gerar também o Word** a partir do modelo; tabelas e figuras.
 - **Parte 4 — importar conversas:** e-mails trocados com o orientando direto do Gmail (o "copiar e colar" do WhatsApp e do e-mail já existe na parte 1).
 
 ## Situação
 
-**Pacote 24** aberto em 2026-11-20, a partir da versão 0.39.0 (já publicada). **Fechado e publicado como versão 0.40.0.**
+**Pacote 25** aberto em 2026-11-20, a partir da versão 0.40.0 (já publicada). Ao fechar: **teste de peso**.
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | **Pré-projeto (TCC I) na página do orientando:** o professor liga o formulário na aba "Página do orientando" e define a capa e a folha de rosto (Uniftec com o logotipo, ou Ftec; curso, cidade, ano, orientador, coorientador, natureza do trabalho; resumo e folha de aprovação opcionais). Na página, a aba **"Meu pré-projeto"** traz os campos do projeto de pesquisa do manual (introdução, 1.1 problema, 1.2 hipóteses, 2.1 objetivo geral, 2.2 específicos, 2.3 justificativa, 3 fundamentação teórica com subtítulos, 4.1 a 4.4 metodologia, 5.1 recursos, referências), **já começando com os elementos do trabalho**; barra com negrito, itálico, citação longa, nota de rodapé e subtítulo; guarda sozinho no serviço. **"Ver o PDF"** monta o pré-projeto pelas regras do manual: A4, margens 3/2 cm, Arial (Helvetica) 12, entrelinha 1,5, recuo de 1,25 cm, citação longa com recuo de 4 cm em fonte 10, **notas de rodapé** no pé da página, capa com o logotipo, folha de rosto (natureza com recuo de 7,5 cm), sumário com as páginas, cronograma como "Quadro 1" (vem do cronograma da orientação), referências em ordem alfabética, páginas contadas desde a folha de rosto e numeradas a partir da introdução. **"Enviar ao orientador"** guarda uma cópia datada, que chega ao professor como **versão em PDF** (ao abrir a Orientação, a cada 5 minutos ou em "Buscar envios agora"); "Ver o rascunho atual (PDF)" mostra o que está escrito agora | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 24 (publicado como 0.40.0 em 2026-11-20)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | **Sugestões e comandos: ✕ e lixeira.** No lugar de "tirar" (que apagava) e "descartar", cada sugestão ou comando tem dois ícones — no formulário da sessão, na linha do tempo e na lista de pendências: **✕** registra como **não cumprido** (comando) ou **rejeitada** (sugestão), com a data — continua guardado, riscado em vermelho com traço duplo (as cumpridas ficam com risco cinza simples); clicar no ✕ de novo desfaz; **lixeira** apaga de vez (com confirmação fora do formulário). Não cumpridas e rejeitadas saem das pendências, do alerta vermelho e da página do orientando; no relatório em PDF aparecem com um ✕ vermelho na coluna Check e "não cumprido em…" | Publicada (0.40.0) |
-
-## Pacotes anteriores
 
 ### Pacote 23 (publicado como 0.39.0 em 2026-11-20)
 

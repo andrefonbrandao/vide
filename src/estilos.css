@@ -1550,3 +1550,20 @@ button.ori-tipo-enc { cursor: pointer; }
 .ori-encaminhamentos li.descartado .ori-enc-texto { text-decoration: line-through double #b8432b; color: #8f2d18; }
 .ori-encaminhamentos li.descartado input:not([type='checkbox']):not([type='date']) { text-decoration: line-through double #b8432b; color: #8f2d18; }
 .ori-nao-rotulo { color: #a2361f; font-weight: 700; font-size: 13px; }
+/* Pré-projeto (página do orientando) */
+.oa-abas { display: flex; gap: 6px; }
+.pp { display: flex; flex-direction: column; gap: 12px; }
+.pp-topo h2 { margin: 0 0 4px; font-size: 22px; }
+.pp-acoes { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.pp-grupo { margin: 0; padding: 0; min-width: 0; }
+.pp-grupo legend { float: left; width: 100%; box-sizing: border-box; }
+.pp-campos { clear: both; padding: 6px 14px 12px; }
+.pp-campo textarea, .pp-campo input { font: inherit; font-size: 15px; line-height: 1.5; }
+.pp-campo textarea { resize: vertical; }
+.pp-barra { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.pp-barra button { font: inherit; font-size: 13px; padding: 3px 9px; border: 1px solid var(--linha); border-radius: 6px; background: #fff; color: var(--tinta); cursor: pointer; }
+.pp-barra button:hover { border-color: var(--tinta); }
+.pp-cronograma { background: #fff; border: 1px dashed var(--linha); border-radius: 8px; padding: 8px 12px; margin: 6px 0; display: flex; flex-direction: column; gap: 2px; }
+.pp-cronograma ul { margin: 4px 0 0; padding-left: 18px; }
+.pp-dicas { background: var(--papel); border: 1px solid var(--linha); border-radius: 10px; padding: 8px 14px; }
+.pp-dicas summary { cursor: pointer; font-weight: 700; }

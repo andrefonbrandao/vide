@@ -9,6 +9,8 @@ import type { PDFFont, PDFPage } from 'pdf-lib';
 import { lerParagrafos, lerTrechos, ordenarReferencias, type Paragrafo, type Trecho } from './marcacao';
 import { dataBR, emOrdem } from './prazos';
 import type { ConfigPreProjeto, Etapa, TextoProjeto } from './tipos';
+import { naturezaPadrao } from './campos';
+export { naturezaPadrao };
 
 export interface EntradaPreProjeto {
   nome: string;
@@ -24,10 +26,6 @@ export const TEXTO_VAZIO: TextoProjeto = {
   justificativa: '', fundamentacao: '', metodo: '', populacao: '', coleta: '', analise: '', recursos: '', referencias: '',
 };
 
-export function naturezaPadrao(c: Pick<ConfigPreProjeto, 'curso' | 'instituicao'>): string {
-  const inst = c.instituicao === 'Ftec' ? 'da Ftec Faculdades' : 'do Centro Universitário Uniftec';
-  return `Pré-projeto de pesquisa apresentado ao Curso de ${c.curso || 'Xxxx'} ${inst}, como parte dos requisitos para avaliação da unidade curricular de Trabalho de Conclusão de Curso I.`;
-}
 
 const CM = 28.3465;
 const A4 = { w: 595.28, h: 841.89 };
