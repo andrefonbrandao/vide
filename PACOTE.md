@@ -23,11 +23,11 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 24** aberto em 2026-11-20, a partir da versão 0.39.0 (já publicada).
+**Pacote 24** aberto em 2026-11-20, a partir da versão 0.39.0 (já publicada). **Fechado e publicado como versão 0.40.0.**
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| 1 | **Sugestões e comandos: ✕ e lixeira.** No lugar de "tirar" (que apagava) e "descartar", cada sugestão ou comando tem dois ícones — no formulário da sessão, na linha do tempo e na lista de pendências: **✕** registra como **não cumprido** (comando) ou **rejeitada** (sugestão), com a data — continua guardado, riscado em vermelho com traço duplo (as cumpridas ficam com risco cinza simples); clicar no ✕ de novo desfaz; **lixeira** apaga de vez (com confirmação fora do formulário). Não cumpridas e rejeitadas saem das pendências, do alerta vermelho e da página do orientando; no relatório em PDF aparecem com um ✕ vermelho na coluna Check e "não cumprido em…" | No pacote |
+| 1 | **Sugestões e comandos: ✕ e lixeira.** No lugar de "tirar" (que apagava) e "descartar", cada sugestão ou comando tem dois ícones — no formulário da sessão, na linha do tempo e na lista de pendências: **✕** registra como **não cumprido** (comando) ou **rejeitada** (sugestão), com a data — continua guardado, riscado em vermelho com traço duplo (as cumpridas ficam com risco cinza simples); clicar no ✕ de novo desfaz; **lixeira** apaga de vez (com confirmação fora do formulário). Não cumpridas e rejeitadas saem das pendências, do alerta vermelho e da página do orientando; no relatório em PDF aparecem com um ✕ vermelho na coluna Check e "não cumprido em…" | Publicada (0.40.0) |
 
 ## Pacotes anteriores
 
