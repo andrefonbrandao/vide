@@ -1794,3 +1794,16 @@ button.ori-tipo-enc { cursor: pointer; }
 /* Com a tela focada aberta, os avisos sobem para não cobrir o rodapé (Registrar / Cancelar). */
 body:has(.ori-foco) .avisos-rapidos { bottom: 84px; }
 .ori-foco-corpo { grid-template-columns: minmax(0, 1fr) 420px; }
+/* Prazo das etapas: data, mês/ano, só o ano, a definir */
+.ori-prazo-campo { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ori-prazo-campo select { font: inherit; font-size: 12.5px; padding: 3px 6px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--tinta-3); cursor: pointer; }
+.ori-prazo-campo select:hover, .ori-prazo-campo select:focus { border-color: var(--linha); background: #fff; outline: none; }
+.ori-prazo-campo input[type='month'], .ori-prazo-ano { font: inherit; padding: 5px 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: inherit; }
+.ori-prazo-ano { width: 64px; }
+.ori-prazo-campo input:hover, .ori-prazo-campo input:focus { border-color: var(--linha); background: #fff; outline: none; }
+.ori-marco.indefinida i { border-style: dashed; }
+.ori-cronograma tr.indefinida .ori-etapa-situacao { color: var(--tinta-3); font-weight: 600; }
+.ori-janela.largo { width: min(900px, 100%); }
+.ori-janela .ori-cronograma .ori-etapa-nome { width: auto; min-width: 260px; }
+.ori-prazo-campo { flex-wrap: nowrap; }
+@media (max-width: 700px) { .ori-prazo-campo { flex-wrap: wrap; } .ori-janela .ori-cronograma .ori-etapa-nome { min-width: 0; } }

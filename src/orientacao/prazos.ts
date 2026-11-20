@@ -40,12 +40,61 @@ export function dataHoraBR(iso: string): string {
   return iso.length > 10 ? `${dataBR(iso)} ${iso.slice(11, 16)}` : dataBR(iso);
 }
 
-export type SituacaoEtapa = 'concluida' | 'atrasada' | 'hoje' | 'proxima' | 'futura';
+// ---------- Precisão do prazo de uma etapa ----------
+// "2027-11-15" = data completa · "2027-11" = só mês e ano · "2027" = só o ano · "" = a definir.
 
-/** Situação de uma etapa hoje. "Próxima" = vence em até 7 dias. */
+export type Precisao = 'dia' | 'mes' | 'ano' | 'indefinida';
+
+export function precisao(prazo: string | undefined): Precisao {
+  const p = (prazo ?? '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(p)) return 'dia';
+  if (/^\d{4}-\d{2}$/.test(p)) return 'mes';
+  if (/^\d{4}$/.test(p)) return 'ano';
+  return 'indefinida';
+}
+
+/** "15/11/2027", "11/2027", "2027" ou "a definir". */
+export function rotuloPrazo(prazo: string | undefined): string {
+  const p = (prazo ?? '').trim();
+  switch (precisao(p)) {
+    case 'dia':
+      return dataBR(p);
+    case 'mes':
+      return `${p.slice(5, 7)}/${p.slice(0, 4)}`;
+    case 'ano':
+      return p;
+    default:
+      return 'a definir';
+  }
+}
+
+/** Versão curta (para a linha do tempo): "15/11", "11/2027", "2027" ou "a definir". */
+export function rotuloPrazoCurto(prazo: string | undefined): string {
+  return precisao(prazo) === 'dia' ? dataBR(prazo!).slice(0, 5) : rotuloPrazo(prazo);
+}
+
+/** Chave para ordenar: dentro do mês (ou do ano), o que tem data completa vem antes; "a definir" vai para o fim. */
+function chaveOrdem(prazo: string): string {
+  switch (precisao(prazo)) {
+    case 'dia':
+      return prazo;
+    case 'mes':
+      return `${prazo}-99`;
+    case 'ano':
+      return `${prazo}-99-99`;
+    default:
+      return '9999-99-99';
+  }
+}
+
+export type SituacaoEtapa = 'concluida' | 'atrasada' | 'hoje' | 'proxima' | 'futura' | 'indefinida';
+
+/** Situação de uma etapa hoje. "Próxima" = vence em até 7 dias. Sem data completa: "indefinida" (sem contagem nem alerta). */
 export function situacaoEtapa(e: Etapa, hoje = hojeISO()): { tipo: SituacaoEtapa; dias: number } {
-  const dias = diasEntre(hoje, e.prazo);
+  const temDia = precisao(e.prazo) === 'dia';
+  const dias = temDia ? diasEntre(hoje, e.prazo) : 0;
   if (e.concluida_em) return { tipo: 'concluida', dias };
+  if (!temDia) return { tipo: 'indefinida', dias: 0 };
   if (dias < 0) return { tipo: 'atrasada', dias };
   if (dias === 0) return { tipo: 'hoje', dias };
   return { tipo: dias <= 7 ? 'proxima' : 'futura', dias };
@@ -59,9 +108,17 @@ export function rotuloDias(dias: number): string {
   return dias === -1 ? 'venceu há 1 dia' : `venceu há ${-dias} dias`;
 }
 
-/** Etapas em ordem de prazo. */
+/** Etapas em ordem de prazo (as sem data completa pelo que se sabe; "a definir" no fim). */
 export function emOrdem(etapas: Etapa[]): Etapa[] {
-  return [...etapas].sort((a, b) => a.prazo.localeCompare(b.prazo));
+  return [...etapas].sort((a, b) => chaveOrdem(a.prazo).localeCompare(chaveOrdem(b.prazo)));
+}
+
+/** O que mostrar sobre o prazo de uma etapa em aberto: "faltam 7 dias", "previsto para 11/2027", "a definir". */
+export function rotuloSituacao(e: Etapa, hoje = hojeISO()): string {
+  const s = situacaoEtapa(e, hoje);
+  if (s.tipo === 'concluida') return `cumprida${e.concluida_em ? ` em ${dataBR(e.concluida_em)}` : ''}`;
+  if (s.tipo === 'indefinida') return precisao(e.prazo) === 'indefinida' ? 'a definir' : `previsto para ${rotuloPrazo(e.prazo)}`;
+  return rotuloDias(s.dias);
 }
 
 /** A primeira etapa ainda em aberto (a que o orientando deve cumprir agora). */

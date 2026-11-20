@@ -1,6 +1,6 @@
 // Relatório de orientação em PDF: elementos do trabalho e/ou orientações (cronograma,
 // pendências, sessões e comunicações, versões). O pdf-lib é carregado só na hora.
-import { dataBR, dataHoraBR, emOrdem, pendencias, rotuloDias, situacaoEtapa } from './prazos';
+import { dataBR, dataHoraBR, emOrdem, pendencias, rotuloDias, rotuloPrazo, rotuloSituacao, situacaoEtapa } from './prazos';
 import type { Interacao, Orientando, Trabalho, Versao } from './tipos';
 import { CANAIS } from './tipos';
 import { CAMPOS_ELEMENTOS } from './campos';
@@ -268,9 +268,9 @@ export async function gerarRelatorioPdf(d: DadosRelatorio, o: OpcoesRelatorio): 
           const s = situacaoEtapa(e, d.hoje);
           const feita = s.tipo === 'concluida';
           const sit: Trecho[] = feita
-            ? [{ t: `cumprida${e.concluida_em ? ` em ${dataBR(e.concluida_em)}` : ''}`, cor: cor.destaque }]
-            : [{ t: rotuloDias(s.dias), cor: s.tipo === 'atrasada' ? cor.vermelho : s.tipo === 'futura' ? cor.cinza : cor.ambar, fonte: s.tipo === 'atrasada' ? f.negrito : f.normal }];
-          return [[{ t: e.nome, cor: feita ? cor.cinza : cor.tinta }], dataBR(e.prazo), sit, { caixa: feita }];
+            ? [{ t: rotuloSituacao(e, d.hoje), cor: cor.destaque }]
+            : [{ t: rotuloSituacao(e, d.hoje), cor: s.tipo === 'atrasada' ? cor.vermelho : s.tipo === 'futura' || s.tipo === 'indefinida' ? cor.cinza : cor.ambar, fonte: s.tipo === 'atrasada' ? f.negrito : f.normal }];
+          return [[{ t: e.nome, cor: feita ? cor.cinza : cor.tinta }], rotuloPrazo(e.prazo), sit, { caixa: feita }];
         }),
       );
   }

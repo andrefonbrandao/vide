@@ -35,7 +35,7 @@ import type { OpcoesRelatorio } from '../orientacao/relatorioPdf';
 import { assinarPublicacao, buscarEnvios, configPreProjetoPadrao, desativarOrientacao, estadoPublicacao, guardarRascunho, lerRascunho, MAX_MODELO, pdfDoPreProjeto, publicarOrientacao, urlDoOrientando, wordDoPreProjeto } from '../orientacao/publicar';
 import { QR } from './JogoTela';
 import { copiar } from './ProcessoTexto';
-import { agoraLocal, dataBR, dataHoraBR, diasEntre, emOrdem, etapaAtual, hojeISO, pendencias, rotuloDias, situacaoEtapa, type Pendencia } from '../orientacao/prazos';
+import { agoraLocal, dataBR, dataHoraBR, diasEntre, emOrdem, etapaAtual, hojeISO, pendencias, precisao, rotuloDias, rotuloPrazo, rotuloPrazoCurto, rotuloSituacao, situacaoEtapa, type Pendencia, type Precisao } from '../orientacao/prazos';
 import { CANAIS, ELEMENTOS_VAZIOS, TIPOS_TRABALHO, type Elementos, type Canal, type ConfigPreProjeto, type Encaminhamento, type Interacao, type Modelo, type Orientando, type Trabalho, type TipoTrabalho, type Versao } from '../orientacao/tipos';
 import { Reconhecedor, obterConstrutor, type StatusVoz } from '../voz/reconhecedor';
 import { controlador } from './controlador';
@@ -303,7 +303,7 @@ function ListaOrientandos({ trabalhos, orientandos, interacoes, aoAbrir }: { tra
                 ) : e && s ? (
                   <>
                     <strong>{e.nome}</strong>
-                    <span className={`ori-quando ${s.tipo}`}>{s.tipo === 'futura' ? `${dataBR(e.prazo).slice(0, 5)} · ${rotuloDias(s.dias)}` : rotuloDias(s.dias)}</span>
+                    <span className={`ori-quando ${s.tipo}`}>{s.tipo === 'futura' ? `${rotuloPrazoCurto(e.prazo)} · ${rotuloDias(s.dias)}` : rotuloSituacao(e, hoje)}</span>
                   </>
                 ) : (
                   <span className="ori-sub">cronograma cumprido ✓</span>
@@ -574,9 +574,9 @@ function VisaoGeral({
             <div className="ori-proximo">
               <div>
                 <div className="ori-proximo-nome">{e.nome}</div>
-                <div className="ori-calmo">prazo {dataBR(e.prazo)} · a etapa da vez no cronograma</div>
+                <div className="ori-calmo">prazo {rotuloPrazo(e.prazo)} · a etapa da vez no cronograma</div>
               </div>
-              <span className={`ori-tag ${s.tipo}`}>{rotuloDias(s.dias)}</span>
+              <span className={`ori-tag ${s.tipo}`}>{rotuloSituacao(e, hoje)}</span>
             </div>
           ) : (
             <p className="ori-calmo">Cronograma cumprido ✓</p>
@@ -632,22 +632,30 @@ function VisaoGeral({
               Cronograma · {feitas} de {etapas.length}
             </h3>
             <button type="button" className="ori-card-acao" onClick={() => setEditarCrono(!editarCrono)}>
-              {editarCrono ? 'Concluir' : 'Editar'}
+              Editar
             </button>
           </div>
-          {editarCrono ? (
-            <Cronograma trabalho={trabalho} embutido />
-          ) : !etapas.length ? (
+          {editarCrono && (
+            <Janela titulo="Editar o cronograma" aoFechar={() => setEditarCrono(false)} largo>
+              <Cronograma trabalho={trabalho} embutido />
+              <div className="modal-botoes ori-janela-pe">
+                <button type="button" className="botao escuro" onClick={() => setEditarCrono(false)}>
+                  Pronto
+                </button>
+              </div>
+            </Janela>
+          )}
+          {!etapas.length ? (
             <p className="ori-calmo">Sem etapas. Clique em Editar para montar o cronograma.</p>
           ) : (
             <div className="ori-marcos" style={{ ['--feito' as string]: `${etapas.length > 1 ? (Math.max(0, feitas - 1) / (etapas.length - 1)) * 100 : 0}%` }}>
               {etapas.map((x) => {
                 const sx = situacaoEtapa(x, hoje);
                 return (
-                  <div key={x.id} className={`ori-marco ${sx.tipo}`} title={`${x.nome} · ${dataBR(x.prazo)} · ${sx.tipo === 'concluida' ? 'cumprida' : rotuloDias(sx.dias)}`}>
+                  <div key={x.id} className={`ori-marco ${sx.tipo}`} title={`${x.nome} · ${rotuloPrazo(x.prazo)} · ${rotuloSituacao(x, hoje)}`}>
                     <i />
                     <span>{x.nome}</span>
-                    <small>{dataBR(x.prazo).slice(0, 5)}</small>
+                    <small>{rotuloPrazoCurto(x.prazo)}</small>
                   </div>
                 );
               })}
@@ -769,7 +777,7 @@ function MenuMais({ itens }: { itens: ItemMenu[] }) {
   );
 }
 
-function Janela({ titulo, aoFechar, children }: { titulo: string; aoFechar: () => void; children: React.ReactNode }) {
+function Janela({ titulo, aoFechar, children, largo = false }: { titulo: string; aoFechar: () => void; children: React.ReactNode; largo?: boolean }) {
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && aoFechar();
     window.addEventListener('keydown', esc);
@@ -777,7 +785,7 @@ function Janela({ titulo, aoFechar, children }: { titulo: string; aoFechar: () =
   }, [aoFechar]);
   return (
     <div className="modal-fundo" onMouseDown={(e) => e.target === e.currentTarget && aoFechar()}>
-      <div className="modal ori-janela" role="dialog" aria-label={titulo}>
+      <div className={`modal ori-janela${largo ? ' largo' : ''}`} role="dialog" aria-label={titulo}>
         <div className="ori-janela-cab">
           <h2>{titulo}</h2>
           <button type="button" className="ori-icone" aria-label="Fechar" onClick={aoFechar}>
@@ -819,6 +827,46 @@ function useRascunho<T extends { id: string }>(valor: T, salvar: (v: T) => Promi
   return [atual, mudar];
 }
 
+/** Prazo de uma etapa: data completa, só mês e ano, só o ano, ou a definir. */
+function CampoPrazo({ nome, valor, aoMudar }: { nome: string; valor: string; aoMudar: (v: string) => void }) {
+  const p = precisao(valor);
+  const [ano, setAno] = useState(valor.slice(0, 4));
+  useEffect(() => setAno(valor.slice(0, 4)), [valor]);
+  const trocar = (nova: Precisao) => {
+    const a = /^\d{4}/.test(valor) ? valor.slice(0, 4) : String(new Date().getFullYear());
+    const m = /^\d{4}-\d{2}/.test(valor) ? valor.slice(5, 7) : String(new Date().getMonth() + 1).padStart(2, '0');
+    const d = /^\d{4}-\d{2}-\d{2}$/.test(valor) ? valor.slice(8, 10) : '01';
+    aoMudar(nova === 'dia' ? `${a}-${m}-${d}` : nova === 'mes' ? `${a}-${m}` : nova === 'ano' ? a : '');
+  };
+  return (
+    <span className="ori-prazo-campo">
+      {p === 'dia' && <input type="date" aria-label={`Prazo: ${nome}`} value={valor} onChange={(ev) => ev.target.value && aoMudar(ev.target.value)} />}
+      {p === 'mes' && <input type="month" aria-label={`Mês e ano: ${nome}`} value={valor} onChange={(ev) => /^\d{4}-\d{2}$/.test(ev.target.value) && aoMudar(ev.target.value)} />}
+      {p === 'ano' && (
+        <input
+          inputMode="numeric"
+          maxLength={4}
+          aria-label={`Ano: ${nome}`}
+          className="ori-prazo-ano"
+          value={ano}
+          onChange={(ev) => {
+            const v = ev.target.value.replace(/\D/g, '').slice(0, 4);
+            setAno(v);
+            if (v.length === 4) aoMudar(v);
+          }}
+        />
+      )}
+      {p === 'indefinida' && <span className="ori-calmo">a definir</span>}
+      <select aria-label={`Tipo de prazo: ${nome}`} value={p} onChange={(ev) => trocar(ev.target.value as Precisao)} title="Data completa, só mês e ano, só o ano, ou a definir">
+        <option value="dia">data</option>
+        <option value="mes">mês/ano</option>
+        <option value="ano">só o ano</option>
+        <option value="indefinida">a definir</option>
+      </select>
+    </span>
+  );
+}
+
 function Cronograma({ trabalho, embutido = false }: { trabalho: Trabalho; embutido?: boolean }) {
   const [t, mudar] = useRascunho(trabalho, (v) => atualizarTrabalho(v.id, { etapas: v.etapas }));
   const hoje = hojeISO();
@@ -848,9 +896,9 @@ function Cronograma({ trabalho, embutido = false }: { trabalho: Trabalho; embuti
                   <input aria-label="Nome da etapa" value={e.nome} onChange={(ev) => mudarEtapa(e.id, { nome: ev.target.value })} />
                 </td>
                 <td>
-                  <input type="date" aria-label={`Prazo: ${e.nome}`} value={e.prazo} onChange={(ev) => ev.target.value && mudarEtapa(e.id, { prazo: ev.target.value })} />
+                  <CampoPrazo nome={e.nome} valor={e.prazo} aoMudar={(prazo) => mudarEtapa(e.id, { prazo })} />
                 </td>
-                <td className="ori-etapa-situacao">{s.tipo === 'concluida' ? `cumprida${e.concluida_em ? ` em ${dataBR(e.concluida_em)}` : ''}` : rotuloDias(s.dias)}</td>
+                <td className="ori-etapa-situacao">{rotuloSituacao(e, hoje)}</td>
                 <td>
                   <button type="button" className="link-discreto" onClick={() => mudar({ ...t, etapas: etapas.filter((x) => x.id !== e.id) })}>
                     tirar

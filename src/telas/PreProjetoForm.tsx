@@ -2,7 +2,7 @@
 // manual), guardados sozinhos no serviço; "Ver o PDF" monta o pré-projeto formatado e
 // "Enviar ao orientador" manda uma cópia datada (vira uma versão no caderno do professor).
 import { useEffect, useRef, useState } from 'react';
-import { dataBR } from '../orientacao/prazos';
+import { rotuloPrazo } from '../orientacao/prazos';
 import type { DadosOrientando, TextoProjeto } from '../orientacao/tipos';
 
 type Campo = Exclude<keyof TextoProjeto, 'atualizado_em'>;
@@ -428,7 +428,7 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
                 <ul>
                   {dados.etapas.map((e) => (
                     <li key={e.id}>
-                      {e.nome} — {dataBR(e.prazo)}
+                      {e.nome} — {rotuloPrazo(e.prazo)}
                     </li>
                   ))}
                 </ul>

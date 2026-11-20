@@ -153,3 +153,17 @@ describe('pendências vencidas (alerta)', () => {
     expect(pendenciasVencidas([i1, i2], trabalhos, '2026-11-20').map((p) => p.texto)).toEqual(['vencida']);
   });
 });
+
+describe('prazo sem data completa (mês/ano, só o ano, a definir)', () => {
+  test('precisão, rótulos e ordem', async () => {
+    const { precisao, rotuloPrazo, rotuloSituacao, emOrdem, situacaoEtapa } = await import('./prazos');
+    expect(['2027-11-15', '2027-11', '2027', ''].map(precisao)).toEqual(['dia', 'mes', 'ano', 'indefinida']);
+    expect(['2027-11-15', '2027-11', '2027', ''].map(rotuloPrazo)).toEqual(['15/11/2027', '11/2027', '2027', 'a definir']);
+    const e = (id: string, prazo: string) => ({ id, nome: id, prazo, concluida_em: null });
+    expect(emOrdem([e('def', ''), e('ano', '2027'), e('mes', '2027-03'), e('dia', '2027-03-20'), e('cedo', '2026-12-01')]).map((x) => x.id)).toEqual(['cedo', 'dia', 'mes', 'ano', 'def']);
+    expect(situacaoEtapa(e('m', '2026-01'), '2026-11-20').tipo).toBe('indefinida'); // sem alerta mesmo no passado
+    expect(rotuloSituacao(e('m', '2027-03'), '2026-11-20')).toBe('previsto para 03/2027');
+    expect(rotuloSituacao(e('d', ''), '2026-11-20')).toBe('a definir');
+    expect(rotuloSituacao(e('x', '2026-11-27'), '2026-11-20')).toBe('faltam 7 dias');
+  });
+});

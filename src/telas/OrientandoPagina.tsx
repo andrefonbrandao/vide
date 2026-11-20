@@ -2,7 +2,7 @@
 // as pendências, os elementos do trabalho e os modelos para baixar. Só leitura.
 import { useEffect, useState } from 'react';
 import { Logo } from '../comum/Logo';
-import { dataBR, etapaAtual, hojeISO, rotuloDias, situacaoEtapa } from '../orientacao/prazos';
+import { dataBR, etapaAtual, hojeISO, rotuloDias, rotuloPrazo, rotuloSituacao, situacaoEtapa } from '../orientacao/prazos';
 import { CAMPOS_ELEMENTOS } from '../orientacao/campos';
 import type { DadosOrientando } from '../orientacao/tipos';
 import { MeuPreProjeto } from './PreProjetoForm';
@@ -179,7 +179,7 @@ export function PaginaOrientando({ codigo }: { codigo: string }) {
                 <span>Etapa da vez</span>
                 <strong>{e.nome}</strong>
                 <span>
-                  {rotuloDias(s.dias)} · prazo {dataBR(e.prazo)}
+                  {s.tipo === 'indefinida' ? rotuloSituacao(e, hoje) : `${rotuloDias(s.dias)} · prazo ${dataBR(e.prazo)}`}
                 </span>
               </section>
             );
@@ -220,8 +220,8 @@ export function PaginaOrientando({ codigo }: { codigo: string }) {
                     <li key={e.id} className={s.tipo}>
                       <span className="oa-marca">{s.tipo === 'concluida' ? '✓' : ''}</span>
                       <span className="oa-etapa">{e.nome}</span>
-                      <span className="oa-prazo">{dataBR(e.prazo)}</span>
-                      <span className="oa-situacao">{s.tipo === 'concluida' ? 'cumprida' : rotuloDias(s.dias)}</span>
+                      <span className="oa-prazo">{rotuloPrazo(e.prazo)}</span>
+                      <span className="oa-situacao">{s.tipo === 'concluida' ? 'cumprida' : s.tipo === 'indefinida' ? (e.prazo ? 'previsto' : 'a definir') : rotuloDias(s.dias)}</span>
                     </li>
                   );
                 })}

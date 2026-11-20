@@ -8,7 +8,7 @@
 import { lerTrechos, type Trecho } from './marcacao';
 import { estruturaPreProjeto } from './preProjetoEstrutura';
 import { naturezaPadrao } from './campos';
-import { dataBR } from './prazos';
+import { rotuloPrazo } from './prazos';
 import type { ConfigPreProjeto, Etapa, TextoProjeto } from './tipos';
 import type { ItemSumario } from './preProjetoPdf';
 
@@ -211,7 +211,7 @@ export async function gerarPreProjetoDocx(e: EntradaDocx): Promise<Blob> {
       const celula = (w: number, conteudo: string, centro = false) => `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/></w:tcPr>${par('Quadro', conteudo, centro ? '<w:jc w:val="center"/>' : '')}</w:tc>`;
       const linhas = [
         `<w:tr>${celula(w1, run('Etapa', { b: true }))}${celula(w2, run('Prazo', { b: true }), true)}</w:tr>`,
-        ...b.etapas.map((x) => `<w:tr>${celula(w1, run(x.nome))}${celula(w2, run(dataBR(x.prazo)), true)}</w:tr>`),
+        ...b.etapas.map((x) => `<w:tr>${celula(w1, run(x.nome))}${celula(w2, run(rotuloPrazo(x.prazo)), true)}</w:tr>`),
       ];
       corpo.push(`<w:tbl><w:tblPr><w:tblW w:w="${LARGURA}" w:type="dxa"/><w:tblBorders>${borda}</w:tblBorders><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid><w:gridCol w:w="${w1}"/><w:gridCol w:w="${w2}"/></w:tblGrid>${linhas.join('')}</w:tbl>`);
       corpo.push(par('Legenda', run('Fonte: o autor.'), '<w:spacing w:before="60" w:after="240"/>'));

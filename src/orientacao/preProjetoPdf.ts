@@ -8,7 +8,7 @@
 import type { PDFFont, PDFPage } from 'pdf-lib';
 import { lerParagrafos, lerTrechos, type Paragrafo, type Trecho } from './marcacao';
 import { estruturaPreProjeto } from './preProjetoEstrutura';
-import { dataBR } from './prazos';
+import { rotuloPrazo } from './prazos';
 import type { ConfigPreProjeto, Etapa, TextoProjeto } from './tipos';
 import { naturezaPadrao } from './campos';
 export { naturezaPadrao };
@@ -408,7 +408,7 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (iten
         pagina.drawText(b, { x: M.esq + col[0] + (col[1] - wb) / 2, y: topo - linhaQ + 4.5, size: PEQ.tam, font: fnt, color: preto });
       };
       linhaQuadro('Etapa', 'Prazo', f.b);
-      for (const et of etapas) linhaQuadro(seguro(et.nome), dataBR(et.prazo), f.n);
+      for (const et of etapas) linhaQuadro(seguro(et.nome), rotuloPrazo(et.prazo), f.n);
       y -= 4;
       reservar(PEQ.linha, []);
       centro('Fonte: o autor.', f.n, PEQ.tam, y + 2);

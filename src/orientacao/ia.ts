@@ -1,6 +1,6 @@
 // Pedido pronto para a IA organizar o registro de uma sessão (ou conversa) de orientação
 // a partir da transcrição, e a leitura da resposta para preencher o registro sozinho.
-import { dataBR, dataHoraBR, emOrdem, situacaoEtapa, rotuloDias, type Pendencia } from './prazos';
+import { dataBR, dataHoraBR, emOrdem, rotuloPrazo, rotuloSituacao, type Pendencia } from './prazos';
 import type { Encaminhamento, Interacao, Trabalho, Versao } from './tipos';
 
 export interface ContextoPedido {
@@ -16,8 +16,7 @@ export function pedidoRegistroIA({ trabalho, interacao, anteriores, versao, hoje
   const sessao = interacao.canal === 'sessao';
   const etapas = emOrdem(trabalho.etapas)
     .map((e) => {
-      const s = situacaoEtapa(e, hoje);
-      return `- ${e.nome}: prazo ${dataBR(e.prazo)} (${s.tipo === 'concluida' ? 'cumprida' : rotuloDias(s.dias)})`;
+      return `- ${e.nome}: prazo ${rotuloPrazo(e.prazo)} (${rotuloSituacao(e, hoje)})`;
     })
     .join('\n');
   const pend = anteriores.length
