@@ -97,7 +97,7 @@ class ServicoDrive {
     const tabelas = [
       db.questoes, db.questionarios, db.jogos, db.treinos, db.materiais, db.diplomas, db.itens, db.apagados,
       db.casos, db.processos, db.disciplinas, db.turmas,
-      db.orientandos, db.trabalhos, db.interacoes, db.versoes,
+      db.orientandos, db.trabalhos, db.interacoes, db.versoes, db.modelos,
     ] as const;
     for (const t of tabelas) {
       const f = marcar(false);

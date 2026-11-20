@@ -6,29 +6,35 @@ import { avisar, confirmar } from '../comum/avisos';
 import { IcMais } from '../comum/Icones';
 import { novoId } from '../dados/modelo';
 import {
+  adicionarModelo,
   adicionarVersao,
   criarOrientacao,
   criarTrabalho,
   EVENTO_ORIENTACAO,
   excluirInteracao,
+  excluirModelo,
   excluirTrabalho,
   excluirVersao,
   interacaoEmBranco,
   listarInteracoes,
+  listarModelos,
   listarOrientandos,
   listarTrabalhos,
   listarVersoes,
   salvarInteracao,
+  salvarModelo,
   salvarOrientando,
-  salvarTrabalho,
+  atualizarTrabalho,
   salvarVersao,
 } from '../orientacao/banco';
 import { analisarColagem, type Colagem } from '../orientacao/colar';
 import { lerRespostaIA, pedidoRegistroIA } from '../orientacao/ia';
 import type { OpcoesRelatorio } from '../orientacao/relatorioPdf';
+import { assinarPublicacao, desativarOrientacao, estadoPublicacao, MAX_MODELO, publicarOrientacao, urlDoOrientando } from '../orientacao/publicar';
+import { LinkEQr } from './CompartilharTreino';
 import { copiar } from './ProcessoTexto';
 import { agoraLocal, dataBR, dataHoraBR, emOrdem, etapaAtual, hojeISO, pendencias, rotuloDias, situacaoEtapa, type Pendencia } from '../orientacao/prazos';
-import { CANAIS, ELEMENTOS_VAZIOS, TIPOS_TRABALHO, type Elementos, type Canal, type Encaminhamento, type Interacao, type Orientando, type Trabalho, type TipoTrabalho, type Versao } from '../orientacao/tipos';
+import { CANAIS, ELEMENTOS_VAZIOS, TIPOS_TRABALHO, type Elementos, type Canal, type Encaminhamento, type Interacao, type Modelo, type Orientando, type Trabalho, type TipoTrabalho, type Versao } from '../orientacao/tipos';
 import { Reconhecedor, obterConstrutor, type StatusVoz } from '../voz/reconhecedor';
 import { controlador } from './controlador';
 import { Figura } from './ConsultaTela';
@@ -84,6 +90,7 @@ export function Orientacoes() {
   });
   const [criando, setCriando] = useState(false);
   const [verEncerrados, setVerEncerrados] = useState(false);
+  const [verModelos, setVerModelos] = useState(false);
   const carregar = useCallback(() => {
     void Promise.all([listarOrientandos(), listarTrabalhos(), listarInteracoes()]).then(([o, t, i]) => {
       setOrientandos(o);
@@ -153,13 +160,28 @@ export function Orientacoes() {
       titulo="Orientandos"
       descricao="Cronograma com prazos, sessões e comunicações, sugestões e comandos, e as versões do trabalho. Fica neste computador e no seu Google Drive."
       acoes={
-        !criando && (
-          <button className="botao escuro com-icone" onClick={() => setCriando(true)}>
-            <IcMais tamanho={16} /> Novo orientando
+        <>
+          <button className={`botao${verModelos ? ' escuro' : ''}`} onClick={() => setVerModelos(!verModelos)}>
+            Modelos e orientações
           </button>
-        )
+          {!criando && (
+            <button className="botao escuro com-icone" onClick={() => setCriando(true)}>
+              <IcMais tamanho={16} /> Novo orientando
+            </button>
+          )}
+        </>
       }
     >
+      {verModelos && (
+        <section className="cartao" style={{ marginBottom: 12 }}>
+          <h3 style={{ marginTop: 0 }}>Modelos e orientações gerais</h3>
+          <p className="ajuda">
+            Valem para todos os orientandos e aparecem para baixar na página de cada um (manual de normalização, modelo de TCC, orientações escritas). Para um orientando só, use a aba
+            "Página do orientando" dele.
+          </p>
+          <ModelosOrientacao trabalhoId={null} />
+        </section>
+      )}
       {criando && <FormNovaOrientacao aoFechar={() => setCriando(false)} aoCriar={(t) => (setCriando(false), abrir(t.id))} />}
       {carregado && !trabalhos.length && !criando ? (
         <div className="vazio-guia">
@@ -272,7 +294,7 @@ function FormNovaOrientacao({ aoFechar, aoCriar }: { aoFechar: () => void; aoCri
 
 // ---------- Trabalho ----------
 
-type Aba = 'geral' | 'elementos' | 'conversas' | 'versoes' | 'dados';
+type Aba = 'geral' | 'elementos' | 'conversas' | 'versoes' | 'pagina' | 'dados';
 
 function TrabalhoDetalhe({ trabalho, orientando, aoVoltar, aoAbrir }: { trabalho: Trabalho; orientando?: Orientando; aoVoltar: () => void; aoAbrir: (id: string) => void }) {
   const [aba, setAba] = useState<Aba>('geral');
@@ -325,6 +347,7 @@ function TrabalhoDetalhe({ trabalho, orientando, aoVoltar, aoAbrir }: { trabalho
             ['elementos', 'Elementos do trabalho'],
             ['conversas', `Sessões e comunicações (${interacoes.length})`],
             ['versoes', `Versões (${versoes.length})`],
+            ['pagina', trabalho.publicacao ? 'Página do orientando ✓' : 'Página do orientando'],
             ['dados', 'Dados'],
           ] as [Aba, string][]
         ).map(([a, r]) => (
@@ -344,6 +367,7 @@ function TrabalhoDetalhe({ trabalho, orientando, aoVoltar, aoAbrir }: { trabalho
         <Conversas trabalho={trabalho} interacoes={interacoes} versoes={versoes} registrando={registrando} setRegistrando={setRegistrando} aoRegistrar={registrar} />
       )}
       {aba === 'versoes' && <Versoes trabalho={trabalho} versoes={versoes} interacoes={interacoes} />}
+      {aba === 'pagina' && <PaginaDoOrientando trabalho={trabalho} orientando={orientando} />}
       {aba === 'dados' && <Dados trabalho={trabalho} orientando={orientando} aoAbrir={aoAbrir} aoApagar={aoVoltar} />}
     </Pagina>
   );
@@ -379,7 +403,7 @@ function useRascunho<T extends { id: string }>(valor: T, salvar: (v: T) => Promi
 }
 
 function Cronograma({ trabalho }: { trabalho: Trabalho }) {
-  const [t, mudar] = useRascunho(trabalho, salvarTrabalho);
+  const [t, mudar] = useRascunho(trabalho, (v) => atualizarTrabalho(v.id, { etapas: v.etapas }));
   const hoje = hojeISO();
   const etapas = t.etapas;
   const mudarEtapa = (id: string, p: Partial<Trabalho['etapas'][number]>) => mudar({ ...t, etapas: etapas.map((e) => (e.id === id ? { ...e, ...p } : e)) });
@@ -490,7 +514,7 @@ const AJUDA_ELEMENTOS: Record<Exclude<keyof Elementos, 'atualizado_em'>, { nome:
 };
 
 function ElementosTrabalho({ trabalho }: { trabalho: Trabalho }) {
-  const [t, mudar] = useRascunho(trabalho, salvarTrabalho);
+  const [t, mudar] = useRascunho(trabalho, (v) => atualizarTrabalho(v.id, { elementos: v.elementos }));
   const e: Elementos = { ...ELEMENTOS_VAZIOS, ...t.elementos };
   const mudarCampo = (p: Partial<Elementos>) => mudar({ ...t, elementos: { ...e, ...p, atualizado_em: hojeISO() } });
   return (
@@ -1243,6 +1267,246 @@ function ItemVersao({ v, etapa, discutida }: { v: Versao; etapa?: string; discut
   );
 }
 
+// ---------- Modelos e orientações ----------
+
+function ModelosOrientacao({ trabalhoId }: { trabalhoId: string | null }) {
+  const [lista, setLista] = useState<Modelo[]>([]);
+  const carregar = useCallback(() => void listarModelos().then((l) => setLista(l.filter((m) => m.trabalhoId === trabalhoId))), [trabalhoId]);
+  useRecarga(carregar);
+  const [tipo, setTipo] = useState<Modelo['tipo']>('arquivo');
+  const [titulo, setTitulo] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [texto, setTexto] = useState('');
+  const [arquivo, setArquivo] = useState<File | null>(null);
+  const campo = useRef<HTMLInputElement>(null);
+  const pode = titulo.trim() && (tipo === 'texto' ? texto.trim() : arquivo);
+  return (
+    <>
+      {lista.length > 0 && (
+        <ul className="ori-modelos">
+          {lista.map((m) => (
+            <ItemModelo key={m.id} m={m} />
+          ))}
+        </ul>
+      )}
+      <form
+        className="ori-novo-modelo"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          if (!pode) return;
+          if (arquivo && arquivo.size > MAX_MODELO) {
+            avisar('O arquivo passa de 10 MB.', 'erro');
+            return;
+          }
+          await adicionarModelo({ titulo: titulo.trim(), descricao: descricao.trim(), tipo, texto: tipo === 'texto' ? texto.trim() : '', trabalhoId }, tipo === 'arquivo' ? arquivo! : undefined);
+          avisar('Guardado');
+          setTitulo('');
+          setDescricao('');
+          setTexto('');
+          setArquivo(null);
+          if (campo.current) campo.current.value = '';
+        }}
+      >
+        <div className="linha-opcoes">
+          <label className="ori-opcao">
+            <input type="radio" name={`tipo-${trabalhoId ?? 'todos'}`} checked={tipo === 'arquivo'} onChange={() => setTipo('arquivo')} /> Arquivo (PDF, Word…)
+          </label>
+          <label className="ori-opcao">
+            <input type="radio" name={`tipo-${trabalhoId ?? 'todos'}`} checked={tipo === 'texto'} onChange={() => setTipo('texto')} /> Orientação escrita
+          </label>
+        </div>
+        <div className="grade-2">
+          <div className="campo">
+            <label htmlFor={`mod-titulo-${trabalhoId ?? 'todos'}`}>Título</label>
+            <input id={`mod-titulo-${trabalhoId ?? 'todos'}`} value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder={tipo === 'arquivo' ? 'ex.: Manual de normalização (Uniftec)' : 'ex.: Como marcar as sessões'} />
+          </div>
+          <div className="campo">
+            <label htmlFor={`mod-desc-${trabalhoId ?? 'todos'}`}>Descrição (opcional)</label>
+            <input id={`mod-desc-${trabalhoId ?? 'todos'}`} value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="ex.: Regras de formatação, citações e referências" />
+          </div>
+        </div>
+        {tipo === 'arquivo' ? (
+          <div className="campo">
+            <label htmlFor={`mod-arq-${trabalhoId ?? 'todos'}`}>Arquivo (até 10 MB)</label>
+            <input id={`mod-arq-${trabalhoId ?? 'todos'}`} ref={campo} type="file" onChange={(e) => {
+              const f = e.target.files?.[0] ?? null;
+              setArquivo(f);
+              if (f && !titulo.trim()) setTitulo(f.name.replace(/\.[^.]+$/, '').replace(/[_]+/g, ' '));
+            }} />
+          </div>
+        ) : (
+          <div className="campo">
+            <label htmlFor={`mod-texto-${trabalhoId ?? 'todos'}`}>Texto</label>
+            <textarea id={`mod-texto-${trabalhoId ?? 'todos'}`} rows={4} value={texto} onChange={(e) => setTexto(e.target.value)} />
+          </div>
+        )}
+        <div className="modal-botoes">
+          <button className="botao primario" disabled={!pode}>
+            Guardar
+          </button>
+        </div>
+      </form>
+    </>
+  );
+}
+
+function ItemModelo({ m }: { m: Modelo }) {
+  const [titulo, setTitulo] = useState(m.titulo);
+  const [descricao, setDescricao] = useState(m.descricao);
+  const [verTexto, setVerTexto] = useState(false);
+  const trocar = useRef<HTMLInputElement>(null);
+  const salvarCampos = () => (titulo.trim() !== m.titulo || descricao.trim() !== m.descricao) && titulo.trim() && void salvarModelo({ ...m, titulo: titulo.trim(), descricao: descricao.trim() });
+  return (
+    <li className="ori-modelo">
+      <div className="ori-modelo-texto">
+        <input className="ori-modelo-titulo" aria-label="Título" value={titulo} onChange={(e) => setTitulo(e.target.value)} onBlur={salvarCampos} />
+        <input className="ori-modelo-desc" aria-label="Descrição" value={descricao} placeholder="descrição (opcional)" onChange={(e) => setDescricao(e.target.value)} onBlur={salvarCampos} />
+        <span className="ajuda" style={{ margin: 0 }}>
+          {m.tipo === 'arquivo' ? `${m.nomeArquivo} · ${tamanhoLegivel(m.tamanho)}${m.arquivo.size ? '' : ' · chegando do Drive…'}` : 'orientação escrita'}
+        </span>
+        {verTexto && <pre className="ori-colado">{m.texto}</pre>}
+      </div>
+      {m.tipo === 'arquivo' ? (
+        <>
+          <button type="button" className="botao pequeno" disabled={!m.arquivo.size} onClick={() => baixarArquivo(new Blob([m.arquivo], { type: m.mime }), m.nomeArquivo)}>
+            Baixar
+          </button>
+          <button type="button" className="link-discreto" onClick={() => trocar.current?.click()}>
+            trocar arquivo
+          </button>
+          <input
+            ref={trocar}
+            type="file"
+            hidden
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              if (f.size > MAX_MODELO) return avisar('O arquivo passa de 10 MB.', 'erro');
+              void salvarModelo({ ...m, arquivo: f, nomeArquivo: f.name, mime: f.type || 'application/octet-stream', tamanho: f.size }).then(() => avisar('Arquivo trocado'));
+            }}
+          />
+        </>
+      ) : (
+        <button type="button" className="link-discreto" onClick={() => setVerTexto(!verTexto)}>
+          {verTexto ? 'esconder' : 'ver o texto'}
+        </button>
+      )}
+      <button
+        type="button"
+        className="link-discreto"
+        onClick={async () => {
+          if (await confirmar({ titulo: `Apagar "${m.titulo}"?`, texto: 'Sai deste computador, do Drive e das páginas dos orientandos.', botao: 'Apagar', perigo: true })) await excluirModelo(m);
+        }}
+      >
+        apagar
+      </button>
+    </li>
+  );
+}
+
+// ---------- Página do orientando ----------
+
+function mensagemConvite(nome: string, url: string, pin: string): string {
+  return `Olá${nome ? `, ${nome.split(' ')[0]}` : ''}! Esta é a sua página de orientação:
+${url}
+Código de acesso: ${pin}
+
+Lá você acompanha o cronograma (com quanto falta para cada etapa), as pendências combinadas nas nossas conversas e os elementos do trabalho, e baixa os modelos e orientações (manual de normalização, modelo do trabalho). A página se atualiza sozinha.`;
+}
+
+function PaginaDoOrientando({ trabalho, orientando }: { trabalho: Trabalho; orientando?: Orientando }) {
+  const [, recarregar] = useState(0);
+  useEffect(() => assinarPublicacao(() => recarregar((n) => n + 1)), []);
+  const [gerais, setGerais] = useState(0);
+  const carregar = useCallback(() => void listarModelos().then((l) => setGerais(l.filter((m) => m.trabalhoId === null).length)), []);
+  useRecarga(carregar);
+  const [criando, setCriando] = useState(false);
+  const pub = trabalho.publicacao;
+  const estado = estadoPublicacao(trabalho.id);
+  const nome = orientando?.nome ?? '';
+  const tentar = async (op: () => Promise<unknown>, ok?: string) => {
+    try {
+      await op();
+      if (ok) avisar(ok);
+    } catch (e) {
+      avisar((e as Error).message, 'erro');
+    }
+  };
+  return (
+    <>
+      <section className="cartao">
+        <h3 style={{ marginTop: 0 }}>Página do orientando</h3>
+        {!pub ? (
+          <>
+            <p className="ajuda">
+              Um link só de {nome || 'orientando'}, protegido por um código de 6 números. Lá ele vê o cronograma (com quanto falta para cada etapa), as pendências (sugestões e comandos
+              em aberto) e os elementos do trabalho, só para ler, e baixa os modelos e orientações. Não aparecem o e-mail, o telefone, as sessões, as conversas nem as versões. A página se
+              atualiza sozinha quando você muda algo aqui.
+            </p>
+            <button className="botao escuro" disabled={criando} onClick={() => (setCriando(true), void tentar(() => publicarOrientacao(trabalho.id), 'Página criada').finally(() => setCriando(false)))}>
+              {criando ? 'Criando…' : 'Criar a página do orientando'}
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="ori-pin">
+              <span>Código de acesso</span>
+              <strong className="mono">{pub.pin}</strong>
+            </div>
+            <LinkEQr url={urlDoOrientando(pub.codigo)} titulo={`Orientação · ${nome || trabalho.titulo}`} ajuda="Mande o link e o código ao orientando (de preferência por canais diferentes, ou pelo botão abaixo)." />
+            <div className="linha-opcoes" style={{ marginTop: 10 }}>
+              <button className="botao primario" onClick={async () => avisar((await copiar(mensagemConvite(nome, urlDoOrientando(pub.codigo), pub.pin))) ? 'Mensagem copiada: cole no WhatsApp ou no e-mail' : 'Este navegador não deixou copiar', 'ok')}>
+                Copiar mensagem para o orientando
+              </button>
+              <a className="botao" href={urlDoOrientando(pub.codigo)} target="_blank" rel="noopener">
+                Abrir a página
+              </a>
+              <button className="botao" disabled={estado?.tipo === 'enviando'} onClick={() => void tentar(() => publicarOrientacao(trabalho.id), 'Página atualizada')}>
+                Atualizar agora
+              </button>
+            </div>
+            <p className={`ajuda${estado?.tipo === 'erro' ? ' ori-erro' : ''}`}>
+              {estado?.tipo === 'enviando'
+                ? 'Atualizando a página…'
+                : estado?.tipo === 'erro'
+                  ? `A página não foi atualizada: ${estado.msg}`
+                  : `Atualizada em ${new Date(pub.publicadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}. As mudanças aqui vão para a página sozinhas.`}
+            </p>
+            <div className="linha-opcoes">
+              <button
+                className="link-discreto"
+                style={{ marginLeft: 0 }}
+                onClick={async () => {
+                  if (await confirmar({ titulo: 'Trocar o código de acesso?', texto: 'O código antigo deixa de funcionar. O link continua o mesmo.', botao: 'Trocar' }))
+                    await tentar(() => publicarOrientacao(trabalho.id, { trocarPin: true }), 'Código trocado');
+                }}
+              >
+                trocar o código
+              </button>
+              <button
+                className="link-discreto"
+                onClick={async () => {
+                  if (await confirmar({ titulo: 'Desativar a página do orientando?', texto: 'O link deixa de funcionar. Tudo continua guardado aqui; dá para criar uma página nova depois (com outro link).', botao: 'Desativar', perigo: true }))
+                    await tentar(() => desativarOrientacao(trabalho.id), 'Página desativada');
+                }}
+              >
+                desativar a página
+              </button>
+            </div>
+          </>
+        )}
+      </section>
+      <section className="cartao" style={{ marginTop: 12 }}>
+        <h3 style={{ marginTop: 0 }}>Modelos só deste orientando</h3>
+        <p className="ajuda">
+          Além dos {gerais} {gerais === 1 ? 'modelo geral' : 'modelos gerais'} (em Orientandos › Modelos e orientações), que aparecem para todos.
+        </p>
+        <ModelosOrientacao trabalhoId={trabalho.id} />
+      </section>
+    </>
+  );
+}
+
 // ---------- Dados ----------
 
 function Dados({ trabalho, orientando, aoAbrir, aoApagar }: { trabalho: Trabalho; orientando?: Orientando; aoAbrir: (id: string) => void; aoApagar: () => void }) {
@@ -1294,7 +1558,7 @@ function Dados({ trabalho, orientando, aoAbrir, aoApagar }: { trabalho: Trabalho
         className="cartao form-turma"
         onSubmit={async (e) => {
           e.preventDefault();
-          await salvarTrabalho({ ...trabalho, titulo: t.titulo.trim(), tipo: t.tipo, inicio: t.inicio || trabalho.inicio, defesa: t.defesa || undefined, situacao });
+          await atualizarTrabalho(trabalho.id, { titulo: t.titulo.trim(), tipo: t.tipo, inicio: t.inicio || trabalho.inicio, defesa: t.defesa || undefined, situacao });
           avisar('Dados do trabalho salvos');
         }}
       >
@@ -1315,7 +1579,8 @@ function Dados({ trabalho, orientando, aoAbrir, aoApagar }: { trabalho: Trabalho
             type="button"
             className="botao perigo"
             onClick={async () => {
-              if (!(await confirmar({ titulo: 'Apagar este trabalho?', texto: 'Saem também as sessões, as comunicações e as versões guardadas, deste computador e do Drive.', botao: 'Apagar', perigo: true }))) return;
+              if (!(await confirmar({ titulo: 'Apagar este trabalho?', texto: 'Saem também as sessões, as comunicações e as versões guardadas, deste computador e do Drive. A página do orientando é desativada.', botao: 'Apagar', perigo: true }))) return;
+              if (trabalho.publicacao) await desativarOrientacao(trabalho.id).catch(() => undefined);
               await excluirTrabalho(trabalho);
               avisar('Trabalho apagado');
               aoApagar();

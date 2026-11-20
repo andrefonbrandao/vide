@@ -1,8 +1,10 @@
 // Relatório de orientação em PDF: elementos do trabalho e/ou orientações (cronograma,
 // pendências, sessões e comunicações, versões). O pdf-lib é carregado só na hora.
 import { dataBR, dataHoraBR, emOrdem, pendencias, rotuloDias, situacaoEtapa } from './prazos';
-import type { Elementos, Interacao, Orientando, Trabalho, Versao } from './tipos';
+import type { Interacao, Orientando, Trabalho, Versao } from './tipos';
 import { CANAIS } from './tipos';
+import { CAMPOS_ELEMENTOS } from './campos';
+export { CAMPOS_ELEMENTOS };
 
 export interface OpcoesRelatorio {
   elementos: boolean;
@@ -26,17 +28,6 @@ export interface DadosRelatorio {
   hoje: string;
 }
 
-/** Os campos dos elementos, na ordem do projeto de pesquisa. */
-export const CAMPOS_ELEMENTOS: { campo: Exclude<keyof Elementos, 'atualizado_em'>; nome: string }[] = [
-  { campo: 'tema', nome: 'Tema' },
-  { campo: 'delimitacao', nome: 'Delimitação do tema' },
-  { campo: 'problema', nome: 'Problema de pesquisa' },
-  { campo: 'hipoteses', nome: 'Hipótese(s)' },
-  { campo: 'objetivoGeral', nome: 'Objetivo geral' },
-  { campo: 'objetivosEspecificos', nome: 'Objetivos específicos' },
-  { campo: 'justificativa', nome: 'Justificativa' },
-  { campo: 'metodologia', nome: 'Metodologia' },
-];
 
 /** Interações do período, da mais antiga para a mais nova. */
 export function interacoesDoPeriodo(l: Interacao[], de?: string, ate?: string): Interacao[] {

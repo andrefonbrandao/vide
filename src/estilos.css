@@ -1478,3 +1478,54 @@ button.ori-tipo-enc { cursor: pointer; }
 .ori-subopcoes { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: 26px; }
 .ori-subopcoes input[type='date'] { font: inherit; padding: 4px 8px; border: 1px solid var(--linha); border-radius: 8px; }
 .ori-subopcoes .ori-opcao { font-size: 14px; margin-right: 8px; }
+.ori-modelos { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-direction: column; gap: 8px; }
+.ori-modelo { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: #fff; border: 1px solid var(--linha); border-radius: 10px; }
+.ori-modelo .link-discreto { margin-left: 0; }
+.ori-modelo-texto { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ori-modelo-titulo, .ori-modelo-desc { font: inherit; border: 1px solid transparent; border-radius: 6px; padding: 2px 6px; margin-left: -6px; background: transparent; color: inherit; }
+.ori-modelo-titulo { font-weight: 700; }
+.ori-modelo-desc { font-size: 14px; color: var(--tinta-2); }
+.ori-modelo-titulo:hover, .ori-modelo-desc:hover, .ori-modelo-titulo:focus, .ori-modelo-desc:focus { border-color: var(--linha); outline: none; background: #fff; }
+.ori-novo-modelo { border-top: 1px dashed var(--linha); padding-top: 8px; }
+.ori-pin { display: inline-flex; align-items: baseline; gap: 12px; background: #fbeed0; border-radius: 10px; padding: 8px 14px; margin-bottom: 10px; }
+.ori-pin strong { font-size: 26px; letter-spacing: 0.12em; }
+.ori-erro { color: #a2361f; }
+
+/* ---------- Página do orientando ---------- */
+.oa-entrar { max-width: 380px; margin: 12vh auto 0; padding: 0 16px; display: flex; flex-direction: column; gap: 12px; text-align: center; }
+.oa-entrar h1 { margin: 0; font-size: 26px; }
+.oa-pin { font: inherit; font-size: 34px; font-weight: 800; letter-spacing: 0.3em; text-align: center; padding: 10px; border: 2px solid var(--tinta); border-radius: 12px; background: #fff; color: var(--tinta); }
+.oa-erro { margin: 0; color: #a2361f; font-weight: 700; }
+.oa { max-width: 860px; }
+.oa-cab h1 { margin: 4px 0 2px; font-size: 28px; }
+.oa-cab p { margin: 0 0 4px; }
+.oa-agora { display: flex; flex-direction: column; gap: 2px; padding: 12px 16px; border-radius: 12px; background: #e4ebe6; }
+.oa-agora strong { font-size: 20px; }
+.oa-agora.proxima, .oa-agora.hoje { background: #fbeed0; }
+.oa-agora.atrasada { background: #fbe3dc; color: #8f2d18; }
+.oa-vazio { margin: 0; padding: 12px 14px; color: var(--tinta-3); }
+.oa-lista { list-style: none; margin: 0; padding: 6px 14px 10px; display: flex; flex-direction: column; gap: 8px; }
+.oa-lista li { display: flex; gap: 8px; align-items: baseline; }
+.oa-cronograma li { display: grid; grid-template-columns: 18px 1fr auto auto; gap: 10px; padding: 4px 0; border-bottom: 1px solid var(--linha); }
+.oa-cronograma li:last-child { border-bottom: none; }
+.oa-cronograma .oa-prazo { color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+.oa-cronograma .oa-situacao { font-size: 13px; font-weight: 700; color: var(--tinta-2); text-align: right; }
+.oa-cronograma li.concluida .oa-etapa { color: var(--tinta-3); text-decoration: line-through; }
+.oa-cronograma li.atrasada .oa-situacao { color: #a2361f; }
+.oa-cronograma li.proxima .oa-situacao, .oa-cronograma li.hoje .oa-situacao { color: #8a6410; }
+.oa-marca { color: #2f6b4f; font-weight: 800; }
+.oa-elementos { margin: 0; padding: 10px 14px; display: flex; flex-direction: column; gap: 12px; }
+.oa-elementos dt { font-size: 12px; font-weight: 800; color: var(--tinta-2); text-transform: uppercase; letter-spacing: 0.05em; }
+.oa-elementos dd { margin: 2px 0 0; white-space: pre-wrap; }
+.oa-elementos ol { margin: 0; padding-left: 22px; }
+.oa-modelos { list-style: none; margin: 0; padding: 6px 14px 12px; display: flex; flex-direction: column; gap: 10px; }
+.oa-modelos li { display: flex; align-items: flex-start; gap: 12px; justify-content: space-between; border-bottom: 1px solid var(--linha); padding-bottom: 10px; }
+.oa-modelos li:last-child { border-bottom: none; padding-bottom: 0; }
+.oa-texto { margin: 4px 0 0; white-space: pre-wrap; }
+.oa-rodape { margin: 0 14px 10px; }
+@media (max-width: 560px) {
+  .oa-cronograma li { grid-template-columns: 18px 1fr auto; }
+  .oa-cronograma .oa-prazo { display: none; }
+}
+.oa-modelos li > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.oa-modelos li > .botao { flex: none; }

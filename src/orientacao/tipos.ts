@@ -55,6 +55,48 @@ export interface Trabalho extends Sincronizavel {
   situacao: SituacaoTrabalho;
   /** Tema, problema, objetivos… (o que já foi definido). */
   elementos?: Elementos;
+  /** Página do orientando (link com código de 6 números). */
+  publicacao?: PublicacaoOrientacao | null;
+}
+
+export interface PublicacaoOrientacao {
+  codigo: string;
+  /** Só o navegador do professor tem: permite atualizar e desativar. */
+  chave: string;
+  /** Código de acesso do orientando (6 números). */
+  pin: string;
+  publicadoEm: string;
+  /** Arquivos já enviados: id do modelo -> versão (atualizado_em) enviada. */
+  arquivos: Record<string, string>;
+}
+
+/** Modelo ou orientação geral (manual, modelo de TCC, um texto de orientação). */
+export interface Modelo extends Sincronizavel {
+  titulo: string;
+  descricao: string;
+  tipo: 'arquivo' | 'texto';
+  /** Orientação escrita (tipo "texto"). */
+  texto: string;
+  nomeArquivo: string;
+  mime: string;
+  tamanho: number;
+  arquivo: Blob;
+  /** null = para todos os orientandos; senão, só para este trabalho. */
+  trabalhoId: string | null;
+}
+
+export type ModeloMeta = Omit<Modelo, 'arquivo'>;
+
+/** O que a página do orientando mostra (sem e-mail, telefone, sessões ou versões). */
+export interface DadosOrientando {
+  formato: 'vide-orientacao@1';
+  nome: string;
+  trabalho: Pick<Trabalho, 'titulo' | 'tipo' | 'inicio' | 'defesa' | 'situacao'>;
+  etapas: Etapa[];
+  pendencias: { tipo: Encaminhamento['tipo']; texto: string; prazo?: string; de: string }[];
+  elementos?: Elementos;
+  modelos: { id: string; titulo: string; descricao: string; tipo: Modelo['tipo']; texto?: string; nomeArquivo?: string; mime?: string; tamanho?: number }[];
+  publicadoEm: string;
 }
 
 export type Canal = 'sessao' | 'whatsapp' | 'email' | 'telefone' | 'outro';

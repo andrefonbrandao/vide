@@ -7,7 +7,7 @@ import type { LinkTreino } from '../treino/tipos';
 import type { Caso } from '../consulta/tipos';
 import type { Processo } from '../processo/tipos';
 import type { Disciplina, Turma } from '../turmas/tipos';
-import type { Interacao, Orientando, Trabalho, Versao } from '../orientacao/tipos';
+import type { Interacao, Modelo, Orientando, Trabalho, Versao } from '../orientacao/tipos';
 import { agoraISO } from './modelo';
 
 export class BancoVide extends Dexie {
@@ -34,6 +34,8 @@ export class BancoVide extends Dexie {
   trabalhos!: Table<Trabalho, string>;
   interacoes!: Table<Interacao, string>;
   versoes!: Table<Versao, string>;
+  /** Modelos e orientações gerais (manual, modelo de TCC…), para a página do orientando. */
+  modelos!: Table<Modelo, string>;
 
   constructor(nome = 'vide') {
     super(nome);
@@ -82,6 +84,8 @@ export class BancoVide extends Dexie {
       interacoes: 'id, trabalhoId, em, atualizado_em, excluido_em',
       versoes: 'id, trabalhoId, atualizado_em, excluido_em',
     });
+    // Versão 11: modelos e orientações gerais da orientação.
+    this.version(11).stores({ modelos: 'id, trabalhoId, atualizado_em, excluido_em' });
   }
 }
 

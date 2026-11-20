@@ -13,6 +13,7 @@ export interface Env {
   JOGOS: DurableObjectNamespace<Jogo>;
   TREINOS: DurableObjectNamespace<Treino>;
   PROCESSOS: DurableObjectNamespace<Processo>;
+  ORIENTACOES: DurableObjectNamespace<Orientacao>;
   ASSETS: Fetcher;
 }
 
@@ -22,6 +23,7 @@ const RE_SALA = /^\/api\/sala\/([A-Z0-9]{6,16})$/;
 const RE_JOGO = /^\/api\/jogo\/(\d{6})$/;
 const RE_TREINO = /^\/api\/treino(?:\/([A-Za-z0-9]{10,24}))?$/;
 const RE_PROCESSO = /^\/api\/processo(?:\/([A-Za-z0-9]{10,24}))?$/;
+const RE_ORIENTACAO = /^\/api\/orientacao(?:\/([A-Za-z0-9]{10,24})(?:\/(entrar|arquivo\/[A-Za-z0-9-]{8,48}))?)?$/;
 const RE_ARQUIVO_PROCESSO = /^\/api\/processo\/([A-Za-z0-9]{10,24})\/arquivo\/([A-Za-z0-9-]{8,48})$/;
 /** Mensagens maiores que isso são descartadas (as do Vide têm poucos KB). */
 const TAMANHO_MAXIMO = 256 * 1024;
@@ -49,6 +51,8 @@ export default {
     if (t) return tratarTreino(req, env, url, t[1]);
     const pr = RE_PROCESSO.exec(url.pathname);
     if (pr) return tratarProcesso(req, env, url, pr[1]);
+    const or = RE_ORIENTACAO.exec(url.pathname);
+    if (or) return tratarOrientacao(req, env, url, or[1], or[2]);
     const pa = RE_ARQUIVO_PROCESSO.exec(url.pathname);
     if (pa) {
       if (req.method !== 'GET') {
@@ -422,6 +426,140 @@ export class Processo extends DurableObject<Env> {
       return jsonResp({ id });
     }
     if (req.method === 'DELETE') {
+      await this.ctx.storage.deleteAll();
+      return jsonResp({ ok: true });
+    }
+    return new Response('Método não permitido', { status: 405 });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Página do orientando: o professor publica o cronograma, as pendências, os
+// elementos do trabalho e os modelos (arquivos). Para ler, o orientando precisa
+// do código de 6 números; erros seguidos bloqueiam por 15 minutos.
+
+const MAX_TENTATIVAS = 8;
+const BLOQUEIO_MS = 15 * 60_000;
+
+async function tratarOrientacao(req: Request, env: Env, url: URL, id: string | undefined, resto: string | undefined): Promise<Response> {
+  // Tudo é escrito ou lido com corpo/cabeçalho do próprio Vide (não de outros sites).
+  const origem = req.headers.get('Origin');
+  if (req.method !== 'GET' && (!origem || new URL(origem).host !== url.host)) return new Response('Origem não permitida', { status: 403 });
+  if (!id) {
+    if (req.method !== 'POST') return new Response('Método não permitido', { status: 405 });
+    const novo = novoIdTreino();
+    return env.ORIENTACOES.get(env.ORIENTACOES.idFromName(novo)).fetch(new Request(`https://orientacao/${novo}`, { method: 'PUT', headers: req.headers, body: req.body }));
+  }
+  return env.ORIENTACOES.get(env.ORIENTACOES.idFromName(id)).fetch(new Request(`https://orientacao/${id}${resto ? `/${resto}` : ''}`, { method: req.method, headers: req.headers, body: req.body }));
+}
+
+async function hashPin(id: string, pin: string): Promise<string> {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`vide-orientacao:${id}:${pin}`));
+  return Array.from(new Uint8Array(d), (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export class Orientacao extends DurableObject<Env> {
+  /** Confere o código; conta os erros e bloqueia depois de muitos. */
+  private async conferirPin(id: string, pin: string): Promise<Response | null> {
+    const falhas = (await this.ctx.storage.get<{ n: number; ate: number }>('falhas')) ?? { n: 0, ate: 0 };
+    if (falhas.ate > Date.now()) return jsonResp({ erro: 'bloqueado', minutos: Math.ceil((falhas.ate - Date.now()) / 60_000) }, 429);
+    const guardado = await this.ctx.storage.get<string>('pin');
+    if (!guardado) return jsonResp({ erro: 'não encontrado' }, 404);
+    if (/^\d{6}$/.test(pin) && (await hashPin(id, pin)) === guardado) {
+      if (falhas.n) await this.ctx.storage.put('falhas', { n: 0, ate: 0 });
+      return null;
+    }
+    const n = falhas.n + 1;
+    if (n >= MAX_TENTATIVAS) {
+      await this.ctx.storage.put('falhas', { n: 0, ate: Date.now() + BLOQUEIO_MS });
+      return jsonResp({ erro: 'bloqueado', minutos: BLOQUEIO_MS / 60_000 }, 429);
+    }
+    await this.ctx.storage.put('falhas', { n, ate: 0 });
+    return jsonResp({ erro: 'código errado', restam: MAX_TENTATIVAS - n }, 403);
+  }
+
+  private async donoOuErro(req: Request): Promise<Response | null> {
+    const chave = req.headers.get('X-Vide-Chave') ?? '';
+    if (!RE_TOKEN.test(chave)) return jsonResp({ erro: 'chave inválida' }, 400);
+    const guardada = await this.ctx.storage.get<string>('chave');
+    if (!guardada || guardada !== chave) return jsonResp({ erro: 'sem permissão' }, 403);
+    return null;
+  }
+
+  async fetch(req: Request): Promise<Response> {
+    const partes = new URL(req.url).pathname.slice(1).split('/');
+    const id = partes[0];
+    // ----- entrar (o orientando, com o código) -----
+    if (partes[1] === 'entrar') {
+      if (req.method !== 'POST') return new Response('Método não permitido', { status: 405 });
+      const { pin } = (await req.json().catch(() => ({}))) as { pin?: string };
+      const erro = await this.conferirPin(id, String(pin ?? ''));
+      if (erro) return erro;
+      const dados = await this.ctx.storage.get<string>('dados');
+      return dados ? new Response(dados, { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } }) : jsonResp({ erro: 'não encontrado' }, 404);
+    }
+    // ----- arquivos (modelos) -----
+    if (partes[1] === 'arquivo') {
+      const arq = partes[2];
+      if (req.method === 'GET') {
+        const erro = await this.conferirPin(id, req.headers.get('X-Vide-Pin') ?? '');
+        if (erro) return erro;
+        const meta = await this.ctx.storage.get<{ partes: number; tamanho: number; mime: string }>(`meta:${arq}`);
+        if (!meta) return jsonResp({ erro: 'não encontrado' }, 404);
+        const chaves = Array.from({ length: meta.partes }, (_, i) => `arq:${arq}:${i}`);
+        const pedacos = await this.ctx.storage.get<ArrayBuffer>(chaves);
+        const tudo = new Uint8Array(meta.tamanho);
+        let pos = 0;
+        for (const k of chaves) {
+          const b = new Uint8Array(pedacos.get(k) ?? new ArrayBuffer(0));
+          tudo.set(b, pos);
+          pos += b.byteLength;
+        }
+        return new Response(tudo, { headers: { 'Content-Type': meta.mime || 'application/octet-stream', 'Cache-Control': 'private, no-store' } });
+      }
+      const erro = await this.donoOuErro(req);
+      if (erro) return erro;
+      if (req.method === 'PUT') {
+        const corpo = await req.arrayBuffer();
+        if (corpo.byteLength > MAX_ARQUIVO) return jsonResp({ erro: 'grande demais' }, 413);
+        const antigo = await this.ctx.storage.get<{ partes: number }>(`meta:${arq}`);
+        if (antigo) await this.ctx.storage.delete(Array.from({ length: antigo.partes }, (_, i) => `arq:${arq}:${i}`));
+        const n = Math.max(1, Math.ceil(corpo.byteLength / PEDACO));
+        for (let i = 0; i < n; i++) await this.ctx.storage.put(`arq:${arq}:${i}`, corpo.slice(i * PEDACO, (i + 1) * PEDACO));
+        await this.ctx.storage.put(`meta:${arq}`, { partes: n, tamanho: corpo.byteLength, mime: req.headers.get('Content-Type') ?? '' });
+        return jsonResp({ ok: true });
+      }
+      return new Response('Método não permitido', { status: 405 });
+    }
+    // ----- a página (o professor, com a chave) -----
+    if (req.method === 'PUT') {
+      const chave = req.headers.get('X-Vide-Chave') ?? '';
+      if (!RE_TOKEN.test(chave)) return jsonResp({ erro: 'chave inválida' }, 400);
+      const guardada = await this.ctx.storage.get<string>('chave');
+      if (guardada && guardada !== chave) return jsonResp({ erro: 'sem permissão' }, 403);
+      const texto = await req.text();
+      if (texto.length > MAX_TREINO) return jsonResp({ erro: 'grande demais' }, 413);
+      let corpo: { pin?: string; dados?: { modelos?: { id: string; tipo: string }[] } };
+      try {
+        corpo = JSON.parse(texto);
+      } catch {
+        return jsonResp({ erro: 'JSON inválido' }, 400);
+      }
+      if (!corpo.dados || !/^\d{6}$/.test(corpo.pin ?? '')) return jsonResp({ erro: 'formato inválido' }, 400);
+      // Arquivos que saíram da página são apagados.
+      const ficam = new Set((corpo.dados.modelos ?? []).filter((m) => m.tipo === 'arquivo').map((m) => m.id));
+      const metas = await this.ctx.storage.list<{ partes: number }>({ prefix: 'meta:' });
+      for (const [k, meta] of metas) {
+        const arq = k.slice(5);
+        if (ficam.has(arq)) continue;
+        await this.ctx.storage.delete([k, ...Array.from({ length: meta.partes }, (_, i) => `arq:${arq}:${i}`)]);
+      }
+      await this.ctx.storage.put({ chave, pin: await hashPin(id, corpo.pin!), dados: JSON.stringify(corpo.dados) });
+      return jsonResp({ id });
+    }
+    if (req.method === 'DELETE') {
+      const erro = await this.donoOuErro(req);
+      if (erro) return erro;
       await this.ctx.storage.deleteAll();
       return jsonResp({ ok: true });
     }

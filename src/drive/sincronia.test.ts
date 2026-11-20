@@ -154,4 +154,13 @@ describe('dois computadores e o Drive', () => {
     expect((await pc2.interacoes.get('i1'))?.resumo).toBe('Recorte do tema');
     expect(await (await pc2.versoes.get('v1'))!.arquivo.text()).toBe('abc');
   });
+  test('modelos da orientação: arquivo e texto', async () => {
+    const m = { titulo: '', descricao: '', texto: '', nomeArquivo: '', mime: '', tamanho: 0, arquivo: new Blob([]), trabalhoId: null };
+    await pc1.modelos.put({ ...base('m1', 1), ...m, titulo: 'Manual', tipo: 'arquivo', nomeArquivo: 'manual.pdf', mime: 'application/pdf', tamanho: 5, arquivo: new Blob(['%PDF-']) });
+    await pc1.modelos.put({ ...base('m2', 1), ...m, titulo: 'Como citar', tipo: 'texto', texto: 'Use o sistema autor-data.' });
+    await sincronizar(pc1, drive);
+    await sincronizar(pc2, drive);
+    expect(await (await pc2.modelos.get('m1'))!.arquivo.text()).toBe('%PDF-');
+    expect((await pc2.modelos.get('m2'))?.texto).toBe('Use o sistema autor-data.');
+  });
 });

@@ -17,7 +17,8 @@
       { "name": "SALAS", "class_name": "Sala" },
       { "name": "JOGOS", "class_name": "Jogo" },
       { "name": "TREINOS", "class_name": "Treino" },
-      { "name": "PROCESSOS", "class_name": "Processo" }
+      { "name": "PROCESSOS", "class_name": "Processo" },
+      { "name": "ORIENTACOES", "class_name": "Orientacao" }
     ]
   },
   "migrations": [
@@ -27,7 +28,9 @@
     // Treinos em casa (cópias de grupos de questões compartilhadas por link).
     { "tag": "v3", "new_sqlite_classes": ["Treino"] },
     // Processos fictícios que a turma acompanha (só os eventos já liberados são lidos pelos alunos).
-    { "tag": "v4", "new_sqlite_classes": ["Processo"] }
+    { "tag": "v4", "new_sqlite_classes": ["Processo"] },
+    // Páginas dos orientandos (cronograma, pendências, elementos e modelos; leitura só com o código de 6 números).
+    { "tag": "v5", "new_sqlite_classes": ["Orientacao"] }
   ],
   "workers_dev": true,
   "preview_urls": false

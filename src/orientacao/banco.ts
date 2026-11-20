@@ -2,11 +2,17 @@
 import { db } from '../dados/db';
 import { agoraISO, novoId } from '../dados/modelo';
 import { cronogramaModelo, hojeISO } from './prazos';
-import type { Interacao, Orientando, Trabalho, TipoTrabalho, Versao } from './tipos';
+import type { Interacao, Modelo, Orientando, Trabalho, TipoTrabalho, Versao } from './tipos';
 
 export const EVENTO_ORIENTACAO = 'vide-orientacao-mudou';
 export function avisarMudancaOrientacao(): void {
   window.dispatchEvent(new Event(EVENTO_ORIENTACAO));
+}
+
+/** Algo que aparece na página do orientando mudou (null = todos os trabalhos, ex.: um modelo geral). */
+export const EVENTO_PUBLICAVEL = 'vide-orientacao-publicavel';
+function publicavel(trabalhoId: string | null): void {
+  window.dispatchEvent(new CustomEvent(EVENTO_PUBLICAVEL, { detail: trabalhoId }));
 }
 
 function base() {
@@ -69,13 +75,26 @@ export async function salvarOrientando(o: Orientando): Promise<Orientando> {
   const novo = { ...o, atualizado_em: agoraISO() };
   await db.orientandos.put(novo);
   avisarMudancaOrientacao();
+  for (const t of await db.trabalhos.where('orientandoId').equals(o.id).toArray()) if (t.publicacao && !t.excluido_em) publicavel(t.id);
   return novo;
 }
 
-export async function salvarTrabalho(t: Trabalho): Promise<Trabalho> {
-  const novo = { ...t, atualizado_em: agoraISO() };
-  await db.trabalhos.put(novo);
-  avisarMudancaOrientacao();
+/**
+ * Muda só os campos dados, sobre o que está no banco agora. Assim uma aba (ex.: elementos)
+ * não desfaz o que outra acabou de gravar (ex.: etapas do cronograma).
+ */
+export async function atualizarTrabalho(id: string, campos: Partial<Omit<Trabalho, 'id' | 'publicacao'>>): Promise<Trabalho | undefined> {
+  let novo: Trabalho | undefined;
+  await db.transaction('rw', db.trabalhos, async () => {
+    const atual = await db.trabalhos.get(id);
+    if (!atual) return;
+    novo = { ...atual, ...campos, atualizado_em: agoraISO() };
+    await db.trabalhos.put(novo);
+  });
+  if (novo) {
+    avisarMudancaOrientacao();
+    publicavel(id);
+  }
   return novo;
 }
 
@@ -102,6 +121,7 @@ export async function salvarInteracao(i: Interacao): Promise<Interacao> {
   const novo = { ...i, atualizado_em: agoraISO() };
   await db.interacoes.put(novo);
   avisarMudancaOrientacao();
+  publicavel(i.trabalhoId);
   return novo;
 }
 
@@ -109,6 +129,7 @@ export async function excluirInteracao(i: Interacao): Promise<void> {
   const agora = agoraISO();
   await db.interacoes.put({ ...i, excluido_em: agora, atualizado_em: agora });
   avisarMudancaOrientacao();
+  publicavel(i.trabalhoId);
 }
 
 export async function adicionarVersao(trabalhoId: string, arquivo: File, dados: Pick<Versao, 'rotulo' | 'recebida_em' | 'etapaId' | 'notas'>): Promise<Versao> {
@@ -129,4 +150,45 @@ export async function excluirVersao(v: Versao): Promise<void> {
   const agora = agoraISO();
   await db.versoes.put({ ...v, arquivo: new Blob([]), excluido_em: agora, atualizado_em: agora });
   avisarMudancaOrientacao();
+}
+
+// ---------- Modelos e orientações gerais ----------
+
+export async function listarModelos(): Promise<Modelo[]> {
+  return vivos(await db.modelos.toArray()).sort((a, b) => a.criado_em.localeCompare(b.criado_em));
+}
+
+/** Os modelos que valem para um trabalho: os gerais e os só dele. */
+export function modelosDoTrabalho(todos: Modelo[], trabalhoId: string): Modelo[] {
+  return todos.filter((m) => !m.excluido_em && (m.trabalhoId === null || m.trabalhoId === trabalhoId));
+}
+
+export async function adicionarModelo(dados: Pick<Modelo, 'titulo' | 'descricao' | 'tipo' | 'texto' | 'trabalhoId'>, arquivo?: File): Promise<Modelo> {
+  const m: Modelo = {
+    ...base(),
+    ...dados,
+    nomeArquivo: arquivo?.name ?? '',
+    mime: arquivo?.type || (arquivo ? 'application/octet-stream' : ''),
+    tamanho: arquivo?.size ?? 0,
+    arquivo: arquivo ?? new Blob([]),
+  };
+  await db.modelos.put(m);
+  avisarMudancaOrientacao();
+  publicavel(m.trabalhoId);
+  return m;
+}
+
+export async function salvarModelo(m: Modelo): Promise<Modelo> {
+  const novo = { ...m, atualizado_em: agoraISO() };
+  await db.modelos.put(novo);
+  avisarMudancaOrientacao();
+  publicavel(m.trabalhoId);
+  return novo;
+}
+
+export async function excluirModelo(m: Modelo): Promise<void> {
+  const agora = agoraISO();
+  await db.modelos.put({ ...m, arquivo: new Blob([]), excluido_em: agora, atualizado_em: agora });
+  avisarMudancaOrientacao();
+  publicavel(m.trabalhoId);
 }

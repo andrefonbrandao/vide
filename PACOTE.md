@@ -15,7 +15,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 ## Próximas etapas anotadas
 
 **Orientação de trabalhos acadêmicos** (a parte 1, o caderno do orientador, com transcrição e IA, foi publicada na 0.37.0)
-- **Parte 2 — página do orientando** (link com código de acesso): cronograma e quanto falta para cada etapa, pendências (sugestões e comandos), modelos e orientações gerais para consulta; o orientando **envia as versões** do trabalho por ela.
+- **Parte 2 — página do orientando:** feita no pacote 22 (cronograma, pendências, elementos, modelos para baixar, com código de acesso). **Falta:** o orientando **enviar as versões** do trabalho pela página.
 - **Parte 3 — e-mails ao orientando** (pelo Gmail do professor, enviados quando o Vide estiver aberto):
   - **Lembretes de prazo:** o prazo é calculado na hora do envio (não quando o lembrete foi agendado); vários avisos atrasados viram um só; prazo vencido com o Vide fechado: aviso de "venceu em…" ou nada (o professor escolhe); cada envio fica marcado e vai para o Drive, para outro computador não repetir.
   - **Resumo da sessão para o orientando:** no registro da sessão, um **campo próprio para o resumo feito pela IA** (separado das anotações internas do professor, editável antes de enviar) e um botão para **mandar ao orientando por e-mail**, com as sugestões e os comandos e seus prazos; o envio fica registrado na linha do tempo. (A IA pode já escrever esse resumo dirigido ao orientando.)
@@ -28,6 +28,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | **Orientação: elementos do trabalho e relatório em PDF.** Nova aba "Elementos do trabalho" (tema, delimitação, problema, hipóteses, objetivo geral, objetivos específicos — um por linha —, justificativa e metodologia, como no projeto de pesquisa do manual de normalização), guardada sozinha, com a data da última alteração. Botão **"Relatório em PDF"**: escolher o que entra (elementos, cronograma, pendências, sessões e comunicações — com período e, se quiser, anotações, conversas e transcrições —, versões), atalhos "Só os elementos", "Só as orientações" e "Tudo", nome do orientador no cabeçalho; o PDF é montado no computador (o leitor de PDF é baixado só no clique) | No pacote |
+| 2 | **Página do orientando** (link `/o/…` com **código de acesso de 6 números**): cronograma com quanto falta para cada etapa e a "etapa da vez", pendências (sugestões e comandos em aberto), elementos do trabalho (só leitura) e **modelos e orientações para baixar** a qualquer momento; sem e-mail, telefone, sessões, conversas ou versões. **Modelos e orientações** (em Orientandos): arquivos (PDF, Word, até 10 MB) ou orientações escritas, para todos os orientandos ou só para um; vão para o Drive. A página **se atualiza sozinha** alguns segundos depois de cada mudança; "Copiar mensagem para o orientando" (link + código), QR, trocar o código, desativar. Segurança: 8 códigos errados bloqueiam por 15 minutos; o código fica guardado no serviço só como "impressão digital" (hash). Correção junto: mudar o cronograma e logo os elementos (ou os dados) não desfaz mais o que a outra aba acabou de gravar | No pacote |
 
 ## Pacotes anteriores
 

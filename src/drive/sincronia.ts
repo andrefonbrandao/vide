@@ -13,7 +13,8 @@ import type { LinkTreino } from '../treino/tipos';
 import type { Caso } from '../consulta/tipos';
 import type { Processo } from '../processo/tipos';
 import type { Disciplina, Turma } from '../turmas/tipos';
-import type { Interacao, Orientando, Trabalho, Versao, VersaoMeta } from '../orientacao/tipos';
+import type { Interacao, ModeloMeta, Orientando, Trabalho, VersaoMeta } from '../orientacao/tipos';
+import type { Table } from 'dexie';
 import type { ArmazemRemoto, ArquivoRemoto } from './remoto';
 
 export type MaterialMeta = Omit<Material, 'arquivo'>;
@@ -46,6 +47,7 @@ export interface DadosRemotos {
   trabalhos?: Trabalho[];
   interacoes?: Interacao[];
   versoes?: VersaoMeta[];
+  modelos?: ModeloMeta[];
   materiais: MaterialMeta[];
   diplomas: Diploma[];
   sessoes: SessaoMeta[];
@@ -58,7 +60,7 @@ export interface ResumoSincronia {
   mudou: Set<'acervo' | 'materiais' | 'questoes' | 'registro' | 'orientacao'>;
 }
 
-const VAZIO: DadosRemotos = { formato: 'vide-dados@1', questoes: [], questionarios: [], jogos: [], treinos: [], casos: [], processos: [], disciplinas: [], turmas: [], orientandos: [], trabalhos: [], interacoes: [], versoes: [], materiais: [], diplomas: [], sessoes: [] };
+const VAZIO: DadosRemotos = { formato: 'vide-dados@1', questoes: [], questionarios: [], jogos: [], treinos: [], casos: [], processos: [], disciplinas: [], turmas: [], orientandos: [], trabalhos: [], interacoes: [], versoes: [], modelos: [], materiais: [], diplomas: [], sessoes: [] };
 
 interface ComData {
   id: string;
@@ -95,11 +97,6 @@ async function lerJson<T>(b: Blob): Promise<T> {
 
 function semArquivo(m: Material): MaterialMeta {
   const { arquivo: _arquivo, ...meta } = m;
-  return meta;
-}
-
-function versaoSemArquivo(v: Versao): VersaoMeta {
-  const { arquivo: _arquivo, ...meta } = v;
   return meta;
 }
 
@@ -141,6 +138,60 @@ export async function sincronizar(banco: BancoVide, remoto: ArmazemRemoto, aviso
     arquivos.find((a) => a.props.vide === tipo && (id === undefined || a.props.id === id));
   const arqDados = achar('dados');
   const rem: DadosRemotos = arqDados ? { ...VAZIO, ...(await lerJson<DadosRemotos>(await remoto.baixar(arqDados.id))) } : VAZIO;
+
+  /** Tabela com um arquivo por registro (versões, modelos): os dados vão no JSON e o arquivo, à parte. */
+  async function sincronizarComArquivo<T extends { id: string; atualizado_em: string; excluido_em: string | null; arquivo: Blob; mime: string }>(
+    tabela: Table<T, string>,
+    remotos: Omit<T, 'arquivo'>[],
+    tipo: string,
+    nomeRemoto: (x: Omit<T, 'arquivo'>) => string,
+    rotulo: (x: Omit<T, 'arquivo'>) => string,
+  ): Promise<{ final: Map<string, Omit<T, 'arquivo'>>; remotoDesatualizado: boolean }> {
+    const locais = await tabela.toArray();
+    const blobs = new Map(locais.map((x) => [x.id, x.arquivo]));
+    const semBlob = (x: T): Omit<T, 'arquivo'> => {
+      const { arquivo: _a, ...meta } = x;
+      return meta;
+    };
+    const m = mesclar(locais.map(semBlob), remotos);
+    const final = new Map(m.resultado.map((x) => [x.id, x]));
+    for (const r of m.paraLocal) {
+      const blob = blobs.get(r.id);
+      if (r.excluido_em) await tabela.put({ ...r, arquivo: new Blob([]) } as T);
+      else if (blob && blob.size > 0) await tabela.put({ ...r, arquivo: blob } as T);
+      else {
+        const arq = achar(tipo, r.id);
+        if (!arq) {
+          // Sem arquivo no Drive (texto, ou o outro computador ainda não enviou).
+          const antigo = remotos.find((x) => x.id === r.id);
+          if ((r as { tamanho?: number }).tamanho === 0) await tabela.put({ ...r, arquivo: new Blob([]) } as T);
+          else {
+            final.delete(r.id);
+            if (antigo) final.set(r.id, antigo);
+            continue;
+          }
+        } else {
+          aviso(`baixando ${rotulo(r)}…`);
+          const conteudo = await remoto.baixar(arq.id);
+          await tabela.put({ ...r, arquivo: new Blob([conteudo], { type: r.mime }) } as T);
+          resumo.baixados.push(rotulo(r));
+        }
+      }
+      resumo.mudou.add('orientacao');
+    }
+    for (const x of final.values()) {
+      const arq = achar(tipo, x.id);
+      const blob = blobs.get(x.id);
+      if (!x.excluido_em && !arq && blob && blob.size > 0) {
+        aviso(`enviando ${rotulo(x)}…`);
+        await remoto.criar(nomeRemoto(x), { vide: tipo, id: x.id }, blob);
+        resumo.enviados.push(rotulo(x));
+      } else if (x.excluido_em && arq) {
+        await remoto.lixeira(arq.id);
+      }
+    }
+    return { final, remotoDesatualizado: m.remotoDesatualizado };
+  }
 
   // ---------- questões, questionários, resultados ----------
   const q = mesclar(await banco.questoes.toArray(), rem.questoes);
@@ -229,41 +280,10 @@ export async function sincronizar(banco: BancoVide, remoto: ArmazemRemoto, aviso
     }
   }
 
-  // ---------- versões dos trabalhos (orientação) ----------
-  const locaisVer = await banco.versoes.toArray();
-  const blobVer = new Map(locaisVer.map((v) => [v.id, v.arquivo]));
-  const ver = mesclar(locaisVer.map(versaoSemArquivo), rem.versoes ?? []);
-  const versoesFinal = new Map(ver.resultado.map((v) => [v.id, v]));
-  for (const r of ver.paraLocal) {
-    const blob = blobVer.get(r.id);
-    if (r.excluido_em) await banco.versoes.put({ ...r, arquivo: new Blob([]) });
-    else if (blob && blob.size > 0) await banco.versoes.put({ ...r, arquivo: blob });
-    else {
-      const arq = achar('versao', r.id);
-      if (!arq) {
-        versoesFinal.delete(r.id);
-        const antigo = (rem.versoes ?? []).find((x) => x.id === r.id);
-        if (antigo) versoesFinal.set(r.id, antigo);
-        continue;
-      }
-      aviso(`baixando "${r.nomeArquivo}"…`);
-      const conteudo = await remoto.baixar(arq.id);
-      await banco.versoes.put({ ...r, arquivo: new Blob([conteudo], { type: r.mime }) });
-      resumo.baixados.push(`versão "${r.rotulo}"`);
-    }
-    resumo.mudou.add('orientacao');
-  }
-  for (const v of versoesFinal.values()) {
-    const arq = achar('versao', v.id);
-    const blob = blobVer.get(v.id);
-    if (!v.excluido_em && !arq && blob && blob.size > 0) {
-      aviso(`enviando "${v.nomeArquivo}"…`);
-      await remoto.criar(`Orientação - ${nomeSeguro(v.rotulo)} - ${nomeSeguro(v.nomeArquivo)}`, { vide: 'versao', id: v.id }, blob);
-      resumo.enviados.push(`versão "${v.rotulo}"`);
-    } else if (v.excluido_em && arq) {
-      await remoto.lixeira(arq.id);
-    }
-  }
+  // ---------- versões dos trabalhos e modelos (orientação): dados no JSON, arquivo à parte ----------
+  const ver = await sincronizarComArquivo(banco.versoes, rem.versoes ?? [], 'versao', (v) => `Orientação - ${nomeSeguro(v.rotulo)} - ${nomeSeguro(v.nomeArquivo)}`, (v) => `versão "${v.rotulo}"`);
+  const mod = await sincronizarComArquivo(banco.modelos, rem.modelos ?? [], 'modelo', (m) => `Orientação - modelo - ${nomeSeguro(m.titulo)} - ${nomeSeguro(m.nomeArquivo || 'texto')}`, (m) => `modelo "${m.titulo}"`);
+  const versoesFinal = ver.final;
 
   // ---------- leis ----------
   const locaisDip = await banco.diplomas.toArray();
@@ -404,6 +424,7 @@ export async function sincronizar(banco: BancoVide, remoto: ArmazemRemoto, aviso
     trabalhos: tb.resultado,
     interacoes: it.resultado,
     versoes: [...versoesFinal.values()],
+    modelos: [...mod.final.values()],
     materiais: [...materiaisFinal.values()],
     diplomas: [...diplomasFinal.values()],
     sessoes: [...sessoesFinal.values()],
@@ -425,7 +446,7 @@ export async function sincronizar(banco: BancoVide, remoto: ArmazemRemoto, aviso
       cs.remotoDesatualizado ? 'casos' : '',
       dc.remotoDesatualizado || tm.remotoDesatualizado ? 'disciplinas e turmas' : '',
       tr.remotoDesatualizado ? 'links de treino' : '',
-      ot.remotoDesatualizado || tb.remotoDesatualizado || it.remotoDesatualizado || ver.remotoDesatualizado ? 'orientação' : '',
+      ot.remotoDesatualizado || tb.remotoDesatualizado || it.remotoDesatualizado || ver.remotoDesatualizado || mod.remotoDesatualizado ? 'orientação' : '',
       mat.remotoDesatualizado || dip.remotoDesatualizado ? 'dados do acervo' : '',
     ].filter(Boolean);
     if (partes.length) resumo.enviados.push(partes.join(', '));
