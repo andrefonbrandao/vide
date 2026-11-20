@@ -57,6 +57,49 @@ export interface Trabalho extends Sincronizavel {
   elementos?: Elementos;
   /** Página do orientando (link com código de 6 números). */
   publicacao?: PublicacaoOrientacao | null;
+  /** Formulário do pré-projeto na página do orientando. */
+  preProjeto?: ConfigPreProjeto;
+}
+
+/** O que o professor define para o PDF do pré-projeto (capa, folha de rosto…). */
+export interface ConfigPreProjeto {
+  ativo: boolean;
+  instituicao: 'Uniftec' | 'Ftec';
+  curso: string;
+  cidade: string;
+  ano: string;
+  /** "Prof. Me. Fulano de Tal". */
+  orientador: string;
+  coorientador: string;
+  /** Texto da natureza do trabalho na folha de rosto (vazio = o padrão). */
+  natureza: string;
+  /** Elementos opcionais. */
+  resumo: boolean;
+  aprovacao: boolean;
+}
+
+/** O texto do pré-projeto que o orientando escreve (marcações: **negrito**, _itálico_, "> " citação longa, "## " subtítulo, [[nota de rodapé]]). */
+export interface TextoProjeto {
+  titulo: string;
+  subtitulo: string;
+  resumo: string;
+  palavrasChave: string;
+  introducao: string;
+  problema: string;
+  hipoteses: string;
+  objetivoGeral: string;
+  /** Um por linha. */
+  objetivosEspecificos: string;
+  justificativa: string;
+  fundamentacao: string;
+  metodo: string;
+  populacao: string;
+  coleta: string;
+  analise: string;
+  recursos: string;
+  /** Uma referência por linha (o Vide põe em ordem alfabética). */
+  referencias: string;
+  atualizado_em?: string;
 }
 
 export interface PublicacaoOrientacao {
@@ -68,6 +111,8 @@ export interface PublicacaoOrientacao {
   publicadoEm: string;
   /** Arquivos já enviados: id do modelo -> versão (atualizado_em) enviada. */
   arquivos: Record<string, string>;
+  /** Último envio do pré-projeto já trazido para as versões. */
+  ultimoEnvio?: string;
 }
 
 /** Modelo ou orientação geral (manual, modelo de TCC, um texto de orientação). */
@@ -95,6 +140,8 @@ export interface DadosOrientando {
   etapas: Etapa[];
   pendencias: { tipo: Encaminhamento['tipo']; texto: string; prazo?: string; de: string }[];
   elementos?: Elementos;
+  /** Formulário do pré-projeto (se o professor ligou). */
+  preProjeto?: ConfigPreProjeto;
   modelos: { id: string; titulo: string; descricao: string; tipo: Modelo['tipo']; texto?: string; nomeArquivo?: string; mime?: string; tamanho?: number }[];
   publicadoEm: string;
 }

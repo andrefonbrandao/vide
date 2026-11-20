@@ -23,7 +23,7 @@ const RE_SALA = /^\/api\/sala\/([A-Z0-9]{6,16})$/;
 const RE_JOGO = /^\/api\/jogo\/(\d{6})$/;
 const RE_TREINO = /^\/api\/treino(?:\/([A-Za-z0-9]{10,24}))?$/;
 const RE_PROCESSO = /^\/api\/processo(?:\/([A-Za-z0-9]{10,24}))?$/;
-const RE_ORIENTACAO = /^\/api\/orientacao(?:\/([A-Za-z0-9]{10,24})(?:\/(entrar|arquivo\/[A-Za-z0-9-]{8,48}))?)?$/;
+const RE_ORIENTACAO = /^\/api\/orientacao(?:\/([A-Za-z0-9]{10,24})(?:\/(entrar|projeto|envio|envios|arquivo\/[A-Za-z0-9-]{8,48}))?)?$/;
 const RE_ARQUIVO_PROCESSO = /^\/api\/processo\/([A-Za-z0-9]{10,24})\/arquivo\/([A-Za-z0-9-]{8,48})$/;
 /** Mensagens maiores que isso são descartadas (as do Vide têm poucos KB). */
 const TAMANHO_MAXIMO = 256 * 1024;
@@ -450,7 +450,7 @@ async function tratarOrientacao(req: Request, env: Env, url: URL, id: string | u
     const novo = novoIdTreino();
     return env.ORIENTACOES.get(env.ORIENTACOES.idFromName(novo)).fetch(new Request(`https://orientacao/${novo}`, { method: 'PUT', headers: req.headers, body: req.body }));
   }
-  return env.ORIENTACOES.get(env.ORIENTACOES.idFromName(id)).fetch(new Request(`https://orientacao/${id}${resto ? `/${resto}` : ''}`, { method: req.method, headers: req.headers, body: req.body }));
+  return env.ORIENTACOES.get(env.ORIENTACOES.idFromName(id)).fetch(new Request(`https://orientacao/${id}${resto ? `/${resto}` : ''}${url.search}`, { method: req.method, headers: req.headers, body: req.body }));
 }
 
 async function hashPin(id: string, pin: string): Promise<string> {
@@ -497,6 +497,57 @@ export class Orientacao extends DurableObject<Env> {
       if (erro) return erro;
       const dados = await this.ctx.storage.get<string>('dados');
       return dados ? new Response(dados, { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } }) : jsonResp({ erro: 'não encontrado' }, 404);
+    }
+    // ----- pré-projeto: rascunho do orientando (com o código) ou leitura pelo professor (com a chave) -----
+    if (partes[1] === 'projeto') {
+      const comChave = !!req.headers.get('X-Vide-Chave');
+      const erro = comChave ? await this.donoOuErro(req) : await this.conferirPin(id, req.headers.get('X-Vide-Pin') ?? '');
+      if (erro) return erro;
+      if (req.method === 'GET') {
+        const projeto = await this.ctx.storage.get<string>('projeto');
+        const ultimoEnvio = (await this.ctx.storage.get<string>('ultimoEnvio')) ?? null;
+        return jsonResp({ projeto: projeto ? JSON.parse(projeto) : null, ultimoEnvio });
+      }
+      if (req.method === 'PUT' && !comChave) {
+        const texto = await req.text();
+        if (texto.length > MAX_TREINO) return jsonResp({ erro: 'grande demais' }, 413);
+        try {
+          JSON.parse(texto);
+        } catch {
+          return jsonResp({ erro: 'JSON inválido' }, 400);
+        }
+        await this.ctx.storage.put('projeto', texto);
+        return jsonResp({ ok: true });
+      }
+      return new Response('Método não permitido', { status: 405 });
+    }
+    // ----- "Enviar ao orientador": guarda uma cópia datada -----
+    if (partes[1] === 'envio') {
+      if (req.method !== 'POST') return new Response('Método não permitido', { status: 405 });
+      const erro = await this.conferirPin(id, req.headers.get('X-Vide-Pin') ?? '');
+      if (erro) return erro;
+      const texto = await req.text();
+      if (texto.length > MAX_TREINO) return jsonResp({ erro: 'grande demais' }, 413);
+      try {
+        JSON.parse(texto);
+      } catch {
+        return jsonResp({ erro: 'JSON inválido' }, 400);
+      }
+      const em = new Date().toISOString();
+      await this.ctx.storage.put({ [`envio:${em}`]: texto, projeto: texto, ultimoEnvio: em });
+      // Guarda os 40 envios mais recentes.
+      const todos = [...(await this.ctx.storage.list({ prefix: 'envio:' })).keys()];
+      if (todos.length > 40) await this.ctx.storage.delete(todos.slice(0, todos.length - 40));
+      return jsonResp({ em });
+    }
+    if (partes[1] === 'envios') {
+      if (req.method !== 'GET') return new Response('Método não permitido', { status: 405 });
+      const erro = await this.donoOuErro(req);
+      if (erro) return erro;
+      const depois = new URL(req.url).searchParams.get('depois') ?? '';
+      const lista = await this.ctx.storage.list<string>({ prefix: 'envio:', start: `envio:${depois}` });
+      const envios = [...lista].filter(([k]) => k.slice(6) > depois).map(([k, v]) => ({ em: k.slice(6), projeto: JSON.parse(v) }));
+      return jsonResp({ envios });
     }
     // ----- arquivos (modelos) -----
     if (partes[1] === 'arquivo') {
