@@ -7,6 +7,7 @@ import { CAMPOS_ELEMENTOS } from '../orientacao/campos';
 import type { DadosOrientando } from '../orientacao/tipos';
 import { MeuPreProjeto } from './PreProjetoForm';
 import { ManualAluno, Passeio, passosDoPasseio } from './ComoUsar';
+import { CombinadoOrientacao } from './Combinado';
 
 const chavePin = (codigo: string) => `vide.orientacao.pin.${codigo}`;
 const chavePasseio = (codigo: string) => `vide.orientacao.passeio.${codigo}`;
@@ -37,7 +38,12 @@ export function PaginaOrientando({ codigo }: { codigo: string }) {
   const [erro, setErro] = useState<string | null>(null);
   const [abrindo, setAbrindo] = useState(false);
   const [baixando, setBaixando] = useState<string | null>(null);
-  const [aba, setAba] = useState<'acompanhamento' | 'projeto' | 'ajuda'>(() => (location.hash === '#pre-projeto' ? 'projeto' : location.hash === '#como-usar' ? 'ajuda' : 'acompanhamento'));
+  const [aba, setAba] = useState<'acompanhamento' | 'projeto' | 'ajuda' | 'combinado'>(() =>
+    location.hash === '#pre-projeto' ? 'projeto' : location.hash === '#como-usar' ? 'ajuda' : location.hash === '#combinado' ? 'combinado' : 'acompanhamento',
+  );
+  /** Quando o orientando confirmou a leitura do combinado (undefined: ainda carregando; null: não leu). */
+  const [lidoEm, setLidoEm] = useState<string | null | undefined>(undefined);
+  const irCombinado = () => (setAba('combinado'), history.replaceState(null, '', '#combinado'), window.scrollTo(0, 0));
   const [passeio, setPasseio] = useState(false);
   const formulario = dados?.preProjeto?.ativo ? (dados.preProjeto.formato ?? 'pre') : null;
   const verPasseio = () => {
@@ -53,18 +59,34 @@ export function PaginaOrientando({ codigo }: { codigo: string }) {
       /* ignore */
     }
   };
-  // Primeiro acesso neste aparelho: o passeio de boas-vindas.
-  useEffect(() => {
-    if (!dados) return;
-    let visto = true;
+  const passeioVisto = () => {
     try {
-      visto = !!localStorage.getItem(chavePasseio(codigo));
+      return !!localStorage.getItem(chavePasseio(codigo));
     } catch {
-      visto = true;
+      return true;
     }
-    if (!visto) verPasseio();
+  };
+  // O combinado: lido ou não (com o código do orientando).
+  useEffect(() => {
+    if (!dados || !pin) return;
+    void fetch(`/api/orientacao/${codigo}/combinado`, { headers: { 'X-Vide-Pin': pin } })
+      .then(async (r) => (r.ok ? ((await r.json()) as { lidoEm: string | null }).lidoEm : null))
+      .then(setLidoEm, () => setLidoEm(null));
+  }, [!!dados, codigo, pin]);
+  // Primeiro acesso: primeiro o combinado; depois de confirmado, o passeio de boas-vindas.
+  useEffect(() => {
+    if (!dados || lidoEm === undefined) return;
+    if (lidoEm === null) {
+      if (aba !== 'projeto') irCombinado();
+    } else if (!passeioVisto()) verPasseio();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [!!dados, codigo]);
+  }, [!!dados, codigo, lidoEm === undefined]);
+  const confirmarCombinado = async () => {
+    const r = await fetch(`/api/orientacao/${codigo}/combinado`, { method: 'POST', headers: { 'X-Vide-Pin': pin } });
+    if (!r.ok) throw new Error(String(r.status));
+    setLidoEm(((await r.json()) as { lidoEm: string }).lidoEm);
+    if (!passeioVisto()) verPasseio();
+  };
 
   const abrir = async (p: string, guardar: boolean) => {
     setAbrindo(true);
@@ -199,12 +221,27 @@ export function PaginaOrientando({ codigo }: { codigo: string }) {
                 {formulario === 'final' ? 'Meu trabalho final' : 'Meu pré-projeto'}
               </button>
             )}
+            <button type="button" data-passeio="combinado" className={`botao pequeno${aba === 'combinado' ? ' escuro' : ''}`} onClick={irCombinado}>
+              Combinado
+            </button>
             <button type="button" data-passeio="comousar" className={`botao pequeno${aba === 'ajuda' ? ' escuro' : ''}`} onClick={() => (setAba('ajuda'), history.replaceState(null, '', '#como-usar'))}>
               Como usar
             </button>
           </nav>
+          {lidoEm === null && aba !== 'combinado' && (
+            <div className="comb-aviso" role="status">
+              <span>
+                <strong>Antes de começar:</strong> leia o nosso combinado de orientação (quem faz o quê e quais fontes usar). Leva uns 3 minutos.
+              </span>
+              <button type="button" className="botao pequeno escuro" onClick={irCombinado}>
+                Ler o combinado
+              </button>
+            </div>
+          )}
           {passeio && <Passeio passos={passosDoPasseio(dados.nome, formulario)} aoFechar={fecharPasseio} />}
-          {aba === 'ajuda' ? (
+          {aba === 'combinado' ? (
+            <CombinadoOrientacao lidoEm={lidoEm} aoConfirmar={confirmarCombinado} />
+          ) : aba === 'ajuda' ? (
             <ManualAluno formulario={formulario} aoPasseio={verPasseio} />
           ) : aba === 'projeto' && dados.preProjeto?.ativo ? (
             <MeuPreProjeto codigo={codigo} pin={pin} dados={dados} />

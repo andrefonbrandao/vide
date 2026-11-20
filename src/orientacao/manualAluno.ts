@@ -28,6 +28,13 @@ export function manualDoAluno(formulario: 'pre' | 'final' | null): SecaoManual[]
           ],
         },
         {
+          p: 'O que é o combinado de orientação?',
+          r: [
+            'São as regras do nosso trabalho: o que cabe a você, o que cabe ao orientador e quais fontes usar (e quais não usar) no trabalho. Fica na aba **Combinado**.',
+            'Leia com atenção e toque em **Li e compreendi o combinado**: o orientador vê que você confirmou.',
+          ],
+        },
+        {
           p: 'Preciso guardar o código de 6 números?',
           r: [
             'Sim: o link e o código vêm juntos na mensagem do orientador. Neste aparelho, o código fica lembrado enquanto a aba estiver aberta; em outro aparelho, digite de novo.',

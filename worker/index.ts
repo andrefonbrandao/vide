@@ -23,7 +23,7 @@ const RE_SALA = /^\/api\/sala\/([A-Z0-9]{6,16})$/;
 const RE_JOGO = /^\/api\/jogo\/(\d{6})$/;
 const RE_TREINO = /^\/api\/treino(?:\/([A-Za-z0-9]{10,24}))?$/;
 const RE_PROCESSO = /^\/api\/processo(?:\/([A-Za-z0-9]{10,24}))?$/;
-const RE_ORIENTACAO = /^\/api\/orientacao(?:\/([A-Za-z0-9]{10,24})(?:\/(entrar|projeto|envio|envios|arquivo\/[A-Za-z0-9-]{8,48}|imagem\/[A-Za-z0-9-]{8,48}|apontamentos))?)?$/;
+const RE_ORIENTACAO = /^\/api\/orientacao(?:\/([A-Za-z0-9]{10,24})(?:\/(entrar|projeto|envio|envios|arquivo\/[A-Za-z0-9-]{8,48}|imagem\/[A-Za-z0-9-]{8,48}|apontamentos|combinado))?)?$/;
 const RE_ARQUIVO_PROCESSO = /^\/api\/processo\/([A-Za-z0-9]{10,24})\/arquivo\/([A-Za-z0-9-]{8,48})$/;
 /** Mensagens maiores que isso são descartadas (as do Vide têm poucos KB). */
 const TAMANHO_MAXIMO = 256 * 1024;
@@ -572,6 +572,19 @@ export class Orientacao extends DurableObject<Env> {
       const lista = await this.ctx.storage.list<string>({ prefix: 'envio:', start: `envio:${depois}` });
       const envios = [...lista].filter(([k]) => k.slice(6) > depois).map(([k, v]) => ({ em: k.slice(6), projeto: JSON.parse(v) }));
       return jsonResp({ envios });
+    }
+    // ----- "combinado de orientação": o orientando confirma que leu; o professor vê quando -----
+    if (partes[1] === 'combinado') {
+      const comChave = !!req.headers.get('X-Vide-Chave');
+      const erro = comChave ? await this.donoOuErro(req) : await this.conferirPin(id, req.headers.get('X-Vide-Pin') ?? '');
+      if (erro) return erro;
+      if (req.method === 'POST' && !comChave) {
+        const lidoEm = (await this.ctx.storage.get<string>('combinadoLido')) ?? new Date().toISOString();
+        await this.ctx.storage.put('combinadoLido', lidoEm);
+        return jsonResp({ lidoEm });
+      }
+      if (req.method !== 'GET') return new Response('Método não permitido', { status: 405 });
+      return jsonResp({ lidoEm: (await this.ctx.storage.get<string>('combinadoLido')) ?? null });
     }
     // ----- apontamentos do orientador no texto (o orientando responde e marca como resolvido) -----
     if (partes[1] === 'apontamentos') {

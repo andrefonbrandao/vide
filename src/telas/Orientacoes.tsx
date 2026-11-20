@@ -721,6 +721,7 @@ function VisaoGeral({
               >
                 Copiar mensagem ao orientando
               </button>
+              <CombinadoLido trabalho={trabalho} />
               <div className="ori-info">
                 <span>Formulário</span>
                 <strong>{trabalho.preProjeto?.ativo ? (trabalho.preProjeto.formato === 'final' ? 'trabalho final' : 'pré-projeto') : 'desligado'}</strong>
@@ -735,6 +736,35 @@ function VisaoGeral({
           )}
         </section>
       </div>
+    </div>
+  );
+}
+
+/** Se o orientando já confirmou a leitura do combinado de orientação. */
+function CombinadoLido({ trabalho }: { trabalho: Trabalho }) {
+  const pub = trabalho.publicacao;
+  const [lido, setLido] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (!pub) return;
+    let vivo = true;
+    void fetch(`/api/orientacao/${pub.codigo}/combinado`, { headers: { 'X-Vide-Chave': pub.chave } })
+      .then(async (r) => (r.ok ? ((await r.json()) as { lidoEm: string | null }).lidoEm : undefined))
+      .then((x) => vivo && setLido(x), () => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [pub]);
+  if (lido === undefined) return null;
+  return (
+    <div className="ori-info">
+      <span>Combinado de orientação</span>
+      {lido ? (
+        <strong>lido em {new Date(lido).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</strong>
+      ) : (
+        <strong className="ori-combinado-pendente">
+          <span className="ori-ponto amarelo" /> ainda não lido
+        </strong>
+      )}
     </div>
   );
 }
@@ -2013,6 +2043,8 @@ function mensagemConvite(nome: string, url: string, pin: string, formulario?: 'p
   return `Olá${nome ? `, ${nome.split(' ')[0]}` : ''}! Esta é a sua página de orientação:
 ${url}
 Código de acesso: ${pin}
+
+Ao entrar, comece pelo nosso combinado de orientação (quem faz o quê e quais fontes usar): leva uns 3 minutos.
 
 Lá você acompanha o cronograma (com quanto falta para cada etapa), as pendências combinadas nas nossas conversas e os elementos do trabalho, e baixa os modelos e orientações (manual de normalização, modelo do trabalho). A página se atualiza sozinha.${form}`;
 }

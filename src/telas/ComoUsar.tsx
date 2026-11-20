@@ -74,6 +74,7 @@ export function passosDoPasseio(nome: string, formulario: 'pre' | 'final' | null
           },
         ]
       : []),
+    { alvo: '[data-passeio="combinado"]', titulo: 'O combinado', texto: 'Quem faz o quê e quais fontes usar no trabalho. Fica sempre aqui para consulta.' },
     { alvo: '[data-passeio="comousar"]', titulo: 'Dúvidas?', texto: 'Em "Como usar", as respostas para as perguntas mais comuns, com busca.' },
     { alvo: '[data-passeio="ajuda"]', titulo: 'Rever o passeio', texto: 'Toque no "?" para ver este passeio de novo. Bom trabalho!' },
   ];

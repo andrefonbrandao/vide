@@ -1931,3 +1931,30 @@ body:has(.ori-foco) .avisos-rapidos { bottom: 84px; }
 .passeio-pe { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
 .passeio-pe .ajuda { margin-right: auto !important; }
 .oa-abas { flex-wrap: wrap; }
+
+/* Combinado de orientação */
+.comb { display: flex; flex-direction: column; gap: 14px; }
+.comb h2 { margin: 0 0 4px; font-size: 22px; }
+.comb-resp { list-style: none; margin: 0; padding: 0 14px 6px; }
+.comb-resp li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid #edf0ea; }
+.comb-resp li:first-child { border-top: none; }
+.comb-quem { flex: none; font-size: 12px; font-weight: 800; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+.comb-quem.aluno { background: #1e3a34; color: #fff; }
+.comb-quem.orientador { background: #e7ebe5; color: #1e3a34; }
+.comb-quem.ambos { background: #fff; color: #1e3a34; border: 1.5px solid #1e3a34; }
+.comb-fontes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; padding: 4px 14px 14px; }
+.comb-fonte { border-radius: 12px; padding: 12px 14px; border: 1px solid; }
+.comb-fonte ul { margin: 6px 0; padding-left: 18px; }
+.comb-fonte p { margin: 4px 0 0; font-size: 13.5px; line-height: 1.45; }
+.comb-fonte.sim { background: #eef6f1; border-color: #bcd9c8; }
+.comb-fonte.cautela { background: #fff8e3; border-color: #ecd98a; }
+.comb-fonte.nao { background: #fbeeea; border-color: #e7beb1; }
+.comb-simb { display: inline-flex; width: 22px; height: 22px; border-radius: 50%; align-items: center; justify-content: center; font-size: 13px; color: #fff; }
+.comb-fonte.sim .comb-simb { background: #3d7a5c; }
+.comb-fonte.cautela .comb-simb { background: #c79a12; }
+.comb-fonte.nao .comb-simb { background: #b5492b; }
+.comb-confirmar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.comb-ok { margin: 0; color: #3d7a5c; font-weight: 700; }
+.comb-aviso { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between; padding: 10px 14px; border-radius: 12px; background: #fff8e3; border: 1px solid #ecd98a; }
+.ori-combinado-pendente { color: #8a6d00; display: inline-flex; align-items: center; gap: 6px; }
+.ori-ponto.amarelo { background: #e2b93b; }
