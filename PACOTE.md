@@ -26,11 +26,11 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 35** aberto em 2026-11-20, a partir da versão 0.50.0 (já publicada).
+**Pacote 35** aberto em 2026-11-20, a partir da versão 0.50.0 (já publicada). **Fechado e publicado como versão 0.51.0.**
 
 | # | Ideia | Situação |
 |---|---|---|
-| 1 | **Senha do professor (porteiro).** O endereço principal do Vide (o app do professor) só abre com a senha do professor: num aparelho novo aparece a tela "Vide — entrar"; acertando, o aparelho fica liberado por um ano (cookie assinado; trocar a senha desconecta todos). Continuam abertos, como antes: as páginas dos alunos (/j jogo, /t treino, /p processo, /o orientação), o controle pelo celular (QR da sala) e os arquivos do app. Criar treinos, processos e páginas de orientação também passa a exigir a sessão do professor. 8 senhas erradas seguidas (do mesmo endereço de internet) bloqueiam por 15 minutos. **A senha é o segredo SENHA_PROFESSOR, guardado no painel do Cloudflare** (sem ele, o porteiro fica desligado). /api/sair desconecta o aparelho | No pacote |
+| 1 | **Senha do professor (porteiro).** O endereço principal do Vide (o app do professor) só abre com a senha do professor: num aparelho novo aparece a tela "Vide — entrar"; acertando, o aparelho fica liberado por um ano (cookie assinado; trocar a senha desconecta todos). Continuam abertos, como antes: as páginas dos alunos (/j jogo, /t treino, /p processo, /o orientação), o controle pelo celular (QR da sala) e os arquivos do app. Criar treinos, processos e páginas de orientação também passa a exigir a sessão do professor. 8 senhas erradas seguidas (do mesmo endereço de internet) bloqueiam por 15 minutos. **A senha é o segredo SENHA_PROFESSOR, guardado no painel do Cloudflare** (sem ele, o porteiro fica desligado). /api/sair desconecta o aparelho | Publicada (0.51.0) |
 
 ## Pacotes anteriores
 
