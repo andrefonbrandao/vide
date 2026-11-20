@@ -1530,3 +1530,10 @@ button.ori-tipo-enc { cursor: pointer; }
 .oa-modelos li > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .oa-modelos li > .botao { flex: none; }
 .ori-msg-bloco { font-size: 14px; font-weight: 700; color: #2f6b4f; }
+/* Alerta de pendências de orientação vencidas */
+.sinal-vencidas { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: #d8452b; color: #fff; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
+.sinal-vencidas.ponto { min-width: 0; width: 10px; height: 10px; padding: 0; margin: 0; position: absolute; top: 6px; right: 6px; border: 2px solid var(--papel); box-sizing: content-box; }
+.lateral-item, .barra-celular a { position: relative; }
+.barra-celular .sinal-vencidas.ponto { top: 4px; right: calc(50% - 18px); }
+.ori-vencidas { font-size: 12px; font-weight: 800; color: #fff; background: #d8452b; border-radius: 999px; padding: 2px 8px; }
+.ori-pend-vencida { color: #a2361f; font-weight: 700; }

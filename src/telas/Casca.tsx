@@ -36,6 +36,7 @@ import { Registro } from './Registro';
 import { Pagina } from './Pagina';
 import { AvisoAula, MinhasTurmas, SeletorTurma } from './Turmas';
 import { useTurmaAtiva } from './FaixaTurma';
+import { SinalVencidas, useVencidas } from './AlertaOrientacao';
 
 // A orientação só é baixada quando aberta (não pesa na aula).
 const Orientacoes = lazy(() => import('./Orientacoes').then((m) => ({ default: m.Orientacoes })));
@@ -272,6 +273,7 @@ function Ajustes() {
 }
 
 function BarraLateral({ rota, recolhida }: { rota: Rota; recolhida: boolean }) {
+  const vencidas = useVencidas();
   return (
     <aside className={`lateral${recolhida ? ' recolhida' : ''}`} aria-label="Seções do Vide" data-ui>
       <button className="lateral-logo" onClick={() => irPara('inicio')} aria-label="Início">
@@ -298,6 +300,7 @@ function BarraLateral({ rota, recolhida }: { rota: Rota; recolhida: boolean }) {
               >
                 {it.icone}
                 {!recolhida && <span>{it.rotulo}</span>}
+                {it.rota === 'orientacoes' && <SinalVencidas n={vencidas} ponto={recolhida} />}
               </a>
             ))}
           </div>
@@ -353,6 +356,7 @@ function AulaNoCelular() {
 }
 
 function BarraCelular({ rota }: { rota: Rota }) {
+  const vencidas = useVencidas();
   const itens: [Rota, string, ReactNode, Rota[]][] = [
     ['inicio', 'Início', <IcInicio key="i" />, ['inicio']],
     ['aula', 'Aula', <IcProjecao key="a" />, ['aula']],
@@ -366,6 +370,7 @@ function BarraCelular({ rota }: { rota: Rota }) {
         <a key={r} href={`#${r}`} aria-current={grupo.includes(rota) ? 'page' : undefined}>
           {ic}
           <span>{rot}</span>
+          {r === 'turmas' && <SinalVencidas n={vencidas} ponto />}
         </a>
       ))}
     </nav>

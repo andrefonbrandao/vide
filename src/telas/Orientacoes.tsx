@@ -28,6 +28,7 @@ import {
   salvarVersao,
 } from '../orientacao/banco';
 import { analisarColagem, type Colagem } from '../orientacao/colar';
+import { pendenciasVencidas } from '../orientacao/alertas';
 import { lerEncaminhamentos, lerRespostaIA, pedidoRegistroIA } from '../orientacao/ia';
 import type { OpcoesRelatorio } from '../orientacao/relatorioPdf';
 import { assinarPublicacao, desativarOrientacao, estadoPublicacao, MAX_MODELO, publicarOrientacao, urlDoOrientando } from '../orientacao/publicar';
@@ -125,6 +126,7 @@ export function Orientacoes() {
     const dele = interacoes.filter((i) => i.trabalhoId === t.id);
     const ultima = dele[0];
     const pend = pendencias(dele).length;
+    const vencidas = pendenciasVencidas(dele, [t], hoje).length;
     const e = etapaAtual(t);
     const s = e && situacaoEtapa(e, hoje);
     return (
@@ -133,6 +135,11 @@ export function Orientacoes() {
           <strong>{o?.nome ?? 'Orientando'}</strong>
           <span className="ori-selo">{t.tipo}</span>
           {t.situacao !== 'andamento' && <span className="ori-selo">{t.situacao === 'concluido' ? 'concluído' : 'interrompido'}</span>}
+          {vencidas > 0 && (
+            <span className="ori-vencidas" title="Pendências com o prazo vencido, sem baixa">
+              {vencidas} {vencidas === 1 ? 'vencida' : 'vencidas'}
+            </span>
+          )}
         </span>
         <span className="ori-cartao-titulo">{t.titulo || 'Trabalho sem título'}</span>
         {t.situacao === 'andamento' && (
@@ -486,8 +493,13 @@ function ListaPendencias({ pend, aoRegistrar }: { pend: Pendencia[]; aoRegistrar
                 <span className="ajuda" style={{ margin: 0 }}>
                   {' '}
                   · {rotuloInteracao(p.interacao).toLowerCase()} de {dataBR(p.interacao.em)}
-                  {p.enc.prazo ? ` · até ${dataBR(p.enc.prazo)} (${rotuloDias(situacaoEtapa({ id: '', nome: '', prazo: p.enc.prazo }).dias)})` : ''}
                 </span>
+                {p.enc.prazo && (
+                  <span className={situacaoEtapa({ id: '', nome: '', prazo: p.enc.prazo }).tipo === 'atrasada' ? 'ori-pend-vencida' : 'ajuda'} style={{ margin: 0 }}>
+                    {' '}
+                    · até {dataBR(p.enc.prazo)} ({rotuloDias(situacaoEtapa({ id: '', nome: '', prazo: p.enc.prazo }).dias)})
+                  </span>
+                )}
               </span>
               <button className="link-discreto" onClick={() => void resolverPendencia(p, 'descartado')}>
                 descartar
@@ -739,7 +751,9 @@ function ItemInteracao({ i, versoes, aoEditar }: { i: Interacao; versoes: Versao
               <span className={`ori-tipo-enc ${e.tipo}`}>{e.tipo === 'comando' ? 'comando' : 'sugestão'}</span>
               <span>
                 {e.texto}
-                {e.prazo ? <span className="ajuda"> · até {dataBR(e.prazo)}</span> : null}
+                {e.prazo ? (
+                  <span className={e.situacao === 'pendente' && situacaoEtapa({ id: '', nome: '', prazo: e.prazo }).tipo === 'atrasada' ? 'ori-pend-vencida' : 'ajuda'}> · até {dataBR(e.prazo)}</span>
+                ) : null}
                 {e.situacao === 'descartado' ? <span className="ajuda"> · descartado</span> : null}
               </span>
             </li>

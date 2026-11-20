@@ -23,15 +23,21 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 22** aberto em 2026-11-19, a partir da versão 0.37.0 (já publicada). **Fechado e publicado como versão 0.38.0.**
+**Pacote 23** aberto em 2026-11-20, a partir da versão 0.38.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | **Alerta de pendência vencida:** quando passa o prazo de uma sugestão ou comando de orientação sem baixa, aparece um **círculo vermelho com o número** ao lado de "Orientandos" na barra lateral (um ponto vermelho no ícone, com a barra recolhida na aula, e na aba "Turma" do celular); some quando você marca como cumprida ou descarta. Também: selo "N vencidas" no cartão do orientando e o prazo vencido em vermelho nas pendências. Contam só os trabalhos em andamento; o alerta se atualiza com as mudanças, ao voltar para a aba e ao virar o dia | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 22 (publicado como 0.38.0 em 2026-11-20)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | **Orientação: elementos do trabalho e relatório em PDF.** Nova aba "Elementos do trabalho" (tema, delimitação, problema, hipóteses, objetivo geral, objetivos específicos — um por linha —, justificativa e metodologia, como no projeto de pesquisa do manual de normalização), guardada sozinha, com a data da última alteração. Botão **"Relatório em PDF"**: escolher o que entra (elementos, cronograma, pendências, sessões e comunicações — com período e, se quiser, anotações, conversas e transcrições —, versões), atalhos "Só os elementos", "Só as orientações" e "Tudo", nome do orientador no cabeçalho; o PDF é montado no computador (o leitor de PDF é baixado só no clique) | Publicada (0.38.0) |
 | 2 | **Página do orientando** (link `/o/…` com **código de acesso de 6 números**): cronograma com quanto falta para cada etapa e a "etapa da vez", pendências (sugestões e comandos em aberto), elementos do trabalho (só leitura) e **modelos e orientações para baixar** a qualquer momento; sem e-mail, telefone, sessões, conversas ou versões. **Modelos e orientações** (em Orientandos): arquivos (PDF, Word, até 10 MB) ou orientações escritas, para todos os orientandos ou só para um; vão para o Drive. A página **se atualiza sozinha** alguns segundos depois de cada mudança; "Copiar mensagem para o orientando" (link + código), QR, trocar o código, desativar. Segurança: 8 códigos errados bloqueiam por 15 minutos; o código fica guardado no serviço só como "impressão digital" (hash). Correção junto: mudar o cronograma e logo os elementos (ou os dados) não desfaz mais o que a outra aba acabou de gravar | Publicada (0.38.0) |
 | 3 | **Sugestões e comandos colados em bloco:** colar várias linhas no campo de sugestões e comandos separa cada uma e classifica pelo que a IA escreve ("[comando]", "[sugestão]", "Comando:", "Sugestão –") ou pelos títulos "Comandos:" e "Sugestões:"; o prazo ("| até 30/11/2026") entra junto; frases soltas fora da lista são ignoradas; sem marcação, vale o tipo escolhido ao lado; não repete o que já está na lista. Colar a resposta inteira da IA (com "RESUMO:") no mesmo campo preenche também o resumo e as pendências cumpridas | Publicada (0.38.0) |
-
-## Pacotes anteriores
 
 ### Pacote 21 (publicado como 0.37.0 em 2026-11-19)
 

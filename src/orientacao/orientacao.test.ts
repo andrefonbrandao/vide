@@ -137,3 +137,19 @@ describe('sugestões e comandos colados em bloco', () => {
     expect(r).toEqual({ comResumo: true, itens: [{ tipo: 'comando', texto: 'Fazer X', prazo: undefined }] });
   });
 });
+
+describe('pendências vencidas (alerta)', () => {
+  test('só as pendentes com prazo passado, de trabalhos em andamento', async () => {
+    const { pendenciasVencidas } = await import('./alertas');
+    const base = { usuario_id: null, criado_em: '', atualizado_em: '', excluido_em: null, canal: 'sessao' as const, em: '2026-11-01T10:00', resumo: '', texto: '' };
+    const i1: Interacao = { ...base, id: '1', trabalhoId: 'a', encaminhamentos: [
+      { id: 'x', tipo: 'comando', texto: 'vencida', situacao: 'pendente', prazo: '2026-11-19' },
+      { id: 'y', tipo: 'comando', texto: 'vence hoje', situacao: 'pendente', prazo: '2026-11-20' },
+      { id: 'z', tipo: 'comando', texto: 'já cumprida', situacao: 'cumprido', prazo: '2026-11-01' },
+      { id: 'w', tipo: 'sugestao', texto: 'sem prazo', situacao: 'pendente' },
+    ] };
+    const i2: Interacao = { ...base, id: '2', trabalhoId: 'b', encaminhamentos: [{ id: 'k', tipo: 'comando', texto: 'de trabalho concluído', situacao: 'pendente', prazo: '2026-10-01' }] };
+    const trabalhos = [{ id: 'a', situacao: 'andamento' as const, excluido_em: null }, { id: 'b', situacao: 'concluido' as const, excluido_em: null }];
+    expect(pendenciasVencidas([i1, i2], trabalhos, '2026-11-20').map((p) => p.texto)).toEqual(['vencida']);
+  });
+});
