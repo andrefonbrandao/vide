@@ -505,6 +505,7 @@ function TrabalhoDetalhe({ trabalho, orientando, aoVoltar, aoAbrir }: { trabalho
           aoRegistrar={() => registrar('sessao')}
           aoLinhaDoTempo={() => setAba('tempo')}
           aoCompartilhar={() => setJanela('compartilhar')}
+          orientando={orientando}
         />
       )}
       {aba === 'tempo' && <LinhaDoTempo trabalho={trabalho} orientando={orientando} interacoes={interacoes} versoes={versoes} aoEditar={setRegistrando} aoRegistrar={registrar} />}
@@ -542,6 +543,7 @@ function VisaoGeral({
   aoRegistrar,
   aoLinhaDoTempo,
   aoCompartilhar,
+  orientando,
 }: {
   trabalho: Trabalho;
   interacoes: Interacao[];
@@ -549,6 +551,7 @@ function VisaoGeral({
   aoRegistrar: () => void;
   aoLinhaDoTempo: () => void;
   aoCompartilhar: () => void;
+  orientando?: Orientando;
 }) {
   const [editarCrono, setEditarCrono] = useState(false);
   const [todas, setTodas] = useState(false);
@@ -709,9 +712,18 @@ function VisaoGeral({
               <p className="ori-estado">
                 <span className="ori-ponto verde" /> Ativa · código <strong className="mono">{pub.pin}</strong>
               </p>
+              <button
+                type="button"
+                className="botao escuro pequeno ori-largo"
+                style={{ margin: '4px 0 8px', whiteSpace: 'normal' }}
+                title="Copia a saudação, o link e o código de acesso, para colar no WhatsApp ou no e-mail"
+                onClick={() => void copiarMensagem(orientando?.nome ?? '', trabalho)}
+              >
+                Copiar mensagem ao orientando
+              </button>
               <div className="ori-info">
-                <span>Formulário do pré-projeto</span>
-                <strong>{trabalho.preProjeto?.ativo ? 'ligado' : 'desligado'}</strong>
+                <span>Formulário</span>
+                <strong>{trabalho.preProjeto?.ativo ? (trabalho.preProjeto.formato === 'final' ? 'trabalho final' : 'pré-projeto') : 'desligado'}</strong>
               </div>
               {trabalho.preProjeto?.ativo && (
                 <div className="ori-info">
@@ -1983,12 +1995,25 @@ function ItemModelo({ m }: { m: Modelo }) {
 
 // ---------- Página do orientando ----------
 
-function mensagemConvite(nome: string, url: string, pin: string): string {
+function mensagemConvite(nome: string, url: string, pin: string, formulario?: 'pre' | 'final' | null): string {
+  const form =
+    formulario === 'final'
+      ? '\n\nNa aba "Meu trabalho final" você escreve o trabalho, vê os meus apontamentos no texto, baixa em PDF ou Word já formatado e me envia as versões.'
+      : formulario === 'pre'
+        ? '\n\nNa aba "Meu pré-projeto" você escreve o pré-projeto, vê os meus apontamentos no texto, baixa em PDF ou Word já formatado e me envia as versões.'
+        : '';
   return `Olá${nome ? `, ${nome.split(' ')[0]}` : ''}! Esta é a sua página de orientação:
 ${url}
 Código de acesso: ${pin}
 
-Lá você acompanha o cronograma (com quanto falta para cada etapa), as pendências combinadas nas nossas conversas e os elementos do trabalho, e baixa os modelos e orientações (manual de normalização, modelo do trabalho). A página se atualiza sozinha.`;
+Lá você acompanha o cronograma (com quanto falta para cada etapa), as pendências combinadas nas nossas conversas e os elementos do trabalho, e baixa os modelos e orientações (manual de normalização, modelo do trabalho). A página se atualiza sozinha.${form}`;
+}
+
+/** Copia a mensagem ao orientando (saudação, link e código). */
+async function copiarMensagem(nome: string, t: Trabalho) {
+  if (!t.publicacao) return;
+  const ok = await copiar(mensagemConvite(nome, urlDoOrientando(t.publicacao.codigo), t.publicacao.pin, t.preProjeto?.ativo ? (t.preProjeto.formato ?? 'pre') : null));
+  avisar(ok ? 'Mensagem copiada (com o link e o código): cole no WhatsApp ou no e-mail' : 'Este navegador não deixou copiar');
 }
 
 /** Configuração do pré-projeto do trabalho (guardada com uma pausa curta). */
@@ -2125,8 +2150,8 @@ function JanelaCompartilhar({ trabalho, orientando, aoFechar }: { trabalho: Trab
         <>
           <div className="ori-link-caixa">
             <input readOnly value={urlDoOrientando(pub.codigo)} aria-label="Link da página" onFocus={(e) => e.target.select()} />
-            <button type="button" className="botao" onClick={async () => avisar((await copiar(urlDoOrientando(pub.codigo))) ? 'Link copiado' : 'Este navegador não deixou copiar')}>
-              Copiar link
+            <button type="button" className="botao" title="Só o endereço, sem a saudação e sem o código" onClick={async () => avisar((await copiar(urlDoOrientando(pub.codigo))) ? 'Link copiado (sem o código)' : 'Este navegador não deixou copiar')}>
+              Copiar só o link
             </button>
             <a className="botao" href={urlDoOrientando(pub.codigo)} target="_blank" rel="noopener">
               Abrir
@@ -2155,7 +2180,7 @@ function JanelaCompartilhar({ trabalho, orientando, aoFechar }: { trabalho: Trab
           <button
             type="button"
             className="botao escuro ori-largo"
-            onClick={async () => avisar((await copiar(mensagemConvite(nome, urlDoOrientando(pub.codigo), pub.pin))) ? 'Mensagem copiada: cole no WhatsApp ou no e-mail' : 'Este navegador não deixou copiar')}
+            onClick={() => void copiarMensagem(nome, trabalho)}
           >
             Copiar mensagem para {primeiro} (link + código)
           </button>
