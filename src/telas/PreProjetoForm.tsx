@@ -172,7 +172,7 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
   const [texto, setTexto] = useState<TextoProjeto | null>(null);
   const [estado, setEstado] = useState('');
   const [ultimoEnvio, setUltimoEnvio] = useState<string | null>(null);
-  const [ocupado, setOcupado] = useState<'' | 'pdf' | 'envio'>('');
+  const [ocupado, setOcupado] = useState<'' | 'ver' | 'pdf' | 'envio'>('');
   const [erro, setErro] = useState('');
   const timer = useRef<number | null>(null);
   const pendente = useRef<TextoProjeto | null>(null);
@@ -236,19 +236,28 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
       .catch(() => undefined);
     return gerarPreProjetoPdf({ nome: dados.nome, config: dados.preProjeto!, texto: texto!, etapas: dados.etapas, logo });
   };
-  const verPdf = async () => {
-    setOcupado('pdf');
+  /** Pré-visualizar (abre numa aba nova) ou baixar: só para o orientando, nada vai ao orientador. */
+  const verPdf = async (modo: 'abrir' | 'baixar') => {
+    // A aba precisa ser aberta já no clique (senão o navegador bloqueia); o PDF entra nela depois.
+    const aba = modo === 'abrir' ? window.open('', '_blank') : null;
+    if (aba) aba.document.write('<p style="font-family:sans-serif;padding:20px">Montando o PDF…</p>');
+    setOcupado(modo === 'abrir' ? 'ver' : 'pdf');
     setErro('');
     try {
       const blob = await gerarPdf();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `Pre-projeto - ${dados.nome.normalize('NFD').replace(/[̀-ͯ]/g, '')}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.setTimeout(() => URL.revokeObjectURL(a.href), 60_000);
+      const url = URL.createObjectURL(blob);
+      if (aba) aba.location.href = url;
+      else {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Pre-projeto - ${dados.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      window.setTimeout(() => URL.revokeObjectURL(url), 5 * 60_000);
     } catch (e) {
+      aba?.close();
       setErro(`Não foi possível montar o PDF: ${(e as Error).message}`);
     } finally {
       setOcupado('');
@@ -280,18 +289,24 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
         <div>
           <h2>Meu pré-projeto</h2>
           <p className="ajuda" style={{ margin: 0 }}>
-            Escreva aqui as partes do projeto de pesquisa. O Vide monta o PDF com a capa, a folha de rosto, o sumário e a formatação do manual (margens, fonte, espaçamento,
+            Escreva aqui as partes do projeto de pesquisa. Quando quiser, pré-visualize ou baixe o PDF (só para você): ele sai com a capa, a folha de rosto, o sumário e a formatação do manual (margens, fonte, espaçamento,
             citações e notas de rodapé). Cada Enter começa um parágrafo novo.
           </p>
         </div>
       </div>
       <div className="pp-acoes">
-        <button type="button" className="botao" disabled={!!ocupado} onClick={() => void verPdf()}>
-          {ocupado === 'pdf' ? 'Montando o PDF…' : 'Ver o PDF'}
+        <button type="button" className="botao" disabled={!!ocupado} onClick={() => void verPdf('abrir')} title="Abre o PDF numa aba nova. Só para você: nada vai ao orientador.">
+          {ocupado === 'ver' ? 'Montando…' : 'Pré-visualizar'}
+        </button>
+        <button type="button" className="botao" disabled={!!ocupado} onClick={() => void verPdf('baixar')} title="Salva o PDF no seu aparelho. Só para você: nada vai ao orientador.">
+          {ocupado === 'pdf' ? 'Montando…' : 'Baixar o PDF'}
         </button>
         <button type="button" className="botao primario" disabled={!!ocupado} onClick={() => void enviar()}>
           {ocupado === 'envio' ? 'Enviando…' : 'Enviar ao orientador'}
         </button>
+        <span className="ajuda pp-so-voce" style={{ margin: 0, flexBasis: '100%' }}>
+          Pré-visualizar e baixar são só para você. O orientador só recebe quando você clicar em "Enviar ao orientador".
+        </span>
         <span className="ajuda" style={{ margin: 0 }}>
           {estado}
           {ultimoEnvio ? ` · Último envio: ${new Date(ultimoEnvio).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}` : ''}
@@ -335,8 +350,11 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
         </ul>
       </details>
       <div className="pp-acoes">
-        <button type="button" className="botao" disabled={!!ocupado} onClick={() => void verPdf()}>
-          {ocupado === 'pdf' ? 'Montando o PDF…' : 'Ver o PDF'}
+        <button type="button" className="botao" disabled={!!ocupado} onClick={() => void verPdf('abrir')} title="Abre o PDF numa aba nova. Só para você: nada vai ao orientador.">
+          {ocupado === 'ver' ? 'Montando…' : 'Pré-visualizar'}
+        </button>
+        <button type="button" className="botao" disabled={!!ocupado} onClick={() => void verPdf('baixar')} title="Salva o PDF no seu aparelho. Só para você: nada vai ao orientador.">
+          {ocupado === 'pdf' ? 'Montando…' : 'Baixar o PDF'}
         </button>
         <button type="button" className="botao primario" disabled={!!ocupado} onClick={() => void enviar()}>
           {ocupado === 'envio' ? 'Enviando…' : 'Enviar ao orientador'}
