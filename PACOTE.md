@@ -23,15 +23,21 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 23** aberto em 2026-11-20, a partir da versão 0.38.0 (já publicada). **Fechado e publicado como versão 0.39.0.**
+**Pacote 24** aberto em 2026-11-20, a partir da versão 0.39.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | **Sugestões e comandos: ✕ e lixeira.** No lugar de "tirar" (que apagava) e "descartar", cada sugestão ou comando tem dois ícones — no formulário da sessão, na linha do tempo e na lista de pendências: **✕** registra como **não cumprido** (comando) ou **rejeitada** (sugestão), com a data — continua guardado, riscado em vermelho com traço duplo (as cumpridas ficam com risco cinza simples); clicar no ✕ de novo desfaz; **lixeira** apaga de vez (com confirmação fora do formulário). Não cumpridas e rejeitadas saem das pendências, do alerta vermelho e da página do orientando; no relatório em PDF aparecem com um ✕ vermelho na coluna Check e "não cumprido em…" | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 23 (publicado como 0.39.0 em 2026-11-20)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | **Alerta de pendência vencida:** quando passa o prazo de uma sugestão ou comando de orientação sem baixa, aparece um **círculo vermelho com o número** ao lado de "Orientandos" na barra lateral (um ponto vermelho no ícone, com a barra recolhida na aula, e na aba "Turma" do celular); some quando você marca como cumprida ou descarta. Também: selo "N vencidas" no cartão do orientando e o prazo vencido em vermelho nas pendências. Contam só os trabalhos em andamento; o alerta se atualiza com as mudanças, ao voltar para a aba e ao virar o dia | Publicada (0.39.0) |
 | 2 | **Silhueta do orientando:** nos quadros de "Orientandos", uma silhueta humana em tom neutro (cinza, cabeça e ombros num círculo) ao lado do nome | Publicada (0.39.0) |
 | 3 | **Relatório em PDF mais bem formatado:** uma família de fontes só (Helvetica: normal, negrito e itálico) em tamanhos padronizados; cabeçalho com ficha em duas colunas (curso, e-mail, orientador, início, defesa, situação, data); títulos de seção em verde com fio; **pendências em tabela** (Tipo — COMANDO/SUGESTÃO —, Descrição com a data em que foi combinada, Prazo com "venceu há…" em vermelho, Check com caixinha para marcar); cronograma, sugestões e comandos de cada sessão e versões também em tabela; rodapé com "página X de Y". Na linha do tempo, o que foi cumprido ou descartado mostra a data | Publicada (0.39.0) |
-
-## Pacotes anteriores
 
 ### Pacote 22 (publicado como 0.38.0 em 2026-11-20)
 

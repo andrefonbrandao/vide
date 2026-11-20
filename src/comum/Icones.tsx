@@ -311,3 +311,19 @@ export const IcOrientacao = (p: P) => (
     <path d="M22 9v6" />
   </Svg>
 );
+
+/** Lixeira (apagar de vez). */
+export const IcLixeira = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 7h16M10 11v6M14 11v6" />
+    <path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" />
+    <path d="M9 7V4h6v3" />
+  </Svg>
+);
+
+/** X (não cumprido / rejeitado). */
+export const IcX = (p: P) => (
+  <Svg {...p}>
+    <path d="M6 6l12 12M18 6L6 18" />
+  </Svg>
+);

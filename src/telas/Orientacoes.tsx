@@ -3,7 +3,7 @@
 // Esta tela é carregada só quando aberta (não pesa na aula).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { avisar, confirmar } from '../comum/avisos';
-import { IcMais } from '../comum/Icones';
+import { IcLixeira, IcMais, IcX } from '../comum/Icones';
 import { novoId } from '../dados/modelo';
 import {
   adicionarModelo,
@@ -47,6 +47,30 @@ function rotuloInteracao(i: Interacao): string {
   if (i.canal === 'sessao') return `Sessão de orientação${i.modo ? ` (${i.modo})` : ''}`;
   return nomeCanal(i.canal);
 }
+
+/** "não cumprido" (comando) ou "rejeitada" (sugestão). */
+function rotuloNao(tipo: Encaminhamento['tipo']): string {
+  return tipo === 'comando' ? 'não cumprido' : 'rejeitada';
+}
+
+/** Os dois botões de cada sugestão ou comando: ✕ (não cumprido/rejeitada, ou desfazer) e lixeira (apagar de vez). */
+function AcoesEnc({ e, aoMarcar, aoApagar }: { e: Pick<Encaminhamento, 'tipo' | 'texto' | 'situacao'>; aoMarcar: () => void; aoApagar: () => void }) {
+  const nao = e.situacao === 'descartado';
+  const rotulo = nao ? `Desfazer "${rotuloNao(e.tipo)}" (volta a ficar pendente)` : e.tipo === 'comando' ? 'Registrar como não cumprido (fica guardado, riscado)' : 'Registrar como rejeitada (fica guardada, riscada)';
+  return (
+    <span className="ori-acoes-enc">
+      <button type="button" className={`ori-icone nao${nao ? ' ativo' : ''}`} title={rotulo} aria-label={`${rotulo}: ${e.texto}`} onClick={aoMarcar}>
+        <IcX tamanho={15} />
+      </button>
+      <button type="button" className="ori-icone lixo" title="Apagar de vez (não fica registrado)" aria-label={`Apagar: ${e.texto}`} onClick={aoApagar}>
+        <IcLixeira tamanho={15} />
+      </button>
+    </span>
+  );
+}
+
+const confirmarApagarEnc = (texto: string) =>
+  confirmar({ titulo: 'Apagar de vez?', texto: `"${texto}" sai do registro, sem ficar como não cumprido. Para guardar o registro, use o ✕.`, botao: 'Apagar', perigo: true });
 
 function tamanhoLegivel(n: number): string {
   return n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
@@ -513,9 +537,13 @@ function ListaPendencias({ pend, aoRegistrar }: { pend: Pendencia[]; aoRegistrar
                   </span>
                 )}
               </span>
-              <button className="link-discreto" onClick={() => void resolverPendencia(p, 'descartado')}>
-                descartar
-              </button>
+              <AcoesEnc
+                e={p.enc}
+                aoMarcar={() => void resolverPendencia(p, 'descartado')}
+                aoApagar={async () => {
+                  if (await confirmarApagarEnc(p.enc.texto)) await salvarInteracao({ ...p.interacao, encaminhamentos: p.interacao.encaminhamentos.filter((x) => x.id !== p.enc.id) });
+                }}
+              />
             </li>
           ))}
         </ul>
@@ -761,14 +789,21 @@ function ItemInteracao({ i, versoes, aoEditar }: { i: Interacao; versoes: Versao
             <li key={e.id} className={e.situacao}>
               <input type="checkbox" aria-label={`Cumprido: ${e.texto}`} checked={e.situacao === 'cumprido'} onChange={(ev) => mudarEnc(e.id, ev.target.checked ? 'cumprido' : 'pendente')} />
               <span className={`ori-tipo-enc ${e.tipo}`}>{e.tipo === 'comando' ? 'comando' : 'sugestão'}</span>
-              <span>
-                {e.texto}
+              <span className="ori-enc-corpo">
+                <span className="ori-enc-texto">{e.texto}</span>
                 {e.prazo ? (
                   <span className={e.situacao === 'pendente' && situacaoEtapa({ id: '', nome: '', prazo: e.prazo }).tipo === 'atrasada' ? 'ori-pend-vencida' : 'ajuda'}> · até {dataBR(e.prazo)}</span>
                 ) : null}
                 {e.situacao === 'cumprido' ? <span className="ajuda"> · cumprido{e.resolvido_em ? ` em ${dataBR(e.resolvido_em)}` : ''}</span> : null}
-                {e.situacao === 'descartado' ? <span className="ajuda"> · descartado{e.resolvido_em ? ` em ${dataBR(e.resolvido_em)}` : ''}</span> : null}
+                {e.situacao === 'descartado' ? <span className="ori-nao-rotulo"> · {rotuloNao(e.tipo)}{e.resolvido_em ? ` em ${dataBR(e.resolvido_em)}` : ''}</span> : null}
               </span>
+              <AcoesEnc
+                e={e}
+                aoMarcar={() => mudarEnc(e.id, e.situacao === 'descartado' ? 'pendente' : 'descartado')}
+                aoApagar={async () => {
+                  if (await confirmarApagarEnc(e.texto)) await salvarInteracao({ ...i, encaminhamentos: i.encaminhamentos.filter((x) => x.id !== e.id) });
+                }}
+              />
             </li>
           ))}
         </ul>
@@ -1113,7 +1148,7 @@ function FormInteracao({ inicial, trabalho, interacoes, versoes, aoFechar }: { i
         {i.encaminhamentos.length > 0 && (
           <ul className="ori-encaminhamentos">
             {i.encaminhamentos.map((e) => (
-              <li key={e.id}>
+              <li key={e.id} className={e.situacao}>
                 <button
                   type="button"
                   className={`ori-tipo-enc ${e.tipo}`}
@@ -1124,9 +1159,21 @@ function FormInteracao({ inicial, trabalho, interacoes, versoes, aoFechar }: { i
                 </button>
                 <input aria-label="Texto" value={e.texto} onChange={(ev) => setI({ ...i, encaminhamentos: i.encaminhamentos.map((x) => (x.id === e.id ? { ...x, texto: ev.target.value } : x)) })} />
                 <input type="date" aria-label="Prazo" value={e.prazo ?? ''} onChange={(ev) => setI({ ...i, encaminhamentos: i.encaminhamentos.map((x) => (x.id === e.id ? { ...x, prazo: ev.target.value || undefined } : x)) })} />
-                <button type="button" className="link-discreto" onClick={() => setI({ ...i, encaminhamentos: i.encaminhamentos.filter((x) => x.id !== e.id) })}>
-                  tirar
-                </button>
+                {e.situacao !== 'pendente' && (
+                  <span className={e.situacao === 'cumprido' ? 'ajuda' : 'ori-nao-rotulo'} style={{ margin: 0, whiteSpace: 'nowrap' }}>
+                    {e.situacao === 'cumprido' ? 'cumprido' : rotuloNao(e.tipo)}
+                  </span>
+                )}
+                <AcoesEnc
+                  e={e}
+                  aoMarcar={() =>
+                    setI({
+                      ...i,
+                      encaminhamentos: i.encaminhamentos.map((x) => (x.id === e.id ? { ...x, situacao: x.situacao === 'descartado' ? 'pendente' : 'descartado', resolvido_em: x.situacao === 'descartado' ? null : hojeISO() } : x)),
+                    })
+                  }
+                  aoApagar={() => setI({ ...i, encaminhamentos: i.encaminhamentos.filter((x) => x.id !== e.id) })}
+                />
               </li>
             ))}
           </ul>

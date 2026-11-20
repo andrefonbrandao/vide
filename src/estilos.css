@@ -1439,8 +1439,6 @@ button.pilula:hover { border-color: var(--tinta); }
 .ori-pendencias li, .ori-encaminhamentos li { display: flex; align-items: center; gap: 8px; }
 .ori-pendencias .link-discreto { margin-left: auto; }
 .ori-pend-texto { flex: 1; }
-.ori-encaminhamentos li.cumprido > span:last-child { text-decoration: line-through; color: var(--tinta-3); }
-.ori-encaminhamentos li.descartado > span:last-child { color: var(--tinta-3); }
 .ori-encaminhamentos input:not([type='checkbox']) { font: inherit; padding: 5px 8px; border: 1px solid var(--linha); border-radius: 8px; }
 .ori-encaminhamentos input:not([type='checkbox']):not([type='date']) { flex: 1; }
 .ori-tipo-enc { flex: none; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; padding: 2px 7px; border-radius: 6px; border: none; background: #e4ebe6; color: var(--tinta); font-family: inherit; }
@@ -1540,3 +1538,15 @@ button.ori-tipo-enc { cursor: pointer; }
 .ori-silhueta { flex: none; border-radius: 50%; }
 .ori-silhueta-fundo { fill: #dfe3dd; }
 .ori-silhueta-figura { fill: #9aa59f; }
+/* Sugestões e comandos: ✕ (não cumprido / rejeitada) e lixeira (apagar) */
+.ori-acoes-enc { display: inline-flex; gap: 2px; margin-left: auto; flex: none; }
+.ori-icone { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--tinta-3); cursor: pointer; }
+.ori-icone:hover { border-color: var(--linha); background: #fff; color: var(--tinta); }
+.ori-icone.nao:hover, .ori-icone.nao.ativo { color: #a2361f; }
+.ori-icone.nao.ativo { background: #fbe3dc; border-color: #f0c4b6; }
+.ori-icone.lixo:hover { color: #a2361f; }
+.ori-enc-corpo { flex: 1; min-width: 0; }
+.ori-encaminhamentos li.cumprido .ori-enc-texto { text-decoration: line-through; color: var(--tinta-3); }
+.ori-encaminhamentos li.descartado .ori-enc-texto { text-decoration: line-through double #b8432b; color: #8f2d18; }
+.ori-encaminhamentos li.descartado input:not([type='checkbox']):not([type='date']) { text-decoration: line-through double #b8432b; color: #8f2d18; }
+.ori-nao-rotulo { color: #a2361f; font-weight: 700; font-size: 13px; }

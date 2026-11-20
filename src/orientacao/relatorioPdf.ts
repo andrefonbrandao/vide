@@ -111,9 +111,12 @@ export async function gerarRelatorioPdf(d: DadosRelatorio, o: OpcoesRelatorio): 
     y -= op.depois ?? 4;
   };
   /** Caixinha de marcar (vazia ou com ✓), com a base em (x, yb). */
-  const caixa = (x: number, yb: number, marcada: boolean, lado = 8.5) => {
+  const caixa = (x: number, yb: number, marcada: boolean | 'x', lado = 8.5) => {
     pagina.drawRectangle({ x, y: yb, width: lado, height: lado, borderColor: cor.tinta, borderWidth: 0.8 });
-    if (marcada) {
+    if (marcada === 'x') {
+      pagina.drawLine({ start: { x: x + 1.8, y: yb + 1.8 }, end: { x: x + lado - 1.8, y: yb + lado - 1.8 }, thickness: 1.2, color: cor.vermelho });
+      pagina.drawLine({ start: { x: x + 1.8, y: yb + lado - 1.8 }, end: { x: x + lado - 1.8, y: yb + 1.8 }, thickness: 1.2, color: cor.vermelho });
+    } else if (marcada) {
       pagina.drawLine({ start: { x: x + 1.8, y: yb + lado * 0.5 }, end: { x: x + lado * 0.42, y: yb + 1.8 }, thickness: 1.2, color: cor.destaque });
       pagina.drawLine({ start: { x: x + lado * 0.42, y: yb + 1.8 }, end: { x: x + lado - 1.4, y: yb + lado - 1.2 }, thickness: 1.2, color: cor.destaque });
     }
@@ -135,7 +138,7 @@ export async function gerarRelatorioPdf(d: DadosRelatorio, o: OpcoesRelatorio): 
 
   // ---------- Tabela ----------
   type Trecho = { t: string; fonte?: Fonte; cor?: Cor; tam?: number };
-  type Celula = string | Trecho[] | { caixa: boolean };
+  type Celula = string | Trecho[] | { caixa: boolean | 'x' };
   interface Coluna {
     titulo: string;
     /** Fração da largura. */
@@ -167,14 +170,14 @@ export async function gerarRelatorioPdf(d: DadosRelatorio, o: OpcoesRelatorio): 
     for (const linha of linhas) {
       // Mede a linha.
       const conteudo = linha.map((cel, k) => {
-        if (typeof cel === 'object' && !Array.isArray(cel)) return { caixa: cel.caixa, partes: [] as { l: string; fonte: Fonte; cor: Cor; tam: number }[] };
+        if (typeof cel === 'object' && !Array.isArray(cel)) return { caixa: cel.caixa as boolean | 'x' | undefined, partes: [] as { l: string; fonte: Fonte; cor: Cor; tam: number }[] };
         const trechos: Trecho[] = typeof cel === 'string' ? [{ t: cel }] : cel;
         const partes = trechos.flatMap((tr) => {
           const fonte = tr.fonte ?? f.normal;
           const tam = tr.tam ?? T.tabela;
           return quebrar(tr.t, fonte, tam, ws[k] - PAD.x * 2).map((l) => ({ l, fonte, cor: tr.cor ?? cor.tinta, tam }));
         });
-        return { caixa: undefined as boolean | undefined, partes };
+        return { caixa: undefined as boolean | 'x' | undefined, partes };
       });
       const h = Math.max(T.tabela * ENTRELINHA, ...conteudo.map((c) => c.partes.reduce((s, p) => s + p.tam * ENTRELINHA, 0))) + PAD.y * 2;
       if (y - h < M.base) {
@@ -308,10 +311,10 @@ export async function gerarRelatorioPdf(d: DadosRelatorio, o: OpcoesRelatorio): 
             [
               { t: e.texto, cor: e.situacao === 'pendente' ? cor.tinta : cor.cinza },
               ...(e.situacao === 'cumprido' ? [{ t: `cumprido${e.resolvido_em ? ` em ${dataBR(e.resolvido_em)}` : ''}`, tam: T.meta, cor: cor.destaque }] : []),
-              ...(e.situacao === 'descartado' ? [{ t: `descartado${e.resolvido_em ? ` em ${dataBR(e.resolvido_em)}` : ''}`, tam: T.meta, cor: cor.cinza }] : []),
+              ...(e.situacao === 'descartado' ? [{ t: `${e.tipo === 'comando' ? 'não cumprido' : 'rejeitada'}${e.resolvido_em ? ` em ${dataBR(e.resolvido_em)}` : ''}`, tam: T.meta, cor: cor.vermelho, fonte: f.negrito }] : []),
             ],
             prazoTrechos(e.prazo, e.situacao === 'pendente'),
-            { caixa: e.situacao === 'cumprido' },
+            { caixa: e.situacao === 'cumprido' ? true : e.situacao === 'descartado' ? 'x' : false },
           ]),
         );
       if (o.conversas && i.texto.trim()) {
