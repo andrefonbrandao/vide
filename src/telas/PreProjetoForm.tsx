@@ -363,6 +363,21 @@ export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; val
   const ref = useRef<HTMLTextAreaElement>(null);
   const pg = useContext(ContextoPagina);
   const [editando, setEditando] = useState<{ ini: number; fim: number; tipo: 'tabela' | 'figura'; tabela?: TabelaTexto; figura?: FiguraTexto } | null>(null);
+  /** Campo ampliado: ocupa a tela toda, para escrever textos longos com conforto. */
+  const [cheio, setCheio] = useState(false);
+  const ampliavel = def.linhas >= 5 && !def.simples;
+  useEffect(() => {
+    if (!cheio) return;
+    const antes = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const tecla = (e: KeyboardEvent) => e.key === 'Escape' && !document.querySelector('.modal-fundo') && setCheio(false);
+    window.addEventListener('keydown', tecla);
+    requestAnimationFrame(() => ref.current?.focus());
+    return () => {
+      document.body.style.overflow = antes;
+      window.removeEventListener('keydown', tecla);
+    };
+  }, [cheio]);
   const blocos = def.tabelas ? blocosDoTexto(valor) : [];
   const abrir = (tipo: 'tabela' | 'figura') => {
     const el = ref.current;
@@ -409,7 +424,18 @@ export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; val
     requestAnimationFrame(() => el.focus());
   };
   return (
-    <div className="campo pp-campo">
+    <div className={`campo pp-campo${cheio ? ' pp-campo-cheio' : ''}`}>
+      {cheio && (
+        <div className="pp-cheio-topo">
+          <strong>{def.nome || 'Texto'}</strong>
+          <span className="ajuda" style={{ margin: 0 }}>
+            O texto é salvo sozinho.
+          </span>
+          <button type="button" className="botao escuro pequeno" onClick={() => setCheio(false)}>
+            Fechar (Esc)
+          </button>
+        </div>
+      )}
       {rotulo ?? <label htmlFor={`pp-${def.campo}`}>{def.nome}</label>}
       {def.ajuda && <span className="ajuda" style={{ margin: 0 }}>{def.ajuda}</span>}
       {def.linhas === 1 ? (
@@ -418,6 +444,11 @@ export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; val
         <>
           {!def.simples && (
             <div className="pp-barra" role="toolbar" aria-label={`Formatação: ${def.nome}`}>
+              {ampliavel && !cheio && (
+                <button type="button" className="pp-ampliar" title="Ampliar: escrever com a tela toda" onClick={() => setCheio(true)}>
+                  ⤢ Ampliar
+                </button>
+              )}
               <button type="button" title="Negrito (**texto**)" onClick={() => envolver('**', '**', 'texto')}>
                 <strong>N</strong>
               </button>

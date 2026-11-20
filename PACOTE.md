@@ -29,6 +29,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 | # | Ideia | Situação |
 |---|---|---|
 | 1 | **Trabalho final (TCC II), parte 2: figuras e gráficos.** Botão **"Figura ou gráfico"** nos capítulos, na introdução, nos apêndices e nos anexos: o orientando escolhe a imagem (PNG ou JPEG, do computador ou do celular), dá o título e a fonte e escolhe a largura (inteira, três quartos ou metade). O Vide **reduz a imagem no navegador** (no máximo 1600 px; gráficos em PNG continuam nítidos) e a guarda na página do orientando; no texto fica só o código. Abaixo do campo, **miniaturas** das figuras e tabelas, que abrem a edição com um clique. Figuras e gráficos numerados (Figura 1, Gráfico 1…), com **lista de figuras e lista de gráficos** quando há três ou mais (na ordem do modelo: figuras, quadros, gráficos, tabelas). No PDF e no Word: título em cima, imagem centralizada, fonte embaixo; no Word a imagem vai dentro do arquivo e a numeração é campo do Word. O professor vê as imagens nos PDFs e Words (rascunho e envios). Limites: 900 KB por imagem (depois de reduzida) e 150 imagens por trabalho. Se a página for desativada, as imagens são apagadas (os PDFs já recebidos continuam com elas) | No pacote |
+| 2 | **Ampliar o campo de escrita:** nos campos de texto longos (capítulos, introdução, considerações, apêndices…), o botão **⤢ Ampliar** abre o campo na tela toda, com letra maior e a mesma barra (negrito, subtítulo, tabela, figura…); **Fechar (Esc)** volta. O texto continua sendo salvo sozinho | No pacote |
 
 ## Pacotes anteriores
 

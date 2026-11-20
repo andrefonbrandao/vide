@@ -1579,6 +1579,13 @@ button.ori-tipo-enc { cursor: pointer; }
 .pp-grade input { font: inherit; font-size: 14px; padding: 5px 7px; min-width: 0; border: 1px solid var(--linha); border-radius: 6px; }
 .pp-grade input.pp-grade-cab { font-weight: 700; background: var(--papel); }
 @media (max-width: 560px) { .pp-parte-cab input { flex-basis: calc(100% - 36px); } }
+.pp-ampliar { margin-left: auto; order: 99; }
+.pp-campo-cheio { position: fixed; inset: 0; z-index: 90; margin: 0; background: var(--fundo); padding: 12px max(16px, calc((100vw - 900px) / 2)) 16px; display: flex; flex-direction: column; gap: 6px; overflow: auto; }
+.pp-campo-cheio > label, .pp-campo-cheio > .pp-parte-cab { display: none; }
+.pp-campo-cheio textarea { flex: 1 1 auto; min-height: 50vh; font-size: 17px; line-height: 1.65; padding: 18px 22px; }
+.pp-cheio-topo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 6px; border-bottom: 1px solid var(--linha); }
+.pp-cheio-topo strong { font-size: 18px; }
+.pp-cheio-topo button { margin-left: auto; }
 .pp-blocos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .pp-bloco { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; font: inherit; font-size: 13px; padding: 4px 10px 4px 4px; border: 1px solid var(--linha); border-radius: 8px; background: #fff; color: var(--tinta); cursor: pointer; text-align: left; }
 .pp-bloco:hover { border-color: var(--tinta); }
