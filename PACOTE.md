@@ -24,12 +24,12 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 28** aberto em 2026-11-20, a partir da versão 0.43.0 (já publicada).
+**Pacote 28** aberto em 2026-11-20, a partir da versão 0.43.0 (já publicada). **Fechado e publicado como versão 0.44.0.**
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| 1 | **Celular: Drive e Orientação à vista.** (a) No alto da tela do celular, ao lado da busca, um ícone de **nuvem com a luz de situação do Google Drive** (cinza desligado, verde sincronizado, amarelo sincronizando, vermelho reconectar/erro); tocar abre a janela do Drive (entrar, sincronizar). (b) Na barra de baixo, **Orientação** entra no lugar de Aula (no celular a aula não é conduzida; ele vira controle pelo QR da tela do computador), com o ponto vermelho das pendências vencidas. No computador, nada muda | No pacote |
-| 2 | **Logo do Vide na tela de início do celular:** ícones PNG quadrados gerados a partir do logo (180 px para iPhone/iPad, 192 e 512 px para Android, com a versão "maskable" para os recortes do Android) e o manifesto do app (nome "Vide", cores do Vide). Antes, só havia o ícone em SVG, que o iPhone não usa na tela de início — por isso aparecia um "V" genérico. O atalho continua abrindo o Vide no navegador (para o login do Google Drive funcionar) | No pacote |
+| 1 | **Celular: Drive e Orientação à vista.** (a) No alto da tela do celular, ao lado da busca, um ícone de **nuvem com a luz de situação do Google Drive** (cinza desligado, verde sincronizado, amarelo sincronizando, vermelho reconectar/erro); tocar abre a janela do Drive (entrar, sincronizar). (b) Na barra de baixo, **Orientação** entra no lugar de Aula (no celular a aula não é conduzida; ele vira controle pelo QR da tela do computador), com o ponto vermelho das pendências vencidas. No computador, nada muda | Publicada (0.44.0) |
+| 2 | **Logo do Vide na tela de início do celular:** ícones PNG quadrados gerados a partir do logo (180 px para iPhone/iPad, 192 e 512 px para Android, com a versão "maskable" para os recortes do Android) e o manifesto do app (nome "Vide", cores do Vide). Antes, só havia o ícone em SVG, que o iPhone não usa na tela de início — por isso aparecia um "V" genérico. O atalho continua abrindo o Vide no navegador (para o login do Google Drive funcionar) | Publicada (0.44.0) |
 
 ## Pacotes anteriores
 
