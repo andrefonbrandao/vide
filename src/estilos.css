@@ -1608,6 +1608,8 @@ button.ori-tipo-enc { cursor: pointer; }
 .apont-painel-cab { display: flex; flex-direction: column; gap: 2px; }
 .apont-painel-lista { margin: 4px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
 .lc-texto { gap: 18px; }
+.lc-envio { margin: 0; padding: 8px 12px; border-radius: 10px; background: #e9f2ee; border: 1px solid #c7ddd3; font-size: 14px; }
+.lc-envio.mudou { background: #fbf0d6; border-color: #e6cf8f; color: #5c4a06; }
 .lc-campo { display: flex; flex-direction: column; gap: 6px; }
 .lc-nome { margin: 0; font-size: 14px; color: var(--tinta-3); text-transform: uppercase; letter-spacing: 0.04em; }
 .lc-cru { white-space: pre-wrap; margin: 0; }

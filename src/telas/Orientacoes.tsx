@@ -1095,6 +1095,7 @@ type FiltroTempo = 'tudo' | 'sessoes' | 'comunicacoes' | 'versoes';
 function LinhaDoTempo({ trabalho, orientando, interacoes, versoes, aoEditar, aoRegistrar }: { trabalho: Trabalho; orientando?: Orientando; interacoes: Interacao[]; versoes: Versao[]; aoEditar: (i: Interacao) => void; aoRegistrar: (c: Canal) => void }) {
   const [filtro, setFiltro] = useState<FiltroTempo>('tudo');
   const [novaVersao, setNovaVersao] = useState(false);
+  const [lendo, setLendo] = useState<Versao | null>(null);
   const sessoes = interacoes.filter((i) => i.canal === 'sessao');
   const comunicacoes = interacoes.filter((i) => i.canal !== 'sessao');
   type Item = { em: string; i?: Interacao; v?: Versao };
@@ -1154,6 +1155,7 @@ function LinhaDoTempo({ trabalho, orientando, interacoes, versoes, aoEditar, aoR
                     etapa={trabalho.etapas.find((e) => e.id === x.v!.etapaId)?.nome}
                     discutida={interacoes.filter((i) => i.versaoId === x.v!.id)}
                     aoWord={x.v!.projeto ? async () => baixarArquivo(await wordDoPreProjeto(trabalho, orientando, x.v!.projeto!), x.v!.nomeArquivo.replace(/\.pdf$/i, '.docx')) : undefined}
+                    aoComentar={x.v!.projeto && trabalho.publicacao ? () => setLendo(x.v!) : undefined}
                   />
                 )}
               </Fragment>
@@ -1161,6 +1163,7 @@ function LinhaDoTempo({ trabalho, orientando, interacoes, versoes, aoEditar, aoR
           })}
         </ol>
       )}
+      {lendo && trabalho.publicacao && <LerEComentar trabalho={trabalho} orientando={orientando} envio={lendo} aoFechar={() => setLendo(null)} />}
       {novaVersao && (
         <Janela titulo="Guardar uma versão" aoFechar={() => setNovaVersao(false)}>
           <FormNovaVersao trabalho={trabalho} total={versoes.length} aoFechar={() => setNovaVersao(false)} />
@@ -1808,7 +1811,7 @@ function FormNovaVersao({ trabalho, total, aoFechar }: { trabalho: Trabalho; tot
   );
 }
 
-function ItemVersao({ v, etapa, discutida, aoWord }: { v: Versao; etapa?: string; discutida: Interacao[]; aoWord?: () => void }) {
+function ItemVersao({ v, etapa, discutida, aoWord, aoComentar }: { v: Versao; etapa?: string; discutida: Interacao[]; aoWord?: () => void; aoComentar?: () => void }) {
   const [notas, setNotas] = useState(v.notas);
   const abrir = () => {
     const blob = new Blob([v.arquivo], { type: v.mime });
@@ -1829,6 +1832,11 @@ function ItemVersao({ v, etapa, discutida, aoWord }: { v: Versao; etapa?: string
         {aoWord && (
           <button className="botao pequeno" onClick={aoWord} title="Esta versão em Word">
             Word
+          </button>
+        )}
+        {aoComentar && (
+          <button className="botao pequeno escuro" onClick={aoComentar} title="Abre o texto do formulário para você fazer apontamentos nos trechos; o orientando vê e responde">
+            Comentar no texto
           </button>
         )}
         <button

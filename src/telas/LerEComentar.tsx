@@ -4,14 +4,15 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { camposDoTrabalho, emAberto, lerApontamentos, mudarApontamento, type AcaoApontamento, type Apontamento } from '../orientacao/apontamentos';
 import { formatoDoTexto, lerRascunho } from '../orientacao/publicar';
-import type { Orientando, TextoProjeto, Trabalho } from '../orientacao/tipos';
+import type { Orientando, TextoProjeto, Trabalho, Versao } from '../orientacao/tipos';
 import { CartaoApontamento, ContextoApontamentos, irPara, marcasDoCampo } from './Apontamentos';
 import { ContextoPagina } from './contextoPagina';
 import type { Controle } from './EditorVivo';
 
 const EditorVivo = lazy(() => import('./EditorVivo'));
 
-export function LerEComentar({ trabalho, orientando, aoFechar }: { trabalho: Trabalho; orientando?: Orientando; aoFechar: () => void }) {
+/** `envio`: aberto a partir de uma versão enviada (linha do tempo): avisa se o texto mudou depois dela. */
+export function LerEComentar({ trabalho, orientando, envio, aoFechar }: { trabalho: Trabalho; orientando?: Orientando; envio?: Versao; aoFechar: () => void }) {
   const pub = trabalho.publicacao!;
   const cab = useMemo(() => ({ 'X-Vide-Chave': pub.chave }), [pub.chave]);
   const pagina = useMemo(() => ({ codigo: pub.codigo, cabecalho: cab }), [pub.codigo, cab]);
@@ -113,6 +114,13 @@ export function LerEComentar({ trabalho, orientando, aoFechar }: { trabalho: Tra
           </header>
           <div className="ori-foco-corpo">
             <div className="ori-foco-esq lc-texto">
+              {envio && texto && (
+                <p className={`lc-envio${(texto.atualizado_em ?? '') !== (envio.projeto?.atualizado_em ?? '') ? ' mudou' : ''}`}>
+                  {(texto.atualizado_em ?? '') === (envio.projeto?.atualizado_em ?? '')
+                    ? `Este é o texto de "${envio.rotulo}" (sem mudanças desde o envio). Os apontamentos aparecem para ${primeiro} na página de orientação.`
+                    : `${primeiro} mudou o texto depois de "${envio.rotulo}". Você está vendo o texto atual, que é onde os apontamentos ficam; a versão enviada continua guardada no PDF da linha do tempo.`}
+                </p>
+              )}
               {!texto ? (
                 <p className="ajuda">{erro || (texto === null ? `Abrindo o texto de ${primeiro}…` : '')}</p>
               ) : !campos.length ? (

@@ -29,6 +29,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 | # | Ideia | Situação |
 |---|---|---|
 | 1 | **Mensagem ao orientando sempre à mão.** Na Visão geral do orientando, o quadro "Página do orientando" ganhou o botão **"Copiar mensagem ao orientando"**: a mesma saudação, com o link e o código de acesso, para colar no WhatsApp ou no e-mail, a qualquer momento depois de criada a página. A mensagem agora também conta, quando o formulário está ligado, que na aba "Meu pré-projeto"/"Meu trabalho final" ele escreve, vê os apontamentos, baixa em PDF ou Word e envia as versões. Em Compartilhar, o botão do link virou **"Copiar só o link"** (para não ser confundido com a mensagem completa). O quadro mostra qual formulário está valendo (pré-projeto ou trabalho final) | No pacote |
+| 2 | **Comentar no texto a partir da linha do tempo:** cada versão enviada pelo orientando pelo formulário ("Pré-projeto/Trabalho final — enviado em…") ganhou o botão **"Comentar no texto"**, que abre a tela de leitura com apontamentos. No alto, um aviso diz se aquele é exatamente o texto enviado ou se o orientando já mudou o texto depois do envio (os apontamentos ficam no texto atual; a versão enviada continua no PDF) | No pacote |
 
 ## Pacotes anteriores
 
