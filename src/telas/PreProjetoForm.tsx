@@ -444,8 +444,14 @@ export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; val
     // Tira uma marca de começo de linha que já houver (trocar subtítulo por citação, por exemplo).
     const velha = /^(#{2,}\s+|>\s*)/.exec(linha)?.[0] ?? '';
     const resto = linha.slice(velha.length);
-    const novo = marca + (resto.trim() ? resto : exemplo);
-    c.trocar(ini, ini + linha.length, novo, ini + marca.length, ini + novo.length);
+    if (!resto.trim()) {
+      // Linha vazia: entra o exemplo, selecionado, para ser trocado pelo texto.
+      c.trocar(ini, ini + linha.length, marca + exemplo, ini + marca.length, ini + marca.length + exemplo.length);
+      return;
+    }
+    // Linha com texto: o cursor fica no mesmo lugar do texto.
+    const pos = Math.max(ini + marca.length, a - velha.length + marca.length);
+    c.trocar(ini, ini + velha.length, marca, pos, pos);
   };
   return (
     <div className={`campo pp-campo${cheio ? ' pp-campo-cheio' : ''}`}>
@@ -467,7 +473,14 @@ export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; val
       ) : (
         <>
           {!def.simples && (
-            <div className="pp-barra" role="toolbar" aria-label={`Formatação: ${def.nome}`}>
+            <div
+              className="pp-barra"
+              role="toolbar"
+              aria-label={`Formatação: ${def.nome}`}
+              // Os botões não tiram o foco do texto: o cursor fica onde estava (no Safari, sem isso, ele pulava para o fim).
+              onMouseDown={(e) => e.preventDefault()}
+              onPointerDown={(e) => e.pointerType !== 'mouse' && e.preventDefault()}
+            >
               {ampliavel && !cheio && (
                 <button type="button" className="pp-ampliar" title="Ampliar: escrever com a tela toda" onClick={() => setCheio(true)}>
                   ⤢ Ampliar

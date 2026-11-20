@@ -29,6 +29,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 | # | Ideia | Situação |
 |---|---|---|
 | 1 | **Apontamentos do orientador no texto do orientando.** Na aba Trabalho, o cartão do formulário mostra quantos apontamentos estão em aberto (e quantos têm resposta do orientando) e o botão **"Ler e comentar"**: abre o texto atual do orientando já formatado, campo por campo; o professor **seleciona um trecho e clica em "Comentar"**. À direita, os apontamentos (em aberto ou todos), com a conversa; o professor responde, edita, apaga, marca como resolvido ou reabre; clicar num apontamento leva ao trecho. Na página do orientando: um **painel "Apontamentos do orientador"** no alto (com atalho para cada um), o **trecho em amarelo no texto** e, logo abaixo do campo, o cartão com o comentário, onde ele **responde** e **marca como resolvido**. Se o orientando reescrever o trecho, o apontamento continua no cartão como "trecho alterado"; se a parte (capítulo, apêndice) for apagada, ele aparece no painel. Os apontamentos ficam guardados na página do orientando, à parte do texto: não vão para o PDF nem para o Word | No pacote |
+| 2 | **Correção: o cursor não sai do lugar ao usar a barra** (negrito, itálico, subtítulo, citação, nota…). Os botões não tiram mais o foco do texto (no Safari, o cursor pulava para o fim). E "Subtítulo"/"Citação longa" numa linha com texto não seleciona mais a linha inteira (a próxima letra apagava a linha): o cursor fica onde estava | No pacote |
 
 ## Pacotes anteriores
 
