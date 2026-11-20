@@ -26,3 +26,10 @@ test('referências em ordem alfabética', () => {
     'MARINONI, Luiz. **Precedentes**.',
   ]);
 });
+
+test('referências: o título colado junto com a lista é descartado', () => {
+  expect(ordenarReferencias('5. REFERÊNCIAS\nPEREIRA, Caio. **Responsabilidade civil**.\n**Referências**\nCAHALI, Yussef. **Dano moral**.')).toEqual([
+    'CAHALI, Yussef. **Dano moral**.',
+    'PEREIRA, Caio. **Responsabilidade civil**.',
+  ]);
+});

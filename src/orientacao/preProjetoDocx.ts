@@ -113,16 +113,36 @@ export async function gerarPreProjetoDocx(e: EntradaDocx): Promise<Blob> {
         return run(tr.t, { b: tr.negrito || base.b, i: tr.italico, sz: base.sz });
       })
       .join('');
-  const par = (estilo: string, conteudo: string, ppr = '') => `<w:p><w:pPr><w:pStyle w:val="${estilo}"/>${ppr}</w:pPr>${conteudo}</w:p>`;
-  const quebra = '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+  // Página nova: o primeiro parágrafo da página seguinte leva "quebra de página antes". (Um
+  // parágrafo só com a quebra, no fim de uma página cheia como a capa, escorregava para a
+  // página seguinte e o Word mostrava uma página em branco.)
+  let paginaNova = false;
+  const par = (estilo: string, conteudo: string, ppr = '') => {
+    const q = paginaNova ? '<w:pageBreakBefore/>' : '';
+    paginaNova = false;
+    return `<w:p><w:pPr><w:pStyle w:val="${estilo}"/>${q}${ppr}</w:pPr>${conteudo}</w:p>`;
+  };
+  const quebra = () => {
+    paginaNova = true;
+  };
   const antes = (tw: number) => `<w:spacing w:before="${Math.round(tw)}"/>`;
+  // Altura útil da página (29,7 − 3 − 2 cm), com folga, e linhas estimadas de um texto centrado.
+  const UTIL = Math.round(24.7 * TW) - 350;
+  const L14 = 322; // uma linha em Arial 14, espaço simples (twips)
+  const L12 = 276;
+  const L11 = 253;
+  const linhas = (s: string, porLinha: number) => Math.max(1, Math.ceil(s.trim().length / porLinha));
+  const nTit = linhas(t.titulo || 'Título do trabalho', 44);
+  const nSub = t.subtitulo.trim() ? linhas(t.subtitulo, 56) : 0;
+  /** Espaço até "cidade/ano" para que caibam no pé da página, sem passar dela. */
+  const folga = (ocupado: number, maximo: number) => Math.max(300, Math.min(maximo, UTIL - ocupado));
   const corpo: string[] = [];
 
   // ----- Capa -----
   const logo = c.instituicao === 'Uniftec' && e.logo ? e.logo : undefined;
+  const cx = Math.round(8.77 * 360000);
+  const cy = Math.round(cx * 314 / 800);
   if (logo) {
-    const cx = Math.round(8.77 * 360000);
-    const cy = Math.round(cx * 314 / 800);
     corpo.push(
       par(
         'Centro',
@@ -134,41 +154,49 @@ export async function gerarPreProjetoDocx(e: EntradaDocx): Promise<Blob> {
   corpo.push(par('Centro', run(e.nome, { b: true, sz: 28, caps: true }), antes(2600)));
   corpo.push(par('Centro', run(t.titulo || 'Título do trabalho', { b: true, sz: 28, caps: true }), antes(2300)));
   if (t.subtitulo.trim()) corpo.push(par('Centro', run(t.subtitulo.trim(), { b: true, sz: 28 })));
-  corpo.push(par('Centro', run(c.cidade || 'Caxias do Sul', { b: true, sz: 28 }), antes(t.subtitulo.trim() ? 4500 : 4900)));
+  const capaOcupada = (logo ? Math.ceil(cy / 635) : L14) + 240 + L14 + 2600 + L14 + 2300 + L14 * (nTit + nSub) + L14 * 2;
+  corpo.push(par('Centro', run(c.cidade || 'Caxias do Sul', { b: true, sz: 28 }), antes(folga(capaOcupada, t.subtitulo.trim() ? 4500 : 4900))));
   corpo.push(par('Centro', run(c.ano, { b: true, sz: 28 })));
-  corpo.push(quebra);
+  quebra();
 
   // ----- Folha de rosto (e de aprovação) -----
   const natureza = c.natureza.trim() || naturezaPadrao(c);
-  const cabRosto = () => {
+  /** Altura do cabeçalho da folha de rosto (nome, título, natureza), sem o espaço do alto. */
+  const alturaCab = L12 + L14 * (nTit + nSub) + 1300 + L12 * linhas(natureza, 32);
+  const cabRosto = (topo: number) => {
     corpo.push(par('Centro', run(e.nome, { b: true, caps: true })));
-    corpo.push(par('Centro', run(t.titulo || 'Título do trabalho', { b: true, sz: 28, caps: true }), antes(3200)));
+    corpo.push(par('Centro', run(t.titulo || 'Título do trabalho', { b: true, sz: 28, caps: true }), antes(topo)));
     if (t.subtitulo.trim()) corpo.push(par('Centro', run(t.subtitulo.trim(), { b: true, sz: 28 })));
     corpo.push(par('Natureza', run(natureza, { b: true }), antes(1300)));
   };
-  cabRosto();
+  const orientadores = (c.orientador.trim() ? 1500 + L12 : 0) + (c.coorientador.trim() ? L12 : 0);
+  // Se o texto for longo, o espaço do alto encolhe antes do espaço até a cidade.
+  const topoRosto = Math.max(1200, Math.min(3200, UTIL - alturaCab - orientadores - L12 * 2 - 2500));
+  cabRosto(topoRosto);
   if (c.orientador.trim()) corpo.push(par('Centro', run(`Orientador(a): ${c.orientador.trim()}`, { b: true }), antes(1500)));
   if (c.coorientador.trim()) corpo.push(par('Centro', run(`Coorientador(a): ${c.coorientador.trim()}`, { b: true })));
-  corpo.push(par('Centro', run(c.cidade || 'Caxias do Sul', { b: true }), antes(c.coorientador.trim() ? 4100 : 4500)));
+  corpo.push(par('Centro', run(c.cidade || 'Caxias do Sul', { b: true }), antes(folga(topoRosto + alturaCab + orientadores + L12 * 2, c.coorientador.trim() ? 4100 : 4500))));
   corpo.push(par('Centro', run(c.ano, { b: true })));
-  corpo.push(quebra);
+  quebra();
   if (c.aprovacao) {
-    cabRosto();
+    const banca = 700 + L12 + 500 + L12 + 3 * (600 + L12 + L11 * 2) + L12 * 2;
+    const topoAprov = Math.max(800, Math.min(3200, UTIL - alturaCab - banca - 600));
+    cabRosto(topoAprov);
     corpo.push(par('Centro', run('Aprovado em ____/____/______'), antes(700)));
     corpo.push(par('Centro', run('BANCA EXAMINADORA', { b: true }), antes(500)));
     for (const quem of [`Professor(a) Orientador(a): ${c.orientador.trim() || '_______________'}`, 'Professor(a) Avaliador(a): _______________', 'Professor(a) Avaliador(a): _______________']) {
       corpo.push(par('Centro', run('_________________________________________'), antes(600)));
       corpo.push(par('Centro', run(quem, { sz: 22 })));
     }
-    corpo.push(par('Centro', run(c.cidade || 'Caxias do Sul', { b: true }), antes(1500)));
+    corpo.push(par('Centro', run(c.cidade || 'Caxias do Sul', { b: true }), antes(folga(topoAprov + alturaCab + banca, 1500))));
     corpo.push(par('Centro', run(c.ano, { b: true })));
-    corpo.push(quebra);
+    quebra();
   }
   if (c.resumo) {
     corpo.push(par('Centro', run('RESUMO', { b: true })));
     for (const l of t.resumo.split('\n').filter((x) => x.trim())) corpo.push(par('Simples', runsDe(lerTrechos(l.trim())), antes(240)));
     if (t.palavrasChave.trim()) corpo.push(par('Simples', run('Palavras-chave: ', { b: true }) + runsDe(lerTrechos(t.palavrasChave.trim())), antes(240)));
-    corpo.push(quebra);
+    quebra();
   }
 
   // ----- Sumário (campo do Word; atualiza ao abrir) -----
@@ -177,11 +205,12 @@ export async function gerarPreProjetoDocx(e: EntradaDocx): Promise<Blob> {
   corpo.push(
     `<w:p><w:pPr><w:pStyle w:val="Sumrio1"/>${antes(360)}</w:pPr><w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\o "1-2" \\h \\z \\u </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>`,
   );
-  // As páginas vêm da mesma montagem do PDF (o Word confirma ao atualizar o sumário).
+  // As páginas vêm da mesma montagem do PDF, com as alturas de linha do Word (o Word confirma ao
+  // atualizar o sumário).
   let paginas: ItemSumario[] = [];
   try {
     const { gerarPreProjetoPdf } = await import('./preProjetoPdf');
-    await gerarPreProjetoPdf({ nome: e.nome, config: c, texto: t, etapas: e.etapas, logo: e.logo }, (x) => (paginas = x));
+    await gerarPreProjetoPdf({ nome: e.nome, config: c, texto: t, etapas: e.etapas, logo: e.logo }, (x) => (paginas = x), true);
   } catch {
     paginas = [];
   }
