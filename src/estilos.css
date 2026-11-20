@@ -1721,3 +1721,76 @@ button.ori-tipo-enc { cursor: pointer; }
   .ori-cab-acoes .ori-split > .botao:first-child { flex: 1; justify-content: center; }
   .ori-capa .grade-2 { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ---------- Orientação, parte 2: registrar sessão (tela focada) e linha do tempo ---------- */
+.ori-foco { position: fixed; inset: 0; z-index: 120; background: var(--fundo); display: flex; flex-direction: column; margin: 0; }
+.ori-foco-topo { display: flex; align-items: center; gap: 12px; padding: 12px 28px; border-bottom: 1px solid #dfe3dc; background: var(--papel); flex-wrap: wrap; }
+.ori-foco-titulo { font-weight: 800; font-size: 17px; }
+.ori-foco-titulo span { color: var(--tinta-3); font-weight: 600; }
+.ori-foco-campo { height: 36px; font: inherit; font-size: 14px; padding: 0 10px; border: 1px solid var(--linha); border-radius: 9px; background: #fff; color: var(--tinta); }
+.ori-seg { display: inline-flex; background: #e7ebe5; border-radius: 10px; padding: 3px; }
+.ori-seg button { border: none; background: transparent; font: inherit; font-size: 13.5px; font-weight: 700; color: var(--tinta-2); padding: 6px 14px; border-radius: 8px; cursor: pointer; }
+.ori-seg button.atual { background: #fff; color: var(--tinta); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
+.ori-foco-corpo { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 380px; }
+.ori-foco-esq { padding: 20px 28px; display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow: auto; }
+.ori-foco-dir { background: var(--papel); border-left: 1px solid #dfe3dc; padding: 20px 22px; overflow: auto; display: flex; flex-direction: column; gap: 8px; }
+.ori-editor { background: #fff; border: 1px solid #dfe3dc; border-radius: 14px; flex: 1; min-height: 260px; display: flex; flex-direction: column; overflow: hidden; }
+.ori-editor-abas { display: flex; gap: 20px; padding: 0 18px; border-bottom: 1px solid #e8ebe5; }
+.ori-editor-abas .ori-aba { font-size: 13.5px; }
+.ori-editor-corpo { flex: 1; display: flex; flex-direction: column; padding: 0; min-height: 0; }
+.ori-editor-corpo textarea, .ori-editor .ori-transcricao textarea { flex: 1; width: 100%; border: none; resize: none; font: inherit; font-size: 15px; line-height: 1.65; padding: 14px 18px; color: var(--tinta); background: transparent; min-height: 180px; outline: none; }
+.ori-editor-corpo .ori-msg-bloco { padding: 0 18px 12px; }
+.ori-editor .ori-transcricao { flex: 1; display: flex; flex-direction: column; margin: 0; border: none; border-radius: 0; padding: 0; background: transparent; min-height: 0; }
+.ori-editor .ori-transcricao > label { display: none; }
+.ori-editor .ori-transcricao-barra { padding: 10px 18px 0; margin: 0; }
+.ori-editor .ori-transcricao > .ajuda { padding: 0 18px 12px; font-size: 12.5px; }
+.ori-editor .ori-parcial { padding: 0 18px; }
+.ori-resumo-caixa { background: #fff; border: 1px solid #dfe3dc; border-radius: 14px; padding: 12px 18px; display: flex; flex-direction: column; gap: 4px; }
+.ori-resumo-caixa label { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; color: var(--tinta-3); text-transform: uppercase; }
+.ori-resumo-caixa textarea { border: none; resize: vertical; font: inherit; font-size: 15px; line-height: 1.55; padding: 2px 0; outline: none; color: var(--tinta); background: transparent; }
+.ori-ia-linha { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 12px; background: #f3efe4; border: 1px solid #e6dcc3; flex-wrap: wrap; }
+.ori-ia-linha .botao { margin-left: auto; }
+.ori-tarefas { gap: 8px; }
+.ori-tarefas li { background: #fff; border: 1px solid #dfe3dc; border-radius: 10px; padding: 8px 8px 8px 10px; align-items: flex-start; }
+.ori-tarefas .ori-tipo-enc { margin-top: 6px; }
+.ori-tarefa-corpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ori-tarefas input:not([type='checkbox']) { border: 1px solid transparent; border-radius: 6px; padding: 4px 6px; font: inherit; font-size: 14px; background: transparent; width: 100%; }
+.ori-tarefas input:not([type='checkbox']):hover, .ori-tarefas input:focus { border-color: var(--linha); background: #fbfcfa; outline: none; }
+.ori-tarefas input[type='date'] { width: auto; font-size: 12.5px; color: var(--tinta-3); }
+.ori-tarefa-linha { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ori-nova-tarefa { display: flex; flex-direction: column; gap: 6px; border: 1px dashed var(--linha); border-radius: 10px; padding: 8px 10px; background: #fff; }
+.ori-nova-tarefa > input { border: none; font: inherit; font-size: 14px; padding: 4px 2px; outline: none; background: transparent; }
+.ori-nova-tarefa input[type='date'], .ori-nova-tarefa .seletor { font: inherit; font-size: 13px; padding: 4px 8px; border: 1px solid var(--linha); border-radius: 8px; height: 32px; }
+.ori-dica { font-size: 12.5px; }
+.ori-anteriores { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ori-anteriores li { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.ori-anteriores label { flex: 1; cursor: pointer; }
+.ori-anteriores input { width: 18px; height: 18px; flex: none; }
+.ori-foco-dir .seletor { width: 100%; }
+.ori-foco-pe { display: flex; align-items: center; gap: 10px; padding: 12px 28px; border-top: 1px solid #dfe3dc; background: var(--papel); }
+@media (max-width: 900px) {
+  .ori-foco { overflow: auto; }
+  .ori-foco-topo { padding: 10px 14px; }
+  .ori-foco-corpo { display: flex; flex-direction: column; min-height: auto; }
+  .ori-foco-esq, .ori-foco-dir { padding: 14px; overflow: visible; }
+  .ori-foco-dir { border-left: none; border-top: 1px solid #dfe3dc; }
+  .ori-foco-pe { position: sticky; bottom: 0; padding: 10px 14px; }
+}
+/* IA em passos (janela) */
+.ori-ia-passos { display: flex; flex-direction: column; gap: 14px; }
+.ori-passo { display: flex; gap: 12px; }
+.ori-passo > div { flex: 1; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.ori-passo textarea { width: 100%; font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--linha); border-radius: 10px; box-sizing: border-box; }
+.ori-passo-n { width: 26px; height: 26px; border-radius: 50%; background: var(--tinta); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 13px; flex: none; }
+/* linha do tempo unificada */
+.ori-mes { list-style: none; font-size: 12.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta-3); margin: 10px 0 -2px; }
+.ori-mes:first-child { margin-top: 0; }
+.ori-linha-tempo .ori-versao { border-left: 5px solid #8aa4c8; }
+.ori-grade-janela { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.ori-grade-janela input, .ori-grade-janela select { width: 100%; box-sizing: border-box; min-width: 0; }
+.pp-conflito { display: flex; flex-direction: column; gap: 6px; padding: 12px 16px; border-radius: 12px; background: #fbf0d6; border: 1px solid #e6cf8f; color: #5c4a06; }
+.pp-conflito-acoes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.ori-info-acoes { display: inline-flex; gap: 10px; align-items: center; }
+/* Com a tela focada aberta, os avisos sobem para não cobrir o rodapé (Registrar / Cancelar). */
+body:has(.ori-foco) .avisos-rapidos { bottom: 84px; }
+.ori-foco-corpo { grid-template-columns: minmax(0, 1fr) 420px; }

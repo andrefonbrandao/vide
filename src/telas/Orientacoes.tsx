@@ -1,7 +1,7 @@
 // Orientação de trabalhos acadêmicos: orientandos, cronograma com prazos, sessões e
 // comunicações (com sugestões e comandos), e as versões provisórias do trabalho.
 // Esta tela é carregada só quando aberta (não pesa na aula).
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { avisar, confirmar } from '../comum/avisos';
 import { IcLixeira, IcMais, IcX } from '../comum/Icones';
 import { novoId } from '../dados/modelo';
@@ -32,7 +32,7 @@ import { pendenciasVencidas } from '../orientacao/alertas';
 import { naturezaPadrao } from '../orientacao/campos';
 import { lerEncaminhamentos, lerRespostaIA, pedidoRegistroIA } from '../orientacao/ia';
 import type { OpcoesRelatorio } from '../orientacao/relatorioPdf';
-import { assinarPublicacao, buscarEnvios, configPreProjetoPadrao, desativarOrientacao, estadoPublicacao, lerRascunho, MAX_MODELO, pdfDoPreProjeto, publicarOrientacao, urlDoOrientando } from '../orientacao/publicar';
+import { assinarPublicacao, buscarEnvios, configPreProjetoPadrao, desativarOrientacao, estadoPublicacao, guardarRascunho, lerRascunho, MAX_MODELO, pdfDoPreProjeto, publicarOrientacao, urlDoOrientando } from '../orientacao/publicar';
 import { QR } from './JogoTela';
 import { copiar } from './ProcessoTexto';
 import { agoraLocal, dataBR, dataHoraBR, diasEntre, emOrdem, etapaAtual, hojeISO, pendencias, rotuloDias, situacaoEtapa, type Pendencia } from '../orientacao/prazos';
@@ -142,6 +142,8 @@ export function Orientacoes() {
       const ts = (await listarTrabalhos()).filter((t) => t.publicacao && t.preProjeto?.ativo);
       const nomes = await listarOrientandos();
       for (const t of ts) {
+        // Cópia de segurança do rascunho do orientando (no computador e no Drive).
+        await guardarRascunho(t.id).catch(() => false);
         const n = await buscarEnvios(t.id).catch(() => 0);
         if (n) avisar(`${nomes.find((o) => o.id === t.orientandoId)?.nome ?? 'Um orientando'} enviou ${n === 1 ? 'uma versão' : `${n} versões`} do pré-projeto (está em Versões).`);
       }
@@ -418,7 +420,6 @@ type Aba = 'visao' | 'tempo' | 'trabalho' | 'ajustes';
 
 function TrabalhoDetalhe({ trabalho, orientando, aoVoltar, aoAbrir }: { trabalho: Trabalho; orientando?: Orientando; aoVoltar: () => void; aoAbrir: (id: string) => void }) {
   const [aba, setAba] = useState<Aba>('visao');
-  const [tempo, setTempo] = useState<'conversas' | 'versoes'>('conversas');
   const [interacoes, setInteracoes] = useState<Interacao[]>([]);
   const [versoes, setVersoes] = useState<Versao[]>([]);
   const [registrando, setRegistrando] = useState<Interacao | null>(null);
@@ -431,8 +432,6 @@ function TrabalhoDetalhe({ trabalho, orientando, aoVoltar, aoAbrir }: { trabalho
   useRecarga(carregar);
   const registrar = (canal: Canal) => {
     setRegistrando(interacaoEmBranco(trabalho.id, canal, agoraLocal()));
-    setTempo('conversas');
-    setAba('tempo');
     setMenuRegistrar(false);
   };
   const situacao = trabalho.situacao === 'andamento' ? 'em andamento' : trabalho.situacao === 'concluido' ? 'concluído' : 'interrompido';
@@ -503,23 +502,7 @@ function TrabalhoDetalhe({ trabalho, orientando, aoVoltar, aoAbrir }: { trabalho
           aoCompartilhar={() => setJanela('compartilhar')}
         />
       )}
-      {aba === 'tempo' && (
-        <>
-          <div className="ori-filtros">
-            <button type="button" className={`ori-chip${tempo === 'conversas' ? ' ativo' : ''}`} onClick={() => setTempo('conversas')}>
-              Sessões e comunicações <span className="ori-chip-n">{interacoes.length}</span>
-            </button>
-            <button type="button" className={`ori-chip${tempo === 'versoes' ? ' ativo' : ''}`} onClick={() => setTempo('versoes')}>
-              Versões <span className="ori-chip-n">{versoes.length}</span>
-            </button>
-          </div>
-          {tempo === 'conversas' ? (
-            <Conversas trabalho={trabalho} interacoes={interacoes} versoes={versoes} registrando={registrando} setRegistrando={setRegistrando} aoRegistrar={registrar} />
-          ) : (
-            <Versoes trabalho={trabalho} versoes={versoes} interacoes={interacoes} />
-          )}
-        </>
-      )}
+      {aba === 'tempo' && <LinhaDoTempo trabalho={trabalho} interacoes={interacoes} versoes={versoes} aoEditar={setRegistrando} aoRegistrar={registrar} />}
       {aba === 'trabalho' && (
         <>
           <ElementosTrabalho trabalho={trabalho} />
@@ -538,6 +521,9 @@ function TrabalhoDetalhe({ trabalho, orientando, aoVoltar, aoAbrir }: { trabalho
         </Janela>
       )}
       {janela === 'compartilhar' && <JanelaCompartilhar trabalho={trabalho} orientando={orientando} aoFechar={() => setJanela('')} />}
+      {registrando && (
+        <FormInteracao key={registrando.id} inicial={registrando} trabalho={trabalho} interacoes={interacoes} versoes={versoes} nome={orientando?.nome} aoFechar={() => setRegistrando(null)} />
+      )}
     </div>
   );
 }
@@ -1038,43 +1024,78 @@ function PainelRelatorio({ trabalho, orientando, interacoes, versoes, aoFechar }
 
 // ---------- Sessões e comunicações ----------
 
-function Conversas({
-  trabalho,
-  interacoes,
-  versoes,
-  registrando,
-  setRegistrando,
-  aoRegistrar,
-}: {
-  trabalho: Trabalho;
-  interacoes: Interacao[];
-  versoes: Versao[];
-  registrando: Interacao | null;
-  setRegistrando: (i: Interacao | null) => void;
-  aoRegistrar: (c: Canal) => void;
-}) {
+type FiltroTempo = 'tudo' | 'sessoes' | 'comunicacoes' | 'versoes';
+
+/** Sessões, comunicações e versões numa linha do tempo só, da mais nova para a mais antiga, por mês. */
+function LinhaDoTempo({ trabalho, interacoes, versoes, aoEditar, aoRegistrar }: { trabalho: Trabalho; interacoes: Interacao[]; versoes: Versao[]; aoEditar: (i: Interacao) => void; aoRegistrar: (c: Canal) => void }) {
+  const [filtro, setFiltro] = useState<FiltroTempo>('tudo');
+  const [novaVersao, setNovaVersao] = useState(false);
+  const sessoes = interacoes.filter((i) => i.canal === 'sessao');
+  const comunicacoes = interacoes.filter((i) => i.canal !== 'sessao');
+  type Item = { em: string; i?: Interacao; v?: Versao };
+  const itens: Item[] = [
+    ...(filtro === 'tudo' || filtro === 'sessoes' ? sessoes.map((i) => ({ em: i.em, i })) : []),
+    ...(filtro === 'tudo' || filtro === 'comunicacoes' ? comunicacoes.map((i) => ({ em: i.em, i })) : []),
+    ...(filtro === 'tudo' || filtro === 'versoes' ? versoes.map((v) => ({ em: `${v.recebida_em}T${v.criado_em.slice(11, 16) || '00:00'}`, v })) : []),
+  ].sort((a, b) => b.em.localeCompare(a.em));
+  const mes = (iso: string) => new Date(`${iso.slice(0, 7)}-15T12:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  let mesAnterior = '';
   return (
     <>
-      {registrando ? (
-        <FormInteracao key={registrando.id} inicial={registrando} trabalho={trabalho} interacoes={interacoes} versoes={versoes} aoFechar={() => setRegistrando(null)} />
+      <div className="ori-filtros">
+        {(
+          [
+            ['tudo', 'Tudo', interacoes.length + versoes.length],
+            ['sessoes', 'Sessões', sessoes.length],
+            ['comunicacoes', 'Comunicações', comunicacoes.length],
+            ['versoes', 'Versões', versoes.length],
+          ] as [FiltroTempo, string, number][]
+        ).map(([f, r, n]) => (
+          <button key={f} type="button" className={`ori-chip${filtro === f ? ' ativo' : ''}`} onClick={() => setFiltro(f)}>
+            {r} <span className="ori-chip-n">{n}</span>
+          </button>
+        ))}
+        <span style={{ flex: 1 }} />
+        <button type="button" className="botao pequeno" onClick={() => aoRegistrar('whatsapp')}>
+          + Comunicação
+        </button>
+        <button type="button" className="botao pequeno" onClick={() => setNovaVersao(true)}>
+          + Versão
+        </button>
+      </div>
+      {!itens.length ? (
+        <p className="ori-calmo">
+          {filtro === 'versoes' ? 'Nenhuma versão guardada ainda.' : 'Nada registrado ainda.'}{' '}
+          {filtro !== 'versoes' && (
+            <button type="button" className="ori-link" onClick={() => aoRegistrar('sessao')}>
+              Registrar uma sessão
+            </button>
+          )}
+        </p>
       ) : (
-        <div className="linha-opcoes" style={{ marginBottom: 10 }}>
-          <button className="botao escuro com-icone" onClick={() => aoRegistrar('sessao')}>
-            <IcMais tamanho={14} /> Sessão de orientação
-          </button>
-          <button className="botao com-icone" onClick={() => aoRegistrar('whatsapp')}>
-            <IcMais tamanho={14} /> Comunicação (WhatsApp, e-mail…)
-          </button>
-        </div>
+        <ol className="ori-linha-tempo">
+          {itens.map((x) => {
+            const m = mes(x.em);
+            const cab = m !== mesAnterior ? m : '';
+            mesAnterior = m;
+            return (
+              <Fragment key={x.i?.id ?? x.v!.id}>
+                {cab && <li className="ori-mes">{cab}</li>}
+                {x.i ? (
+                  <ItemInteracao i={x.i} versoes={versoes} aoEditar={() => aoEditar(x.i!)} />
+                ) : (
+                  <ItemVersao v={x.v!} etapa={trabalho.etapas.find((e) => e.id === x.v!.etapaId)?.nome} discutida={interacoes.filter((i) => i.versaoId === x.v!.id)} />
+                )}
+              </Fragment>
+            );
+          })}
+        </ol>
       )}
-      {!interacoes.length && !registrando && <p className="ajuda">Nenhuma sessão ou comunicação registrada ainda.</p>}
-      <ol className="ori-linha-tempo">
-        {interacoes
-          .filter((i) => i.id !== registrando?.id)
-          .map((i) => (
-            <ItemInteracao key={i.id} i={i} versoes={versoes} aoEditar={() => setRegistrando(i)} />
-          ))}
-      </ol>
+      {novaVersao && (
+        <Janela titulo="Guardar uma versão" aoFechar={() => setNovaVersao(false)}>
+          <FormNovaVersao trabalho={trabalho} total={versoes.length} aoFechar={() => setNovaVersao(false)} />
+        </Janela>
+      )}
     </>
   );
 }
@@ -1269,53 +1290,44 @@ function PainelTranscricao({ transcricao, aoMudar, aoTrecho }: { transcricao: st
 
 /** "Organizar com a IA": copia o pedido (com a transcrição) e lê a resposta colada de volta. */
 function OrganizarComIA({ pedido, temMaterial, aoUsar }: { pedido: () => string; temMaterial: boolean; aoUsar: (resposta: string) => string }) {
-  const [colando, setColando] = useState(false);
   const [resposta, setResposta] = useState('');
   const [msg, setMsg] = useState('');
+  const [copiado, setCopiado] = useState(false);
   return (
-    <div className="campo ori-ia">
-      <label>Organizar com a IA</label>
-      <div className="linha-opcoes">
-        <button
-          type="button"
-          className="botao primario"
-          disabled={!temMaterial}
-          onClick={async () => {
-            const ok = await copiar(pedido());
-            setMsg(ok ? 'Pedido copiado. Cole no Claude (ou outra IA), copie a resposta inteira e clique em "Colar a resposta da IA".' : 'Este navegador não deixou copiar.');
-          }}
-        >
-          Copiar o pedido para a IA
-        </button>
-        <button type="button" className={`botao${colando ? ' escuro' : ''}`} onClick={() => setColando(!colando)}>
-          Colar a resposta da IA
-        </button>
+    <div className="ori-ia-passos">
+      <p className="ori-calmo" style={{ marginTop: 0 }}>
+        O pedido leva a transcrição, as anotações, o cronograma e as pendências anteriores (sem o nome do orientando).
+      </p>
+      <div className="ori-passo">
+        <span className="ori-passo-n">1</span>
+        <div>
+          <strong>Copie o pedido e cole no Claude (ou outra IA)</strong>
+          <button
+            type="button"
+            className="botao escuro pequeno"
+            disabled={!temMaterial}
+            onClick={async () => {
+              const ok = await copiar(pedido());
+              setCopiado(ok);
+              setMsg(ok ? '' : 'Este navegador não deixou copiar.');
+            }}
+          >
+            {copiado ? 'Copiado ✓' : 'Copiar o pedido'}
+          </button>
+          {!temMaterial && <span className="ori-calmo">Transcreva, cole a conversa ou escreva anotações primeiro.</span>}
+        </div>
       </div>
-      {!temMaterial && <span className="ajuda" style={{ margin: 0 }}>Transcreva a sessão, cole a conversa ou escreva anotações primeiro.</span>}
-      {msg && <span className="ajuda" style={{ margin: 0 }}>{msg}</span>}
-      {colando && (
-        <>
-          <textarea rows={7} aria-label="Resposta da IA" value={resposta} onChange={(e) => setResposta(e.target.value)} placeholder="Cole aqui a resposta da IA (RESUMO, SUGESTÕES E COMANDOS…)" />
-          <div className="linha-opcoes">
-            <button
-              type="button"
-              className="botao escuro"
-              disabled={!resposta.trim()}
-              onClick={() => {
-                setMsg(aoUsar(resposta));
-                setResposta('');
-                setColando(false);
-              }}
-            >
-              Usar a resposta
-            </button>
-          </div>
-        </>
-      )}
-      <span className="ajuda" style={{ margin: 0 }}>
-        O pedido leva a transcrição, as anotações, o cronograma e as pendências anteriores (sem o nome do orientando). A resposta preenche o resumo, as sugestões e os comandos, e marca as
-        pendências já cumpridas; confira antes de registrar.
-      </span>
+      <div className="ori-passo">
+        <span className="ori-passo-n">2</span>
+        <div>
+          <strong>Cole aqui a resposta inteira da IA</strong>
+          <textarea rows={7} aria-label="Resposta da IA" value={resposta} onChange={(e) => setResposta(e.target.value)} placeholder="RESUMO: …&#10;SUGESTÕES E COMANDOS: …" />
+          <button type="button" className="botao escuro pequeno" disabled={!resposta.trim()} onClick={() => setMsg(aoUsar(resposta))}>
+            Usar a resposta
+          </button>
+        </div>
+      </div>
+      {msg && <p className="ori-msg-bloco">{msg}</p>}
     </div>
   );
 }
@@ -1327,7 +1339,7 @@ function descreverColagem(c: Colagem): string {
   return partes.join(' ');
 }
 
-function FormInteracao({ inicial, trabalho, interacoes, versoes, aoFechar }: { inicial: Interacao; trabalho: Trabalho; interacoes: Interacao[]; versoes: Versao[]; aoFechar: () => void }) {
+function FormInteracao({ inicial, trabalho, interacoes, versoes, nome, aoFechar }: { inicial: Interacao; trabalho: Trabalho; interacoes: Interacao[]; versoes: Versao[]; nome?: string; aoFechar: () => void }) {
   const [i, setI] = useState(inicial);
   const [reconhecido, setReconhecido] = useState<string | null>(null);
   const [novoTexto, setNovoTexto] = useState('');
@@ -1410,9 +1422,25 @@ function FormInteracao({ inicial, trabalho, interacoes, versoes, aoFechar }: { i
     setNovoTexto('');
     setNovoPrazo('');
   };
+  const [aba, setAba] = useState<'anotacoes' | 'transcricao'>(() => (inicial.transcricao?.trim() ? 'transcricao' : 'anotacoes'));
+  const [ia, setIa] = useState(false);
+  const [guardadoEm, setGuardadoEm] = useState('');
+  // A tela cobre a página: trava a rolagem do fundo enquanto está aberta.
+  useEffect(() => {
+    const antes = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = antes;
+    };
+  }, []);
+  useEffect(() => {
+    if (i.transcricao?.trim()) setGuardadoEm(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+  }, [i.transcricao]);
+  const editarEnc = (id: string, p: Partial<Encaminhamento>) => setI({ ...i, encaminhamentos: i.encaminhamentos.map((x) => (x.id === id ? { ...x, ...p } : x)) });
+  const temMaterial = !!(i.transcricao?.trim() || i.texto.trim() || i.resumo.trim());
   return (
     <form
-      className="cartao form-turma"
+      className="ori-foco"
       onSubmit={async (e) => {
         e.preventDefault();
         const final = novoTexto.trim()
@@ -1424,251 +1452,289 @@ function FormInteracao({ inicial, trabalho, interacoes, versoes, aoFechar }: { i
         aoFechar();
       }}
     >
-      <h3>{novo ? (ehSessao ? 'Registrar sessão de orientação' : 'Registrar comunicação') : 'Editar registro'}</h3>
-      <div className="grade-3">
-        <div className="campo">
-          <label htmlFor="int-canal">Tipo</label>
-          <select id="int-canal" className="seletor" value={i.canal} onChange={(e) => setI({ ...i, canal: e.target.value as Canal, modo: e.target.value === 'sessao' ? (i.modo ?? 'presencial') : undefined })}>
-            {CANAIS.map((c) => (
+      <header className="ori-foco-topo">
+        <button type="button" className="ori-icone" aria-label="Fechar sem registrar" title="Fechar sem registrar" onClick={aoFechar}>
+          <IcX tamanho={20} />
+        </button>
+        <div className="ori-foco-titulo">
+          {novo ? (ehSessao ? 'Nova sessão' : 'Nova comunicação') : 'Editar registro'}
+          {nome && <span> · {nome}</span>}
+        </div>
+        <span style={{ flex: 1 }} />
+        {ehSessao ? (
+          <span className="ori-seg" role="radiogroup" aria-label="Como foi">
+            {(['presencial', 'online'] as const).map((m) => (
+              <button key={m} type="button" role="radio" aria-checked={(i.modo ?? 'presencial') === m} className={(i.modo ?? 'presencial') === m ? 'atual' : ''} onClick={() => setI({ ...i, modo: m })}>
+                {m === 'presencial' ? 'Presencial' : 'Online'}
+              </button>
+            ))}
+          </span>
+        ) : (
+          <select id="int-canal" className="seletor ori-foco-campo" aria-label="Tipo" value={i.canal} onChange={(e) => setI({ ...i, canal: e.target.value as Canal })}>
+            {CANAIS.filter((c) => c.id !== 'sessao').map((c) => (
               <option key={c.id} value={c.id}>
                 {c.nome}
               </option>
             ))}
           </select>
-        </div>
-        {ehSessao && (
-          <div className="campo">
-            <label htmlFor="int-modo">Como foi</label>
-            <select id="int-modo" className="seletor" value={i.modo ?? 'presencial'} onChange={(e) => setI({ ...i, modo: e.target.value as 'presencial' | 'online' })}>
-              <option value="presencial">presencial</option>
-              <option value="online">online</option>
-            </select>
-          </div>
         )}
-        <div className="campo">
-          <label htmlFor="int-em">Data e hora</label>
-          <input id="int-em" type="datetime-local" value={i.em} onChange={(e) => e.target.value && setI({ ...i, em: e.target.value })} />
-        </div>
-      </div>
-      {ehSessao && <PainelTranscricao transcricao={i.transcricao ?? ''} aoMudar={(t) => setI({ ...i, transcricao: t })} aoTrecho={aoTrecho} />}
-      <div className="campo">
-        <label htmlFor="int-colar">{ehSessao ? 'Anotações (opcional)' : 'Conversa (cole aqui o WhatsApp ou o e-mail)'}</label>
-        <textarea
-          id="int-colar"
-          rows={ehSessao ? 3 : 6}
-          value={i.texto}
-          placeholder={ehSessao ? '' : 'No WhatsApp: selecione as mensagens, copie e cole aqui. No e-mail: copie a mensagem (com o "De:" e a data) e cole.'}
-          onChange={(e) => setI({ ...i, texto: e.target.value })}
-          onPaste={(e) => {
-            const colado = e.clipboardData.getData('text');
-            if (!colado) return;
-            const el = e.currentTarget;
-            // Deixa o navegador colar e então lê o texto inteiro.
-            window.setTimeout(() => aoColar(el.value), 0);
-          }}
-        />
-        {reconhecido && (
-          <span className="ajuda" style={{ margin: 0 }}>
-            Reconhecido: {reconhecido}. Tipo, data e resumo preenchidos; confira.
-          </span>
-        )}
-      </div>
-      <OrganizarComIA
-        temMaterial={!!(i.transcricao?.trim() || i.texto.trim() || i.resumo.trim())}
-        pedido={() => pedidoRegistroIA({ trabalho, interacao: i, anteriores, versao: versoes.find((v) => v.id === i.versaoId), hoje: hojeISO() })}
-        aoUsar={usarResposta}
-      />
-      <div className="campo">
-        <label htmlFor="int-resumo">{ehSessao ? 'O que foi conversado' : 'Resumo'}</label>
-        <textarea id="int-resumo" rows={3} value={i.resumo} onChange={(e) => setI({ ...i, resumo: e.target.value })} placeholder={ehSessao ? 'ex.: Discutimos o recorte do tema; o capítulo 1 está descritivo demais.' : ''} />
-      </div>
+        <input id="int-em" className="ori-foco-campo" type="datetime-local" aria-label="Data e hora" value={i.em} onChange={(e) => e.target.value && setI({ ...i, em: e.target.value })} />
+      </header>
 
-      <div className="campo">
-        <label htmlFor="int-enc">Sugestões e comandos ao orientando</label>
-        {i.encaminhamentos.length > 0 && (
-          <ul className="ori-encaminhamentos">
-            {i.encaminhamentos.map((e) => (
-              <li key={e.id} className={e.situacao}>
-                <button
-                  type="button"
-                  className={`ori-tipo-enc ${e.tipo}`}
-                  title="Trocar entre sugestão e comando"
-                  onClick={() => setI({ ...i, encaminhamentos: i.encaminhamentos.map((x) => (x.id === e.id ? { ...x, tipo: x.tipo === 'comando' ? 'sugestao' : 'comando' } : x)) })}
-                >
-                  {e.tipo === 'comando' ? 'comando' : 'sugestão'}
-                </button>
-                <input aria-label="Texto" value={e.texto} onChange={(ev) => setI({ ...i, encaminhamentos: i.encaminhamentos.map((x) => (x.id === e.id ? { ...x, texto: ev.target.value } : x)) })} />
-                <input type="date" aria-label="Prazo" value={e.prazo ?? ''} onChange={(ev) => setI({ ...i, encaminhamentos: i.encaminhamentos.map((x) => (x.id === e.id ? { ...x, prazo: ev.target.value || undefined } : x)) })} />
-                {e.situacao !== 'pendente' && (
-                  <span className={e.situacao === 'cumprido' ? 'ajuda' : 'ori-nao-rotulo'} style={{ margin: 0, whiteSpace: 'nowrap' }}>
-                    {e.situacao === 'cumprido' ? 'cumprido' : rotuloNao(e.tipo)}
-                  </span>
-                )}
-                <AcoesEnc
-                  e={e}
-                  aoMarcar={() =>
-                    setI({
-                      ...i,
-                      encaminhamentos: i.encaminhamentos.map((x) => (x.id === e.id ? { ...x, situacao: x.situacao === 'descartado' ? 'pendente' : 'descartado', resolvido_em: x.situacao === 'descartado' ? null : hojeISO() } : x)),
-                    })
+      <div className="ori-foco-corpo">
+        <div className="ori-foco-esq">
+          <div className="ori-editor">
+            <div className="ori-editor-abas">
+              {ehSessao ? (
+                <>
+                  <button type="button" className={`ori-aba${aba === 'anotacoes' ? ' atual' : ''}`} onClick={() => setAba('anotacoes')}>
+                    Anotações
+                  </button>
+                  <button type="button" className={`ori-aba${aba === 'transcricao' ? ' atual' : ''}`} onClick={() => setAba('transcricao')}>
+                    Transcrição
+                  </button>
+                </>
+              ) : (
+                <span className="ori-aba atual">Conversa</span>
+              )}
+            </div>
+            {ehSessao && aba === 'transcricao' ? (
+              <PainelTranscricao transcricao={i.transcricao ?? ''} aoMudar={(t) => setI({ ...i, transcricao: t })} aoTrecho={aoTrecho} />
+            ) : (
+              <div className="ori-editor-corpo">
+                <textarea
+                  id="int-colar"
+                  aria-label={ehSessao ? 'Anotações' : 'Conversa colada'}
+                  value={i.texto}
+                  placeholder={
+                    ehSessao
+                      ? 'Suas anotações da sessão (opcional). Para transcrever pelo microfone, use a aba Transcrição.'
+                      : 'Cole aqui a conversa. No WhatsApp: selecione as mensagens, copie e cole. No e-mail: copie a mensagem com o "De:" e a data.'
                   }
-                  aoApagar={() => setI({ ...i, encaminhamentos: i.encaminhamentos.filter((x) => x.id !== e.id) })}
+                  onChange={(e) => setI({ ...i, texto: e.target.value })}
+                  onPaste={(e) => {
+                    const colado = e.clipboardData.getData('text');
+                    if (!colado) return;
+                    const el = e.currentTarget;
+                    // Deixa o navegador colar e então lê o texto inteiro.
+                    window.setTimeout(() => aoColar(el.value), 0);
+                  }}
                 />
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="ori-novo-enc">
-          <select className="seletor" aria-label="Sugestão ou comando" value={novoTipo} onChange={(e) => setNovoTipo(e.target.value as Encaminhamento['tipo'])}>
-            <option value="comando">comando (deve fazer)</option>
-            <option value="sugestao">sugestão (pode fazer)</option>
-          </select>
-          <input
-            id="int-enc"
-            value={novoTexto}
-            placeholder="ex.: Reescrever a introdução com o problema de pesquisa"
-            onChange={(e) => setNovoTexto(e.target.value)}
-            onPaste={(e) => {
-              if (colarBloco(e.clipboardData.getData('text'))) e.preventDefault();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                acrescentar();
-              }
-            }}
-          />
-          <input type="date" aria-label="Prazo (opcional)" title="Prazo (opcional)" value={novoPrazo} onChange={(e) => setNovoPrazo(e.target.value)} />
-          <button type="button" className="botao pequeno" onClick={acrescentar} disabled={!novoTexto.trim()}>
-            Acrescentar
-          </button>
+                {reconhecido && <span className="ori-msg-bloco">Reconhecido: {reconhecido}. Tipo, data e resumo preenchidos; confira.</span>}
+              </div>
+            )}
+          </div>
+          <div className="ori-resumo-caixa">
+            <label htmlFor="int-resumo">{ehSessao ? 'O que foi conversado' : 'Resumo'}</label>
+            <textarea
+              id="int-resumo"
+              rows={3}
+              value={i.resumo}
+              onChange={(e) => setI({ ...i, resumo: e.target.value })}
+              placeholder={ehSessao ? 'Escreva um resumo, ou use "Organizar com IA" para preencher a partir da transcrição.' : 'Em poucas linhas, o que foi tratado.'}
+            />
+          </div>
+          <div className="ori-ia-linha">
+            <strong>Organizar com IA</strong>
+            <span className="ori-calmo">monta o resumo e as tarefas a partir {ehSessao ? 'da transcrição e das anotações' : 'da conversa'}</span>
+            <button type="button" className="botao pequeno" onClick={() => setIa(true)}>
+              Abrir
+            </button>
+          </div>
         </div>
-        <span className="ajuda" style={{ margin: 0 }}>
-          Enter acrescenta. Dá para colar várias de uma vez (uma por linha, como a IA formata: "[comando]", "[sugestão]", "| até 30/11/2026", ou listas sob "Comandos:" e
-          "Sugestões:"); sem marcação, vale o tipo escolhido ao lado. Ficam como pendências do orientando até você marcá-las como cumpridas.
-        </span>
-        {msgBloco && <span className="ori-msg-bloco">{msgBloco}</span>}
+
+        <aside className="ori-foco-dir">
+          <h3 className="ori-card-titulo">Tarefas para o orientando</h3>
+          {i.encaminhamentos.length > 0 && (
+            <ul className="ori-encaminhamentos ori-tarefas">
+              {i.encaminhamentos.map((e) => (
+                <li key={e.id} className={e.situacao}>
+                  <button type="button" className={`ori-tipo-enc ${e.tipo}`} title="Trocar entre sugestão e comando" onClick={() => editarEnc(e.id, { tipo: e.tipo === 'comando' ? 'sugestao' : 'comando' })}>
+                    {e.tipo === 'comando' ? 'comando' : 'sugestão'}
+                  </button>
+                  <span className="ori-tarefa-corpo">
+                    <input aria-label="Texto" title={e.texto} value={e.texto} onChange={(ev) => editarEnc(e.id, { texto: ev.target.value })} />
+                    <span className="ori-tarefa-linha">
+                      <input type="date" aria-label="Prazo" value={e.prazo ?? ''} onChange={(ev) => editarEnc(e.id, { prazo: ev.target.value || undefined })} />
+                      {e.situacao !== 'pendente' && <span className={e.situacao === 'cumprido' ? 'ori-calmo' : 'ori-nao-rotulo'}>{e.situacao === 'cumprido' ? 'cumprido' : rotuloNao(e.tipo)}</span>}
+                    </span>
+                  </span>
+                  <AcoesEnc
+                    e={e}
+                    aoMarcar={() => editarEnc(e.id, { situacao: e.situacao === 'descartado' ? 'pendente' : 'descartado', resolvido_em: e.situacao === 'descartado' ? null : hojeISO() })}
+                    aoApagar={() => setI({ ...i, encaminhamentos: i.encaminhamentos.filter((x) => x.id !== e.id) })}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="ori-nova-tarefa">
+            <input
+              id="int-enc"
+              value={novoTexto}
+              placeholder="+ Adicionar tarefa (ou colar várias)"
+              onChange={(e) => setNovoTexto(e.target.value)}
+              onPaste={(e) => {
+                if (colarBloco(e.clipboardData.getData('text'))) e.preventDefault();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  acrescentar();
+                }
+              }}
+            />
+            {(novoTexto.trim() || novoPrazo) && (
+              <span className="ori-tarefa-linha">
+                <select className="seletor" aria-label="Sugestão ou comando" value={novoTipo} onChange={(e) => setNovoTipo(e.target.value as Encaminhamento['tipo'])}>
+                  <option value="comando">comando (deve fazer)</option>
+                  <option value="sugestao">sugestão (pode fazer)</option>
+                </select>
+                <input type="date" aria-label="Prazo (opcional)" title="Prazo (opcional)" value={novoPrazo} onChange={(e) => setNovoPrazo(e.target.value)} />
+                <button type="button" className="botao pequeno" onClick={acrescentar} disabled={!novoTexto.trim()}>
+                  Acrescentar
+                </button>
+              </span>
+            )}
+          </div>
+          {!novoTexto.trim() && (
+            <span className="ori-calmo ori-dica">
+              Enter acrescenta. Ao colar várias (como a IA formata), o Vide separa comandos e sugestões. Sem marcação, vale{' '}
+              <button type="button" className="ori-link" onClick={() => setNovoTipo(novoTipo === 'comando' ? 'sugestao' : 'comando')}>
+                {novoTipo === 'comando' ? 'comando' : 'sugestão'}
+              </button>
+              .
+            </span>
+          )}
+          {msgBloco && <span className="ori-msg-bloco">{msgBloco}</span>}
+
+          {anteriores.length > 0 && (
+            <>
+              <h3 className="ori-card-titulo" style={{ marginTop: 22 }}>
+                Pendências anteriores
+              </h3>
+              <ul className="ori-anteriores">
+                {anteriores.map((p) => (
+                  <li key={p.enc.id}>
+                    <input
+                      type="checkbox"
+                      id={`cump-${p.enc.id}`}
+                      checked={cumpridas.includes(p.enc.id)}
+                      onChange={(e) => setCumpridas(e.target.checked ? [...cumpridas, p.enc.id] : cumpridas.filter((x) => x !== p.enc.id))}
+                    />
+                    <label htmlFor={`cump-${p.enc.id}`}>{p.enc.texto}</label>
+                    <span className="ori-calmo">{dataBR(p.interacao.em).slice(0, 5)}</span>
+                  </li>
+                ))}
+              </ul>
+              <span className="ori-calmo ori-dica">Marque o que ele já cumpriu.</span>
+            </>
+          )}
+
+          {versoes.length > 0 && (
+            <>
+              <h3 className="ori-card-titulo" style={{ marginTop: 22 }}>
+                Versão discutida
+              </h3>
+              <select id="int-versao" className="seletor" aria-label="Versão do trabalho discutida" value={i.versaoId ?? ''} onChange={(e) => setI({ ...i, versaoId: e.target.value || null })}>
+                <option value="">nenhuma</option>
+                {versoes.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.rotulo} ({dataBR(v.recebida_em)})
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+        </aside>
       </div>
 
-      {anteriores.length > 0 && (
-        <div className="campo">
-          <label>Pendências anteriores: marque o que ele já cumpriu</label>
-          <ul className="ori-pendencias">
-            {anteriores.map((p) => (
-              <li key={p.enc.id}>
-                <input
-                  type="checkbox"
-                  id={`cump-${p.enc.id}`}
-                  checked={cumpridas.includes(p.enc.id)}
-                  onChange={(e) => setCumpridas(e.target.checked ? [...cumpridas, p.enc.id] : cumpridas.filter((x) => x !== p.enc.id))}
-                />
-                <span className={`ori-tipo-enc ${p.enc.tipo}`}>{p.enc.tipo === 'comando' ? 'comando' : 'sugestão'}</span>
-                <label htmlFor={`cump-${p.enc.id}`} className="ori-pend-texto">
-                  {p.enc.texto} <span className="ajuda">· {dataBR(p.interacao.em)}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {versoes.length > 0 && (
-        <div className="campo">
-          <label htmlFor="int-versao">Versão do trabalho discutida (opcional)</label>
-          <select id="int-versao" className="seletor" value={i.versaoId ?? ''} onChange={(e) => setI({ ...i, versaoId: e.target.value || null })}>
-            <option value="">nenhuma</option>
-            {versoes.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.rotulo} ({dataBR(v.recebida_em)})
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-      <div className="modal-botoes">
-        <button className="botao primario">{novo ? 'Registrar' : 'Salvar'}</button>
+      <footer className="ori-foco-pe">
+        <span className="ori-calmo">{guardadoEm && ehSessao ? `Transcrição guardada às ${guardadoEm}` : ''}</span>
+        <span style={{ flex: 1 }} />
         <button type="button" className="botao" onClick={aoFechar}>
           Cancelar
         </button>
-      </div>
-      <span className="ajuda" style={{ margin: 0 }}>
-        Trabalho: {trabalho.titulo || trabalho.tipo}
-      </span>
+        <button className="botao escuro">{novo ? (ehSessao ? 'Registrar sessão' : 'Registrar comunicação') : 'Salvar'}</button>
+      </footer>
+
+      {ia && (
+        <Janela titulo="Organizar com IA" aoFechar={() => setIa(false)}>
+          <OrganizarComIA
+            temMaterial={temMaterial}
+            pedido={() => pedidoRegistroIA({ trabalho, interacao: i, anteriores, versao: versoes.find((v) => v.id === i.versaoId), hoje: hojeISO() })}
+            aoUsar={(t) => {
+              const msg = usarResposta(t);
+              if (msg.startsWith('Preenchido')) {
+                setIa(false);
+                avisar(msg.replace(/ Confira e clique.*$/, ' Confira antes de registrar.'));
+              }
+              return msg;
+            }}
+          />
+        </Janela>
+      )}
     </form>
   );
 }
 
 // ---------- Versões ----------
 
-function Versoes({ trabalho, versoes, interacoes }: { trabalho: Trabalho; versoes: Versao[]; interacoes: Interacao[] }) {
+function FormNovaVersao({ trabalho, total, aoFechar }: { trabalho: Trabalho; total: number; aoFechar: () => void }) {
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [rotulo, setRotulo] = useState('');
   const [recebida, setRecebida] = useState(hojeISO());
   const [etapaId, setEtapaId] = useState(etapaAtual(trabalho)?.id ?? '');
   const [notas, setNotas] = useState('');
-  const campoArquivo = useRef<HTMLInputElement>(null);
   const etapas = emOrdem(trabalho.etapas);
   return (
-    <>
-      <form
-        className="cartao form-turma"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          if (!arquivo) return;
-          await adicionarVersao(trabalho.id, arquivo, { rotulo: rotulo.trim() || `Versão ${versoes.length + 1}`, recebida_em: recebida || hojeISO(), etapaId: etapaId || null, notas: notas.trim() });
-          avisar('Versão guardada');
-          setArquivo(null);
-          setRotulo('');
-          setNotas('');
-          if (campoArquivo.current) campoArquivo.current.value = '';
-        }}
-      >
-        <h3>Guardar uma versão</h3>
-        <div className="grade-2">
-          <div className="campo">
-            <label htmlFor="ver-arquivo">Arquivo (PDF, Word…)</label>
-            <input id="ver-arquivo" ref={campoArquivo} type="file" accept=".pdf,.doc,.docx,.odt,.rtf,.txt" onChange={(e) => setArquivo(e.target.files?.[0] ?? null)} />
-          </div>
-          <div className="campo">
-            <label htmlFor="ver-rotulo">Nome da versão</label>
-            <input id="ver-rotulo" value={rotulo} onChange={(e) => setRotulo(e.target.value)} placeholder={`Versão ${versoes.length + 1}`} />
-          </div>
-          <div className="campo">
-            <label htmlFor="ver-data">Recebida em</label>
-            <input id="ver-data" type="date" value={recebida} onChange={(e) => setRecebida(e.target.value)} />
-          </div>
-          <div className="campo">
-            <label htmlFor="ver-etapa">Etapa do cronograma</label>
-            <select id="ver-etapa" className="seletor" value={etapaId} onChange={(e) => setEtapaId(e.target.value)}>
-              <option value="">nenhuma</option>
-              {etapas.map((x) => (
-                <option key={x.id} value={x.id}>
-                  {x.nome}
-                </option>
-              ))}
-            </select>
-          </div>
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!arquivo) return;
+        await adicionarVersao(trabalho.id, arquivo, { rotulo: rotulo.trim() || `Versão ${total + 1}`, recebida_em: recebida || hojeISO(), etapaId: etapaId || null, notas: notas.trim() });
+        avisar('Versão guardada');
+        aoFechar();
+      }}
+    >
+      <div className="grade-2 ori-grade-janela">
+        <div className="campo">
+          <label htmlFor="ver-arquivo">Arquivo (PDF, Word…)</label>
+          <input id="ver-arquivo" type="file" accept=".pdf,.doc,.docx,.odt,.rtf,.txt" onChange={(e) => setArquivo(e.target.files?.[0] ?? null)} />
         </div>
         <div className="campo">
-          <label htmlFor="ver-notas">Suas anotações sobre esta versão (opcional)</label>
-          <textarea id="ver-notas" rows={2} value={notas} onChange={(e) => setNotas(e.target.value)} />
+          <label htmlFor="ver-rotulo">Nome da versão</label>
+          <input id="ver-rotulo" value={rotulo} onChange={(e) => setRotulo(e.target.value)} placeholder={`Versão ${total + 1}`} />
         </div>
-        <div className="modal-botoes">
-          <button className="botao primario" disabled={!arquivo}>
-            Guardar versão
-          </button>
+        <div className="campo">
+          <label htmlFor="ver-data">Recebida em</label>
+          <input id="ver-data" type="date" value={recebida} onChange={(e) => setRecebida(e.target.value)} />
         </div>
-      </form>
-      {!versoes.length ? (
-        <p className="ajuda">Nenhuma versão guardada ainda. Mais adiante, o orientando poderá enviar as versões pela página dele.</p>
-      ) : (
-        <ol className="ori-linha-tempo">
-          {versoes.map((v) => (
-            <ItemVersao key={v.id} v={v} etapa={trabalho.etapas.find((x) => x.id === v.etapaId)?.nome} discutida={interacoes.filter((i) => i.versaoId === v.id)} />
-          ))}
-        </ol>
-      )}
-    </>
+        <div className="campo">
+          <label htmlFor="ver-etapa">Etapa do cronograma</label>
+          <select id="ver-etapa" className="seletor" value={etapaId} onChange={(e) => setEtapaId(e.target.value)}>
+            <option value="">nenhuma</option>
+            {etapas.map((x) => (
+              <option key={x.id} value={x.id}>
+                {x.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="campo">
+        <label htmlFor="ver-notas">Suas anotações sobre esta versão (opcional)</label>
+        <textarea id="ver-notas" rows={2} value={notas} onChange={(e) => setNotas(e.target.value)} />
+      </div>
+      <div className="modal-botoes ori-janela-pe">
+        <button type="button" className="botao" onClick={aoFechar}>
+          Cancelar
+        </button>
+        <button className="botao escuro" disabled={!arquivo}>
+          Guardar versão
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -2031,7 +2097,14 @@ function JanelaCompartilhar({ trabalho, orientando, aoFechar }: { trabalho: Trab
             type="button"
             className="ori-link perigo"
             onClick={async () => {
-              if (await confirmar({ titulo: 'Desativar a página do orientando?', texto: 'O link deixa de funcionar. Tudo continua guardado aqui; dá para criar uma página nova depois (com outro link).', botao: 'Desativar', perigo: true }))
+              if (
+                await confirmar({
+                  titulo: 'Desativar a página do orientando?',
+                  texto: `O link deixa de funcionar e o serviço apaga o que está na página${trabalho.preProjeto?.ativo ? ', inclusive o rascunho do pré-projeto que ele está escrevendo. Antes, o Vide guarda uma cópia do rascunho aqui e no seu Drive; se você criar uma página nova depois, o rascunho volta para ela' : ''}. As versões enviadas, as sessões e o resto continuam guardados aqui.`,
+                  botao: 'Desativar',
+                  perigo: true,
+                })
+              )
                 await tentar(() => desativarOrientacao(trabalho.id), 'Página desativada');
             }}
           >
@@ -2059,6 +2132,23 @@ function PreProjetoCartao({ trabalho, orientando, aoCompartilhar }: { trabalho: 
           {ativo ? 'Configurar' : 'Ligar o formulário'}
         </button>
       </div>
+      {trabalho.rascunhoProjeto && (
+        <div className="ori-info">
+          <span>Cópia do rascunho (aqui e no Drive)</span>
+          <span className="ori-info-acoes">
+            <strong>{new Date(trabalho.rascunhoProjeto.guardadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</strong>
+            <button
+              type="button"
+              className="ori-link"
+              onClick={async () =>
+                baixarArquivo(await pdfDoPreProjeto(trabalho, orientando, trabalho.rascunhoProjeto!.texto), `Pre-projeto (copia) - ${(orientando?.nome ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')}.pdf`)
+              }
+            >
+              ver (PDF)
+            </button>
+          </span>
+        </div>
+      )}
       {!ativo || !pub ? (
         <p className="ori-calmo">
           {!pub ? 'Compartilhe a página do orientando e ligue o formulário do pré-projeto: ele escreve lá e o Vide monta o PDF pelo manual.' : 'O formulário está desligado. Ligue em Compartilhar.'}

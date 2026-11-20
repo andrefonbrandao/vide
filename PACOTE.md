@@ -24,15 +24,22 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 25** aberto em 2026-11-20, a partir da versão 0.40.0 (já publicada). **Fechado e publicado como versão 0.41.0** (com o teste de peso).
+**Pacote 26** aberto em 2026-11-20, a partir da versão 0.41.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|-------|----------|
+| 1 | **Orientação reorganizada, parte 2:** **registrar sessão numa tela focada** (cobre a página): no alto, presencial/online e data; à esquerda, o editor com as abas **Anotações · Transcrição** (na comunicação, a conversa colada), "O que foi conversado" e **"Organizar com IA"** num botão só, que abre a janela em dois passos (copiar o pedido · colar a resposta); à direita, **Tarefas para o orientando** (com colar em bloco), **pendências anteriores** para marcar e a versão discutida; rodapé fixo com Cancelar e Registrar. **Linha do tempo unificada:** sessões, comunicações e versões numa lista só, por mês, com filtros (Tudo · Sessões · Comunicações · Versões) e "+ Comunicação" / "+ Versão" (em janela) | No pacote |
+| 2 | **Segurança do rascunho do pré-projeto:** (a) o Vide guarda uma **cópia do rascunho** do orientando no computador e no **Drive** (ao abrir a Orientação e a cada 5 minutos), visível na aba Trabalho com "ver (PDF)"; (b) **desativar a página** avisa que o rascunho será apagado do serviço e guarda a cópia antes; ao **criar uma página nova**, o rascunho volta para ela; (c) **dois aparelhos**: o serviço não grava por cima de um texto mais novo — o orientando vê "O texto foi alterado em outro aparelho" e escolhe qual manter; ao voltar para a aba, o texto mais novo é trazido sozinho | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 25 (publicado como 0.41.0 em 2026-11-20)
 
 | # | Ideia | Situação |
 |---|-------|----------|
 | 1 | **Pré-projeto (TCC I) na página do orientando:** o professor liga o formulário na aba "Página do orientando" e define a capa e a folha de rosto (Uniftec com o logotipo, ou Ftec; curso, cidade, ano, orientador, coorientador, natureza do trabalho; resumo e folha de aprovação opcionais). Na página, a aba **"Meu pré-projeto"** traz os campos do projeto de pesquisa do manual (introdução, 1.1 problema, 1.2 hipóteses, 2.1 objetivo geral, 2.2 específicos, 2.3 justificativa, 3 fundamentação teórica com subtítulos, 4.1 a 4.4 metodologia, 5.1 recursos, referências), **já começando com os elementos do trabalho**; barra com negrito, itálico, citação longa, nota de rodapé e subtítulo; guarda sozinho no serviço. **"Ver o PDF"** monta o pré-projeto pelas regras do manual: A4, margens 3/2 cm, Arial (Helvetica) 12, entrelinha 1,5, recuo de 1,25 cm, citação longa com recuo de 4 cm em fonte 10, **notas de rodapé** no pé da página, capa com o logotipo, folha de rosto (natureza com recuo de 7,5 cm), sumário com as páginas, cronograma como "Quadro 1" (vem do cronograma da orientação), referências em ordem alfabética, páginas contadas desde a folha de rosto e numeradas a partir da introdução. **"Enviar ao orientador"** guarda uma cópia datada, que chega ao professor como **versão em PDF** (ao abrir a Orientação, a cada 5 minutos ou em "Buscar envios agora"); "Ver o rascunho atual (PDF)" mostra o que está escrito agora | Publicada (0.41.0) |
 | 2 | **Pré-visualizar o pré-projeto (só para o orientando):** na aba "Meu pré-projeto", **"Pré-visualizar"** abre o PDF numa aba nova e **"Baixar o PDF"** salva no aparelho — nada vai ao orientador; o aviso deixa claro que o orientador só recebe com "Enviar ao orientador" | Publicada (0.41.0) |
 | 3 | **Orientação reorganizada (parte 1 da maquete aprovada):** **lista de orientandos** em linhas (silhueta, nome e trabalho, barra de progresso do cronograma, próximo prazo, pendências, último contato), com filtros **Em andamento · Com atraso · Concluídos** e busca; "Modelos e orientações" no menu ⋯. **Orientando:** cabeçalho com **Compartilhar**, **+ Registrar sessão** (▾ para comunicação) e ⋯ (relatório em PDF, modelos, voltar); **4 abas** — **Visão geral** (próximo prazo em destaque, pendências com ✓ e ✕/lixeira ao passar o mouse, cronograma como linha do tempo visual com "Editar", últimas atividades, situação da página do orientando), **Linha do tempo** (sessões e comunicações · versões), **Trabalho** (elementos e pré-projeto), **Ajustes** (dados e modelos só dele). **Compartilhar** reúne link, código com QR, "copiar mensagem", o formulário do pré-projeto (liga/desliga) e a capa; relatório e modelos em janelas. Avisos um de cada vez. **Parte 2 (próximo pacote):** a tela focada de registrar sessão e a linha do tempo unificada | Publicada (0.41.0) |
-
-## Pacotes anteriores
 
 ### Pacote 24 (publicado como 0.40.0 em 2026-11-20)
 

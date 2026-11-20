@@ -90,6 +90,10 @@ export async function publicarOrientacao(trabalhoId: string, opcoes: { trocarPin
       const { id } = (await r.json()) as { id: string };
       pub = { codigo: id, chave, pin, publicadoEm: agoraISO(), arquivos: {} };
       await gravarPublicacao(t.id, pub);
+      // Página nova de quem já tinha rascunho guardado: o rascunho volta para ela.
+      if (t.rascunhoProjeto?.texto) {
+        await fetch(`/api/orientacao/${id}/projeto`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Vide-Pin': pin }, body: JSON.stringify(t.rascunhoProjeto.texto) }).catch(() => undefined);
+      }
     } else pub = { ...t.publicacao, pin };
     // Arquivos novos ou trocados.
     const arquivos: Record<string, string> = {};
@@ -118,6 +122,8 @@ export async function publicarOrientacao(trabalhoId: string, opcoes: { trocarPin
 }
 
 export async function desativarOrientacao(trabalhoId: string): Promise<void> {
+  // Antes de apagar a página, guarda o rascunho do orientando (se houver).
+  await guardarRascunho(trabalhoId).catch(() => false);
   const t = await db.trabalhos.get(trabalhoId);
   if (!t?.publicacao) return;
   await pedir(`/api/orientacao/${t.publicacao.codigo}`, 'DELETE', t.publicacao.chave);
@@ -219,4 +225,18 @@ export async function buscarEnvios(trabalhoId: string): Promise<number> {
   } finally {
     buscando.delete(trabalhoId);
   }
+}
+
+/** Guarda (no computador e no Drive) uma cópia do rascunho do orientando, se ele mudou. Devolve se guardou. */
+export async function guardarRascunho(trabalhoId: string): Promise<boolean> {
+  const t = await db.trabalhos.get(trabalhoId);
+  if (!t?.publicacao || !t.preProjeto?.ativo) return false;
+  const { projeto } = await lerRascunho(trabalhoId);
+  if (!projeto) return false;
+  const atual = await db.trabalhos.get(trabalhoId);
+  if (!atual || (atual.rascunhoProjeto?.texto.atualizado_em ?? '') === (projeto.atualizado_em ?? '') && atual.rascunhoProjeto) return false;
+  // Gravado direto (sem pedir nova publicação da página).
+  await db.trabalhos.put({ ...atual, rascunhoProjeto: { texto: projeto, guardadoEm: agoraISO() }, atualizado_em: agoraISO() });
+  window.dispatchEvent(new Event('vide-orientacao-mudou'));
+  return true;
 }

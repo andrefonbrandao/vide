@@ -176,6 +176,9 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
   const [erro, setErro] = useState('');
   const timer = useRef<number | null>(null);
   const pendente = useRef<TextoProjeto | null>(null);
+  /** Versão do servidor sobre a qual este aparelho está escrevendo (para não gravar por cima de outro aparelho). */
+  const base = useRef('');
+  const [conflito, setConflito] = useState<TextoProjeto | null>(null);
 
   useEffect(() => {
     void fetch(`/api/orientacao/${codigo}/projeto`, { headers: { 'X-Vide-Pin': pin } })
@@ -183,6 +186,7 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
         if (!r.ok) throw new Error();
         const j = (await r.json()) as { projeto: TextoProjeto | null; ultimoEnvio: string | null };
         setTexto(j.projeto ? { ...VAZIO, ...j.projeto } : inicial(dados));
+        base.current = j.projeto?.atualizado_em ?? '';
         setUltimoEnvio(j.ultimoEnvio);
         if (!j.projeto) setEstado('Começamos com o que você e o orientador já definiram (tema, problema, objetivos…). Confira e complete.');
       })
@@ -192,16 +196,52 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
       });
   }, [codigo, pin, dados]);
 
-  const salvar = async (t: TextoProjeto) => {
+  const salvar = async (t: TextoProjeto, forcar = false) => {
     setEstado('Salvando…');
     try {
-      const r = await fetch(`/api/orientacao/${codigo}/projeto`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Vide-Pin': pin }, body: JSON.stringify(t) });
+      const cab: Record<string, string> = { 'Content-Type': 'application/json', 'X-Vide-Pin': pin };
+      if (!forcar) cab['X-Vide-Base'] = base.current;
+      const r = await fetch(`/api/orientacao/${codigo}/projeto`, { method: 'PUT', headers: cab, body: JSON.stringify(t) });
+      if (r.status === 409) {
+        // Outro aparelho gravou um texto mais novo: não grava por cima; pergunta qual manter.
+        const j = (await r.json()) as { projeto: TextoProjeto };
+        setConflito({ ...VAZIO, ...j.projeto });
+        setEstado('Não salvo: o texto mudou em outro aparelho.');
+        return;
+      }
       if (!r.ok) throw new Error(String(r.status));
+      base.current = t.atualizado_em ?? base.current;
       setEstado(`Salvo às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`);
     } catch {
       setEstado('Não foi salvo (sem internet?). Continue escrevendo: tento de novo na próxima mudança.');
     }
   };
+  // Ao voltar para esta aba (ou aparelho): se o texto mudou em outro lugar, traz o mais novo (ou pergunta, se houver mudança aqui).
+  useEffect(() => {
+    const conferir = () => {
+      if (document.visibilityState !== 'visible') return;
+      void fetch(`/api/orientacao/${codigo}/projeto`, { headers: { 'X-Vide-Pin': pin } })
+        .then(async (r) => {
+          if (!r.ok) return;
+          const j = (await r.json()) as { projeto: TextoProjeto | null };
+          const remoto = j.projeto;
+          if (!remoto || !(remoto.atualizado_em ?? '') || (remoto.atualizado_em ?? '') <= base.current) return;
+          if (pendente.current) setConflito({ ...VAZIO, ...remoto });
+          else {
+            setTexto({ ...VAZIO, ...remoto });
+            base.current = remoto.atualizado_em ?? '';
+            setEstado('Atualizado com o texto escrito em outro aparelho.');
+          }
+        })
+        .catch(() => undefined);
+    };
+    document.addEventListener('visibilitychange', conferir);
+    window.addEventListener('focus', conferir);
+    return () => {
+      document.removeEventListener('visibilitychange', conferir);
+      window.removeEventListener('focus', conferir);
+    };
+  }, [codigo, pin]);
   // Guarda alguns segundos depois de parar de digitar (e ao sair da página).
   useEffect(() => {
     const sair = () => {
@@ -272,6 +312,7 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
       if (!r.ok) throw new Error(String(r.status));
       const { em } = (await r.json()) as { em: string };
       pendente.current = null;
+      base.current = texto.atualizado_em ?? base.current;
       setUltimoEnvio(em);
       setEstado('Enviado ao orientador.');
     } catch {
@@ -313,6 +354,42 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
         </span>
       </div>
       {erro && <p className="oa-erro">{erro}</p>}
+      {conflito && (
+        <div className="pp-conflito" role="alert">
+          <strong>O texto foi alterado em outro aparelho</strong>
+          <span>
+            Lá, a última mudança foi às{' '}
+            {conflito.atualizado_em ? new Date(conflito.atualizado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '?'}. Qual texto você quer manter?
+          </span>
+          <span className="pp-conflito-acoes">
+            <button
+              type="button"
+              className="botao escuro"
+              onClick={() => {
+                pendente.current = null;
+                if (timer.current) window.clearTimeout(timer.current);
+                setTexto(conflito);
+                base.current = conflito.atualizado_em ?? '';
+                setConflito(null);
+                setEstado('Usando o texto do outro aparelho.');
+              }}
+            >
+              Usar o do outro aparelho
+            </button>
+            <button
+              type="button"
+              className="botao"
+              onClick={() => {
+                if (texto) void salvar({ ...texto, atualizado_em: new Date().toISOString() }, true);
+                pendente.current = null;
+                setConflito(null);
+              }}
+            >
+              Manter o deste aparelho
+            </button>
+          </span>
+        </div>
+      )}
       {GRUPOS.filter((g) => g.so !== 'resumo' || cfg.resumo).map((g) => (
         <fieldset key={g.titulo} className="proc-caixa pp-grupo">
           <legend className="proc-caixa-titulo">{g.titulo}</legend>

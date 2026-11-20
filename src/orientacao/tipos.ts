@@ -59,6 +59,8 @@ export interface Trabalho extends Sincronizavel {
   publicacao?: PublicacaoOrientacao | null;
   /** Formulário do pré-projeto na página do orientando. */
   preProjeto?: ConfigPreProjeto;
+  /** Cópia de segurança do rascunho do pré-projeto (o que o orientando escreveu na página), no computador e no Drive. */
+  rascunhoProjeto?: { texto: TextoProjeto; guardadoEm: string } | null;
 }
 
 /** O que o professor define para o PDF do pré-projeto (capa, folha de rosto…). */

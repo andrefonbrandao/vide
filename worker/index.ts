@@ -516,6 +516,13 @@ export class Orientacao extends DurableObject<Env> {
         } catch {
           return jsonResp({ erro: 'JSON inválido' }, 400);
         }
+        // Dois aparelhos: se o texto guardado é mais novo que a base deste aparelho, não grava por cima.
+        const base = req.headers.get('X-Vide-Base');
+        if (base !== null) {
+          const atual = await this.ctx.storage.get<string>('projeto');
+          const emAtual = atual ? ((JSON.parse(atual) as { atualizado_em?: string }).atualizado_em ?? '') : '';
+          if (emAtual && emAtual > base) return jsonResp({ erro: 'conflito', projeto: JSON.parse(atual!) }, 409);
+        }
         await this.ctx.storage.put('projeto', texto);
         return jsonResp({ ok: true });
       }
