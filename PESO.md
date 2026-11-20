@@ -147,3 +147,26 @@ Processador 4 vezes mais lento (imita um notebook de entrada). Baixado só quand
 
 **Veredito: leve.** Nenhum limite passou; não é preciso mexer.
 
+
+### 2026-11-20 · versão 0.51.0
+
+Processador 4 vezes mais lento (imita um notebook de entrada). Baixado só quando usado (gzip): leitor de PDF (parte que roda à parte) 384 KB, montador do PDF dos autos 171 KB, leitor de PDF 143 KB, EditorVivo 87 KB.
+
+| Medida | Resultado | Limite | |
+|---|---|---|---|
+| JS principal (gzip), baixado ao abrir | 257 KB | 400 KB | ok |
+| Visual (CSS, gzip) | 44 KB | — | ok |
+| Abrir o Vide (primeira vez) | 1245 ms | 2000 ms | ok |
+| Abrir de novo (com cache) | 432 ms | — | ok |
+| Importar uma lei do tamanho do CPC | 914 ms | — | ok |
+| Abrir a Aula | 172 ms | — | ok |
+| Digitar artigo até a alternativa | 122 ms | 400 ms | ok |
+| Clicar e o artigo aparecer no projetor | 172 ms | 400 ms | ok |
+| Primeira página do PDF no projetor | 274 ms | — | ok |
+| Passar para um slide com foto grande | 170 ms | 1500 ms | ok |
+| Busca geral (Ctrl K) | 109 ms | 600 ms | ok |
+| Memória (Aula + projeção + PDF) | 10.7 MB | 80 MB | ok |
+| Processador com a aula parada | 0.6% | 3% | ok |
+
+**Veredito: leve.** Nenhum limite passou; não é preciso mexer.
+
