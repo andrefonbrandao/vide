@@ -82,9 +82,23 @@ export function pendencias(interacoes: Interacao[]): Pendencia[] {
     .flatMap((i) => i.encaminhamentos.filter((e) => e.situacao === 'pendente').map((enc) => ({ enc, interacao: i })));
 }
 
+const ETAPAS_TCC = [
+  'Definição do tema',
+  'Entrega do pré-projeto (Grau A)',
+  'Entrega do Capítulo 1 (Grau B)',
+  'Revisão do Capítulo 1',
+  'Entrega do Capítulo 2 (Grau A)',
+  'Revisão do Capítulo 2',
+  'Trabalho completo',
+  'Revisão final',
+  'Depósito da versão impressa',
+  'Defesa',
+];
+
 const MODELOS: Record<TipoTrabalho, string[]> = {
-  TCC: ['Tema e problema de pesquisa', 'Projeto (sumário provisório e bibliografia)', 'Capítulo 1', 'Capítulo 2', 'Capítulo 3', 'Introdução e conclusão', 'Versão completa para revisão', 'Versão final (depósito)', 'Defesa'],
-  Monografia: ['Tema e problema de pesquisa', 'Projeto (sumário provisório e bibliografia)', 'Capítulo 1', 'Capítulo 2', 'Capítulo 3', 'Introdução e conclusão', 'Versão completa para revisão', 'Versão final (depósito)', 'Defesa'],
+  // Os prazos usuais do TCC I e do TCC II.
+  TCC: ETAPAS_TCC,
+  Monografia: ETAPAS_TCC,
   Artigo: ['Tema e problema', 'Estrutura e bibliografia', 'Primeira versão', 'Versão revisada', 'Versão final', 'Submissão'],
   Dissertação: ['Projeto', 'Capítulo 1', 'Qualificação', 'Capítulo 2', 'Capítulo 3', 'Versão completa', 'Depósito', 'Defesa'],
   Tese: ['Projeto', 'Capítulo 1', 'Capítulo 2', 'Qualificação', 'Capítulo 3', 'Capítulo 4', 'Versão completa', 'Depósito', 'Defesa'],

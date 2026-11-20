@@ -401,7 +401,10 @@ function FormNovaOrientacao({ aoFechar, aoCriar }: { aoFechar: () => void; aoCri
         </div>
       </div>
       <CamposTrabalho v={t} mudar={(p) => setT({ ...t, ...p })} />
-      <p className="ajuda">O Vide monta um cronograma sugerido para o tipo de trabalho, com os prazos espalhados até a defesa (ou de 30 em 30 dias). Você ajusta depois.</p>
+      <p className="ajuda">
+        O Vide monta um cronograma sugerido para o tipo de trabalho, com os prazos espalhados até a defesa (ou de 30 em 30 dias). No TCC e na monografia: definição do tema, pré-projeto
+        (Grau A), Capítulo 1 (Grau B) e revisão, Capítulo 2 (Grau A) e revisão, trabalho completo, revisão final, depósito da versão impressa e defesa. Você ajusta depois.
+      </p>
       <div className="modal-botoes">
         <button className="botao primario" disabled={!o.nome.trim()}>
           Cadastrar

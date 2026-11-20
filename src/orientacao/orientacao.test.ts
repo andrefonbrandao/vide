@@ -23,7 +23,7 @@ describe('prazos', () => {
   });
   test('cronograma modelo termina na defesa', () => {
     const c = cronogramaModelo('TCC', '2026-08-01', '2026-12-10');
-    expect(c[0].nome).toBe('Tema e problema de pesquisa');
+    expect(c.map((e) => e.nome)).toEqual(['Definição do tema', 'Entrega do pré-projeto (Grau A)', 'Entrega do Capítulo 1 (Grau B)', 'Revisão do Capítulo 1', 'Entrega do Capítulo 2 (Grau A)', 'Revisão do Capítulo 2', 'Trabalho completo', 'Revisão final', 'Depósito da versão impressa', 'Defesa']);
     expect(c[c.length - 1]).toMatchObject({ nome: 'Defesa', prazo: '2026-12-10' });
     expect(c.every((e, i) => i === 0 || e.prazo >= c[i - 1].prazo)).toBe(true);
     expect(etapaAtual({ etapas: [{ ...c[1] }, { ...c[0], concluida_em: '2026-08-20' }] })?.nome).toBe(c[1].nome);

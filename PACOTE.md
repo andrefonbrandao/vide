@@ -30,6 +30,7 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 |---|-------|----------|
 | 1 | **Pré-projeto em Word (.docx) e em PDF, para o orientando e para o orientador.** O Word tem a mesma estrutura e formatação do PDF (A4, margens 3/2 cm, Arial 12, entrelinha 1,5, recuo 1,25 cm, citação longa com recuo de 4 cm em fonte 10, títulos como "Título 1/2", **notas de rodapé do Word**, quadro do cronograma, capa com o logotipo, folha de rosto, **sumário do Word já numerado** — e atualizável —, números de página no cabeçalho a partir da introdução, contando desde a folha de rosto). Orientando: "Baixar em Word" ao lado de "Baixar o PDF". Orientador: rascunho atual e cópia guardada em PDF ou Word; cada envio vira versão em PDF com o botão "Word" daquela versão. O PDF e o Word leem a mesma estrutura (numeração e ordem iguais) | No pacote |
 | 2 | **Correção: as Referências começam em página nova** (elemento pós-textual), no PDF e no Word | No pacote |
+| 3 | **Cronograma sugerido com os prazos usuais do TCC I e TCC II** (trabalho novo do tipo TCC ou monografia): Definição do tema; Entrega do pré-projeto (Grau A); Entrega do Capítulo 1 (Grau B); Revisão do Capítulo 1; Entrega do Capítulo 2 (Grau A); Revisão do Capítulo 2; Trabalho completo; Revisão final; Depósito da versão impressa; Defesa — com os prazos espalhados do começo da orientação até a defesa prevista (editáveis). Trabalhos já cadastrados ficam como estão | No pacote |
 
 ## Pacotes anteriores
 
