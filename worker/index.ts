@@ -7,8 +7,10 @@
 // Tudo que não começa com /api/ é o próprio app (arquivos da pasta dist).
 import { DurableObject } from 'cloudflare:workers';
 import { paraAluno, type ComLibera } from '../src/processo/liberacao';
+import { enderecoAberto, precisaEntrar, telaDeEntrada, tratarEntrada, type EnvPorteiro } from './porteiro';
+export { Porteiro } from './porteiro';
 
-export interface Env {
+export interface Env extends EnvPorteiro {
   SALAS: DurableObjectNamespace<Sala>;
   JOGOS: DurableObjectNamespace<Jogo>;
   TREINOS: DurableObjectNamespace<Treino>;
@@ -31,6 +33,11 @@ const TAMANHO_MAXIMO = 256 * 1024;
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
+    // Senha do professor (porteiro): entrar e sair.
+    if (url.pathname === '/api/entrar' || url.pathname === '/api/sair') return tratarEntrada(req, env, url);
+    // Criar treinos, processos e páginas de orientação é coisa do professor: pede a sessão dele.
+    if (req.method === 'POST' && /^\/api\/(treino|processo|orientacao)\/?$/.test(url.pathname) && (await precisaEntrar(req, env)))
+      return new Response(JSON.stringify({ erro: 'Entre com a senha do professor.' }), { status: 401, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
     const m = RE_SALA.exec(url.pathname);
     if (m) {
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('Esperado WebSocket', { status: 426 });
@@ -62,6 +69,8 @@ export default {
       return env.PROCESSOS.get(env.PROCESSOS.idFromName(pa[1])).fetch(new Request(`https://processo/${pa[1]}/arquivo/${pa[2]}`, { method: req.method, headers: req.headers, body: req.body }));
     }
     if (url.pathname.startsWith('/api/')) return new Response('Não encontrado', { status: 404 });
+    // O app do professor só abre com a senha; as páginas dos alunos e os arquivos continuam abertos.
+    if (!enderecoAberto(url) && (await precisaEntrar(req, env))) return telaDeEntrada(url);
     return env.ASSETS.fetch(req);
   },
 } satisfies ExportedHandler<Env>;

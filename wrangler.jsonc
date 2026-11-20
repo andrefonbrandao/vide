@@ -8,8 +8,9 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    // Só os endereços /api/ passam pelo worker; o resto é servido direto.
-    "run_worker_first": ["/api/*"]
+    // Passam pelo worker os endereços /api/ e as páginas (para o porteiro conferir a senha do
+    // professor); os arquivos do app (scripts, estilos, imagens) são servidos direto.
+    "run_worker_first": ["/*", "!/assets/*", "!/*.png", "!/*.svg", "!/*.webmanifest"]
   },
   // Salas de pareamento celular <-> computador e do jogo de perguntas (Durable Objects, plano gratuito).
   "durable_objects": {
@@ -18,7 +19,8 @@
       { "name": "JOGOS", "class_name": "Jogo" },
       { "name": "TREINOS", "class_name": "Treino" },
       { "name": "PROCESSOS", "class_name": "Processo" },
-      { "name": "ORIENTACOES", "class_name": "Orientacao" }
+      { "name": "ORIENTACOES", "class_name": "Orientacao" },
+      { "name": "PORTEIROS", "class_name": "Porteiro" }
     ]
   },
   "migrations": [
@@ -30,7 +32,9 @@
     // Processos fictícios que a turma acompanha (só os eventos já liberados são lidos pelos alunos).
     { "tag": "v4", "new_sqlite_classes": ["Processo"] },
     // Páginas dos orientandos (cronograma, pendências, elementos e modelos; leitura só com o código de 6 números).
-    { "tag": "v5", "new_sqlite_classes": ["Orientacao"] }
+    { "tag": "v5", "new_sqlite_classes": ["Orientacao"] },
+    // Porteiro do app do professor (conta os erros de senha por endereço de internet).
+    { "tag": "v6", "new_sqlite_classes": ["Porteiro"] }
   ],
   "workers_dev": true,
   "preview_urls": false

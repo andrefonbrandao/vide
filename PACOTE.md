@@ -26,7 +26,15 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 34** aberto em 2026-11-20, a partir da versão 0.49.0 (já publicada). **Fechado e publicado como versão 0.50.0.**
+**Pacote 35** aberto em 2026-11-20, a partir da versão 0.50.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|---|---|
+| 1 | **Senha do professor (porteiro).** O endereço principal do Vide (o app do professor) só abre com a senha do professor: num aparelho novo aparece a tela "Vide — entrar"; acertando, o aparelho fica liberado por um ano (cookie assinado; trocar a senha desconecta todos). Continuam abertos, como antes: as páginas dos alunos (/j jogo, /t treino, /p processo, /o orientação), o controle pelo celular (QR da sala) e os arquivos do app. Criar treinos, processos e páginas de orientação também passa a exigir a sessão do professor. 8 senhas erradas seguidas (do mesmo endereço de internet) bloqueiam por 15 minutos. **A senha é o segredo SENHA_PROFESSOR, guardado no painel do Cloudflare** (sem ele, o porteiro fica desligado). /api/sair desconecta o aparelho | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 34 (publicado como 0.50.0 em 2026-11-20)
 
 | # | Ideia | Situação |
 |---|---|---|
@@ -34,8 +42,6 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 | 2 | **Comentar no texto a partir da linha do tempo:** cada versão enviada pelo orientando pelo formulário ("Pré-projeto/Trabalho final — enviado em…") ganhou o botão **"Comentar no texto"**, que abre a tela de leitura com apontamentos. No alto, um aviso diz se aquele é exatamente o texto enviado ou se o orientando já mudou o texto depois do envio (os apontamentos ficam no texto atual; a versão enviada continua no PDF) | Publicada (0.50.0) |
 | 3 | **Boas-vindas e manual para o orientando.** (a) **Passeio de boas-vindas** no primeiro acesso de cada aparelho: o fundo escurece e cada parte da página é destacada com um balão curto (etapa da vez, pendências, cronograma, modelos, a aba do formulário, "Como usar" e o "?"), com Próximo/Voltar/pular; o **?** no alto refaz o passeio. (b) Aba **"Como usar"** com o manual em perguntas e respostas, com **busca**: a sua página (código, celular), acompanhamento (etapa da vez, fazer × sugestão, modelos), escrevendo o trabalho (salvar, dois aparelhos, o que o orientador vê, formatação, citação, nota, tabela, ampliar, PDF/Word; no trabalho final, capítulos e figuras), apontamentos (ver, responder, resolver) e problemas comuns. O manual se ajusta ao que a página mostra (formulário desligado, pré-projeto ou trabalho final) e é a fonte única sobre o app para o aluno (src/orientacao/manualAluno.ts) | Publicada (0.50.0) |
 | 4 | **Combinado de orientação.** Nova aba **"Combinado"** na página do orientando, com o conteúdo do PDF "Orientação de TCC" do professor (fixo, em src/orientacao/combinado.ts): **responsabilidades** (cada tarefa com o selo "Você", "Orientador" ou "Os dois") e **fontes de pesquisa** (use como fonte · use com cautela · não use como fonte, cada grupo com uma frase do porquê). No primeiro acesso, a página abre no combinado; o orientando toca em **"Li e compreendi o combinado"** (fica registrado com data e hora) e só então começa o passeio de boas-vindas. Enquanto não confirmar, um **aviso amarelo no alto** da página. No caderno do professor, o quadro "Página do orientando" mostra **"Combinado: lido em…"** ou **"ainda não lido"**. A mensagem de boas-vindas pede para começar pelo combinado; o manual e o passeio falam dele. As dicas do orientador (encontros, fichamento, bibliotecas, prompts de IA) ficaram para depois, com um jeito de o professor editar | Publicada (0.50.0) |
-
-## Pacotes anteriores
 
 ### Pacote 33 (publicado como 0.49.0 em 2026-11-20)
 
