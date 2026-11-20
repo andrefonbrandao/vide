@@ -1586,6 +1586,40 @@ button.ori-tipo-enc { cursor: pointer; }
 .pp-cheio-topo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 6px; border-bottom: 1px solid var(--linha); }
 .pp-cheio-topo strong { font-size: 18px; }
 .pp-cheio-topo button { margin-left: auto; }
+/* Editor com visualização ao vivo (página do orientando) */
+.pp-editor { border: 1px solid var(--linha); border-radius: 10px; background: #fff; overflow: hidden; }
+.pp-editor:focus-within { border-color: var(--tinta); box-shadow: 0 0 0 3px rgba(30, 58, 52, 0.08); }
+.pp-editor .cm-editor { outline: none; max-height: 70vh; }
+.pp-editor .cm-scroller { font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 1.7; }
+.pp-editor .cm-content { padding: 14px 18px; caret-color: var(--tinta); }
+.pp-editor .cm-line { padding: 0 0 6px; }
+.pp-editor .cm-par { text-indent: 1.25cm; text-align: justify; }
+.pp-editor .cm-h2 { font-weight: 700; font-size: 17px; padding-top: 10px; }
+.pp-editor .cm-h3 { font-weight: 700; font-size: 16px; padding-top: 6px; }
+.pp-editor .cm-cit { padding-left: 4cm !important; font-size: 14px; line-height: 1.35; }
+.pp-editor .cm-b { font-weight: 700; }
+.pp-editor .cm-i { font-style: italic; }
+.pp-editor .cm-marca { color: #9aa49f; font-weight: 400; font-style: normal; }
+.pp-editor .cm-nota { font-size: 10px; color: #fff; background: #4f7a6c; border-radius: 4px; padding: 0 4px; margin-left: 1px; cursor: help; vertical-align: super; line-height: 1; }
+.pp-editor .cm-nota-cru { color: #4f7a6c; background: #eef4f1; }
+.pp-editor .cm-bloco-cru { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; background: #f6f7f4; color: #4a5550; text-indent: 0; }
+.pp-editor .cm-bloco { margin: 6px 0 12px; padding: 8px 10px; border: 1px dashed transparent; border-radius: 8px; cursor: pointer; text-align: center; }
+.pp-editor .cm-bloco:hover { border-color: var(--linha); background: #fafbf8; }
+.pp-editor .cm-bloco-legenda { font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+.pp-editor .cm-bloco-fonte { font-size: 12px; text-align: left; margin-top: 4px; }
+.pp-editor .cm-bloco table { border-collapse: collapse; width: 100%; font-size: 13px; line-height: 1.35; }
+.pp-editor .cm-bloco th, .pp-editor .cm-bloco td { padding: 3px 8px; text-align: center; }
+.pp-editor .cm-tabela { border-top: 1.5px solid #222; border-bottom: 1.5px solid #222; }
+.pp-editor .cm-tabela th { border-bottom: 1px solid #222; }
+.pp-editor .cm-quadro th, .pp-editor .cm-quadro td { border: 1px solid #222; }
+.pp-editor .cm-quadro td { text-align: left; }
+.pp-editor .cm-figura { max-width: 100%; max-height: 420px; object-fit: contain; display: inline-block; }
+.pp-editor .cm-figura-falta { padding: 30px; color: #999; border: 1px solid #ccc; font-style: italic; }
+@media (max-width: 560px) { .pp-editor .cm-cit { padding-left: 1.2cm !important; } .pp-editor .cm-par { text-align: left; text-indent: 0.8cm; } .pp-editor .cm-content { padding: 12px 12px; } }
+.pp-campo-cheio .pp-editor { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+.pp-campo-cheio .pp-editor .cm-editor { flex: 1 1 auto; max-height: none; height: 100%; }
+.pp-campo-cheio .pp-editor .cm-scroller { font-size: 17px; }
+.pp-campo-cheio .pp-editor .cm-content { padding: 22px 28px; }
 .pp-blocos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .pp-bloco { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; font: inherit; font-size: 13px; padding: 4px 10px 4px 4px; border: 1px solid var(--linha); border-radius: 8px; background: #fff; color: var(--tinta); cursor: pointer; text-align: left; }
 .pp-bloco:hover { border-color: var(--tinta); }

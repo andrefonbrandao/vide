@@ -11,6 +11,9 @@
     "peso": "npm run build && node scripts/peso/medir-peso.mjs"
   },
   "dependencies": {
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.15",
     "@fontsource/manrope": "^5.3.0",
     "dexie": "^4.4.6",
     "pdf-lib": "1.17.1",

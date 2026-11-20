@@ -1,7 +1,11 @@
 // "Meu pré-projeto" na página do orientando: os campos do projeto de pesquisa (como no
 // manual), guardados sozinhos no serviço; "Ver o PDF" monta o pré-projeto formatado e
 // "Enviar ao orientador" manda uma cópia datada (vira uma versão no caderno do professor).
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import type { Controle } from './EditorVivo';
+
+const EditorVivo = lazy(() => import('./EditorVivo'));
+import { ContextoPagina } from './contextoPagina';
 import { rotuloPrazo } from '../orientacao/prazos';
 import { separarTabelas, textoDaFigura, textoDaTabela, type FiguraTexto, type Pedaco, type TabelaTexto } from '../orientacao/marcacao';
 import { buscarImagens, imagemDaPagina, lembrarImagem, reduzirImagem } from '../orientacao/imagens';
@@ -63,8 +67,7 @@ function blocosDoTexto(texto: string): { ini: number; fim: number; pedaco: Pedac
   return out;
 }
 
-/** Código da página do orientando (para enviar e ver as imagens das figuras). */
-export const ContextoPagina = createContext<{ codigo: string; pin: string } | null>(null);
+export { ContextoPagina };
 
 const novoIdImagem = () => Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
 
@@ -361,6 +364,25 @@ const GRUPOS: { titulo: string; campos: (DefCampo & { campo: Campo })[]; so?: 'r
 /** Campo de texto com a barra de marcações (negrito, itálico, citação longa, nota de rodapé, subtítulo). */
 export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; valor: string; aoMudar: (v: string) => void; rotulo?: React.ReactNode }) {
   const ref = useRef<HTMLTextAreaElement>(null);
+  /** O editor com visualização ao vivo (quando carregado); senão, a caixa de texto simples. */
+  const editor = useRef<Controle | null>(null);
+  const ctrl = (): Controle | null => {
+    if (editor.current) return editor.current;
+    const el = ref.current;
+    if (!el) return null;
+    return {
+      sel: () => [el.selectionStart, el.selectionEnd],
+      trocar: (de, ate, texto, selDe, selAte) => {
+        aoMudar(valor.slice(0, de) + texto + valor.slice(ate));
+        requestAnimationFrame(() => {
+          el.focus();
+          if (selDe !== undefined) el.setSelectionRange(selDe, selAte ?? selDe);
+        });
+      },
+      foco: () => el.focus(),
+    };
+  };
+  const vivo = def.linhas > 1 && !def.simples;
   const pg = useContext(ContextoPagina);
   const [editando, setEditando] = useState<{ ini: number; fim: number; tipo: 'tabela' | 'figura'; tabela?: TabelaTexto; figura?: FiguraTexto } | null>(null);
   /** Campo ampliado: ocupa a tela toda, para escrever textos longos com conforto. */
@@ -372,7 +394,7 @@ export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; val
     document.body.style.overflow = 'hidden';
     const tecla = (e: KeyboardEvent) => e.key === 'Escape' && !document.querySelector('.modal-fundo') && setCheio(false);
     window.addEventListener('keydown', tecla);
-    requestAnimationFrame(() => ref.current?.focus());
+    requestAnimationFrame(() => ctrl()?.foco());
     return () => {
       document.body.style.overflow = antes;
       window.removeEventListener('keydown', tecla);
@@ -380,8 +402,7 @@ export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; val
   }, [cheio]);
   const blocos = def.tabelas ? blocosDoTexto(valor) : [];
   const abrir = (tipo: 'tabela' | 'figura') => {
-    const el = ref.current;
-    const pos = el?.selectionStart ?? valor.length;
+    const pos = ctrl()?.sel()[0] ?? valor.length;
     const achado = blocos.find((b) => pos >= b.ini && pos < b.fim && (b.pedaco.tipo === 'figura') === (tipo === 'figura'));
     if (achado) return editarBloco(achado);
     // Novo: entra depois da linha em que está o cursor.
@@ -402,26 +423,23 @@ export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; val
     setEditando(null);
   };
   const envolver = (antes: string, depois: string, exemplo: string) => {
-    const el = ref.current;
-    if (!el) return;
-    const { selectionStart: a, selectionEnd: b } = el;
+    const c = ctrl();
+    if (!c) return;
+    const [a, b] = c.sel();
     const sel = valor.slice(a, b) || exemplo;
-    const novo = valor.slice(0, a) + antes + sel + depois + valor.slice(b);
-    aoMudar(novo);
-    requestAnimationFrame(() => {
-      el.focus();
-      el.setSelectionRange(a + antes.length, a + antes.length + sel.length);
-    });
+    c.trocar(a, b, antes + sel + depois, a + antes.length, a + antes.length + sel.length);
   };
   const noComecoDaLinha = (marca: string, exemplo: string) => {
-    const el = ref.current;
-    if (!el) return;
-    const a = el.selectionStart;
+    const c = ctrl();
+    if (!c) return;
+    const a = c.sel()[0];
     const ini = valor.lastIndexOf('\n', a - 1) + 1;
     const linha = valor.slice(ini).split('\n')[0];
-    const novo = linha.trim() ? valor.slice(0, ini) + marca + valor.slice(ini) : valor.slice(0, ini) + marca + exemplo + valor.slice(ini);
-    aoMudar(novo);
-    requestAnimationFrame(() => el.focus());
+    // Tira uma marca de começo de linha que já houver (trocar subtítulo por citação, por exemplo).
+    const velha = /^(#{2,}\s+|>\s*)/.exec(linha)?.[0] ?? '';
+    const resto = linha.slice(velha.length);
+    const novo = marca + (resto.trim() ? resto : exemplo);
+    c.trocar(ini, ini + linha.length, novo, ini + marca.length, ini + novo.length);
   };
   return (
     <div className={`campo pp-campo${cheio ? ' pp-campo-cheio' : ''}`}>
@@ -483,22 +501,26 @@ export function CampoTexto({ def, valor, aoMudar, rotulo }: { def: DefCampo; val
               )}
             </div>
           )}
-          <textarea id={`pp-${def.campo}`} ref={ref} rows={def.linhas} value={valor} onChange={(e) => aoMudar(e.target.value)} />
+          {vivo ? (
+            <Suspense fallback={<textarea id={`pp-${def.campo}`} ref={ref} rows={def.linhas} value={valor} onChange={(e) => aoMudar(e.target.value)} />}>
+              <EditorVivo
+                id={`pp-${def.campo}`}
+                rotulo={def.nome}
+                valor={valor}
+                aoMudar={aoMudar}
+                linhas={cheio ? 20 : def.linhas}
+                subtitulos={!!def.subtitulos}
+                controle={(c) => (editor.current = c)}
+                aoEditarBloco={(pos) => {
+                  const b = blocosDoTexto(valor).find((x) => pos >= x.ini && pos <= x.fim);
+                  if (b) editarBloco(b);
+                }}
+              />
+            </Suspense>
+          ) : (
+            <textarea id={`pp-${def.campo}`} ref={ref} rows={def.linhas} value={valor} onChange={(e) => aoMudar(e.target.value)} />
+          )}
         </>
-      )}
-      {blocos.length > 0 && (
-        <div className="pp-blocos" aria-label="Tabelas e figuras deste campo">
-          {blocos.map((b, k) => (
-            <button key={k} type="button" className="pp-bloco" onClick={() => editarBloco(b)} title="Editar">
-              {b.pedaco.tipo === 'figura' ? <Miniatura id={b.pedaco.figura.imagem} className="pp-mini" /> : <span className="pp-mini pp-mini-tab">▦</span>}
-              <span>
-                {b.pedaco.tipo === 'figura' ? (b.pedaco.figura.tipo === 'grafico' ? 'Gráfico' : 'Figura') : b.pedaco.tipo === 'tabela' ? (b.pedaco.tabela.tipo === 'quadro' ? 'Quadro' : 'Tabela') : ''}
-                {': '}
-                {(b.pedaco.tipo === 'figura' ? b.pedaco.figura.titulo : b.pedaco.tipo === 'tabela' ? b.pedaco.tabela.titulo : '') || 'sem título'}
-              </span>
-            </button>
-          ))}
-        </div>
       )}
       {editando?.tipo === 'tabela' && <EditorTabela inicial={editando.tabela ?? null} aoFechar={() => setEditando(null)} aoConfirmar={(t) => colocar(textoDaTabela(t))} />}
       {editando?.tipo === 'figura' && <EditorFigura inicial={editando.figura ?? null} aoFechar={() => setEditando(null)} aoConfirmar={(f) => colocar(textoDaFigura(f))} />}
@@ -798,6 +820,8 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
       <details className="pp-dicas">
         <summary>Como marcar o texto</summary>
         <ul>
+          <li>O texto aparece já formatado (subtítulos, negrito, citações, tabelas e figuras). As marcações abaixo só aparecem, em cinza, na linha em que o cursor está. Use os botões da barra ou escreva as marcações.</li>
+          <li>Colar do Word: o negrito e o itálico vêm junto. Atalhos: Ctrl+B (negrito) e Ctrl+I (itálico).</li>
           <li>
             <strong>**negrito**</strong> e <em>_itálico_</em> (o itálico, só para palavras estrangeiras, como <em>ratio decidendi</em>).
           </li>
