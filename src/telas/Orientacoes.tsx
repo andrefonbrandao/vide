@@ -33,9 +33,9 @@ import { naturezaPadrao } from '../orientacao/campos';
 import { lerEncaminhamentos, lerRespostaIA, pedidoRegistroIA } from '../orientacao/ia';
 import type { OpcoesRelatorio } from '../orientacao/relatorioPdf';
 import { assinarPublicacao, buscarEnvios, configPreProjetoPadrao, desativarOrientacao, estadoPublicacao, lerRascunho, MAX_MODELO, pdfDoPreProjeto, publicarOrientacao, urlDoOrientando } from '../orientacao/publicar';
-import { LinkEQr } from './CompartilharTreino';
+import { QR } from './JogoTela';
 import { copiar } from './ProcessoTexto';
-import { agoraLocal, dataBR, dataHoraBR, emOrdem, etapaAtual, hojeISO, pendencias, rotuloDias, situacaoEtapa, type Pendencia } from '../orientacao/prazos';
+import { agoraLocal, dataBR, dataHoraBR, diasEntre, emOrdem, etapaAtual, hojeISO, pendencias, rotuloDias, situacaoEtapa, type Pendencia } from '../orientacao/prazos';
 import { CANAIS, ELEMENTOS_VAZIOS, TIPOS_TRABALHO, type Elementos, type Canal, type ConfigPreProjeto, type Encaminhamento, type Interacao, type Modelo, type Orientando, type Trabalho, type TipoTrabalho, type Versao } from '../orientacao/tipos';
 import { Reconhecedor, obterConstrutor, type StatusVoz } from '../voz/reconhecedor';
 import { controlador } from './controlador';
@@ -101,9 +101,9 @@ function useRecarga(carregar: () => void) {
 }
 
 /** Silhueta humana neutra (cabeça e ombros), ao lado do nome do orientando. */
-function Silhueta() {
+function Silhueta({ tamanho = 34 }: { tamanho?: number }) {
   return (
-    <svg className="ori-silhueta" viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+    <svg className="ori-silhueta" viewBox="0 0 32 32" width={tamanho} height={tamanho} aria-hidden="true">
       <circle cx="16" cy="16" r="16" className="ori-silhueta-fundo" />
       <circle cx="16" cy="12.5" r="5.5" className="ori-silhueta-figura" />
       <path d="M6.5 27.5c1.2-5.4 5-8.3 9.5-8.3s8.3 2.9 9.5 8.3A15.9 15.9 0 0 1 16 32a15.9 15.9 0 0 1-9.5-4.5z" className="ori-silhueta-figura" />
@@ -126,7 +126,6 @@ export function Orientacoes() {
     }
   });
   const [criando, setCriando] = useState(false);
-  const [verEncerrados, setVerEncerrados] = useState(false);
   const [verModelos, setVerModelos] = useState(false);
   const carregar = useCallback(() => {
     void Promise.all([listarOrientandos(), listarTrabalhos(), listarInteracoes()]).then(([o, t, i]) => {
@@ -171,61 +170,13 @@ export function Orientacoes() {
     return <TrabalhoDetalhe key={aberto} trabalho={trabalhoAberto} orientando={orientandos.find((o) => o.id === trabalhoAberto.orientandoId)} aoVoltar={() => abrir(null)} aoAbrir={abrir} />;
   }
 
-  const hoje = hojeISO();
-  const ordem = (t: Trabalho) => etapaAtual(t)?.prazo ?? '9999';
-  const emAndamento = trabalhos.filter((t) => t.situacao === 'andamento').sort((a, b) => ordem(a).localeCompare(ordem(b)));
-  const encerrados = trabalhos.filter((t) => t.situacao !== 'andamento');
-  const cartao = (t: Trabalho) => {
-    const o = orientandos.find((x) => x.id === t.orientandoId);
-    const dele = interacoes.filter((i) => i.trabalhoId === t.id);
-    const ultima = dele[0];
-    const pend = pendencias(dele).length;
-    const vencidas = pendenciasVencidas(dele, [t], hoje).length;
-    const e = etapaAtual(t);
-    const s = e && situacaoEtapa(e, hoje);
-    return (
-      <button key={t.id} type="button" className="cartao ori-cartao" onClick={() => abrir(t.id)}>
-        <span className="ori-cartao-cab">
-          <Silhueta />
-          <strong>{o?.nome ?? 'Orientando'}</strong>
-          <span className="ori-selo">{t.tipo}</span>
-          {t.situacao !== 'andamento' && <span className="ori-selo">{t.situacao === 'concluido' ? 'concluído' : 'interrompido'}</span>}
-          {vencidas > 0 && (
-            <span className="ori-vencidas" title="Pendências com o prazo vencido, sem baixa">
-              {vencidas} {vencidas === 1 ? 'vencida' : 'vencidas'}
-            </span>
-          )}
-        </span>
-        <span className="ori-cartao-titulo">{t.titulo || 'Trabalho sem título'}</span>
-        {t.situacao === 'andamento' && (
-          <span className={`ori-prazo ${s?.tipo ?? 'concluida'}`}>
-            {e && s ? (
-              <>
-                {e.nome} · <strong>{rotuloDias(s.dias)}</strong> ({dataBR(e.prazo)})
-              </>
-            ) : (
-              'Cronograma cumprido ✓'
-            )}
-          </span>
-        )}
-        <span className="ajuda" style={{ margin: 0 }}>
-          {pend ? `${pend} ${pend === 1 ? 'pendência' : 'pendências'} · ` : ''}
-          {ultima ? `último contato: ${dataBR(ultima.em)} (${nomeCanal(ultima.canal)})` : 'nenhum contato registrado'}
-        </span>
-      </button>
-    );
-  };
-
   return (
     <Pagina
       caminho="Orientação"
       titulo="Orientandos"
-      descricao="Cronograma com prazos, sessões e comunicações, sugestões e comandos, e as versões do trabalho. Fica neste computador e no seu Google Drive."
       acoes={
         <>
-          <button className={`botao${verModelos ? ' escuro' : ''}`} onClick={() => setVerModelos(!verModelos)}>
-            Modelos e orientações
-          </button>
+          <MenuMais itens={[{ rotulo: 'Modelos e orientações', desc: 'Manual, modelo do trabalho, orientações para todos', aoClicar: () => setVerModelos(true) }]} />
           {!criando && (
             <button className="botao escuro com-icone" onClick={() => setCriando(true)}>
               <IcMais tamanho={16} /> Novo orientando
@@ -235,14 +186,12 @@ export function Orientacoes() {
       }
     >
       {verModelos && (
-        <section className="cartao" style={{ marginBottom: 12 }}>
-          <h3 style={{ marginTop: 0 }}>Modelos e orientações gerais</h3>
-          <p className="ajuda">
-            Valem para todos os orientandos e aparecem para baixar na página de cada um (manual de normalização, modelo de TCC, orientações escritas). Para um orientando só, use a aba
-            "Página do orientando" dele.
+        <Janela titulo="Modelos e orientações" aoFechar={() => setVerModelos(false)}>
+          <p className="ajuda" style={{ marginTop: 0 }}>
+            Valem para todos os orientandos e aparecem para baixar na página de cada um. Para um orientando só, use Ajustes, no orientando.
           </p>
           <ModelosOrientacao trabalhoId={null} />
-        </section>
+        </Janela>
       )}
       {criando && <FormNovaOrientacao aoFechar={() => setCriando(false)} aoCriar={(t) => (setCriando(false), abrir(t.id))} />}
       {carregado && !trabalhos.length && !criando ? (
@@ -260,19 +209,128 @@ export function Orientacoes() {
           </div>
         </div>
       ) : (
-        <>
-          <div className="ori-grade">{emAndamento.map(cartao)}</div>
-          {encerrados.length > 0 && (
-            <>
-              <button className="link-discreto" style={{ marginLeft: 0 }} onClick={() => setVerEncerrados(!verEncerrados)}>
-                {verEncerrados ? 'esconder os concluídos e interrompidos' : `mostrar os concluídos e interrompidos (${encerrados.length})`}
-              </button>
-              {verEncerrados && <div className="ori-grade">{encerrados.map(cartao)}</div>}
-            </>
-          )}
-        </>
+        <ListaOrientandos trabalhos={trabalhos} orientandos={orientandos} interacoes={interacoes} aoAbrir={abrir} />
       )}
     </Pagina>
+  );
+}
+
+/** "hoje", "ontem", "há 5 dias", "há 2 semanas", "12/03/2026". */
+function relativo(iso: string, hoje = hojeISO()): string {
+  const d = -diasEntre(hoje, iso.slice(0, 10));
+  if (d <= 0) return 'hoje';
+  if (d === 1) return 'ontem';
+  if (d < 14) return `há ${d} dias`;
+  if (d < 60) return `há ${Math.floor(d / 7)} semanas`;
+  return dataBR(iso);
+}
+
+type Filtro = 'andamento' | 'atraso' | 'encerrados';
+
+function ListaOrientandos({ trabalhos, orientandos, interacoes, aoAbrir }: { trabalhos: Trabalho[]; orientandos: Orientando[]; interacoes: Interacao[]; aoAbrir: (id: string) => void }) {
+  const [filtro, setFiltro] = useState<Filtro>('andamento');
+  const [busca, setBusca] = useState('');
+  const hoje = hojeISO();
+  const linhas = trabalhos.map((t) => {
+    const o = orientandos.find((x) => x.id === t.orientandoId);
+    const dele = interacoes.filter((i) => i.trabalhoId === t.id);
+    const e = etapaAtual(t);
+    const s = e && situacaoEtapa(e, hoje);
+    const vencidas = pendenciasVencidas(dele, [t], hoje).length;
+    return { t, o, dele, e, s, vencidas, pend: pendencias(dele).length, ultima: dele[0], feitas: t.etapas.filter((x) => x.concluida_em).length, atraso: t.situacao === 'andamento' && (vencidas > 0 || s?.tipo === 'atrasada') };
+  });
+  const contagem = {
+    andamento: linhas.filter((l) => l.t.situacao === 'andamento').length,
+    atraso: linhas.filter((l) => l.atraso).length,
+    encerrados: linhas.filter((l) => l.t.situacao !== 'andamento').length,
+  };
+  const termo = busca.trim().toLocaleLowerCase('pt-BR');
+  const visiveis = linhas
+    .filter((l) => (filtro === 'andamento' ? l.t.situacao === 'andamento' : filtro === 'atraso' ? l.atraso : l.t.situacao !== 'andamento'))
+    .filter((l) => !termo || `${l.o?.nome ?? ''} ${l.t.titulo}`.toLocaleLowerCase('pt-BR').includes(termo))
+    .sort((a, b) => (a.e?.prazo ?? '9999').localeCompare(b.e?.prazo ?? '9999'));
+  return (
+    <>
+      <div className="ori-filtros">
+        {(
+          [
+            ['andamento', 'Em andamento'],
+            ['atraso', 'Com atraso'],
+            ['encerrados', 'Concluídos'],
+          ] as [Filtro, string][]
+        ).map(([f, r]) => (
+          <button key={f} type="button" className={`ori-chip${filtro === f ? ' ativo' : ''}`} onClick={() => setFiltro(f)}>
+            {f === 'atraso' && contagem.atraso > 0 && <span className="ori-ponto" />}
+            {r} <span className="ori-chip-n">{contagem[f]}</span>
+          </button>
+        ))}
+        <input className="ori-busca" type="search" placeholder="Buscar orientando…" aria-label="Buscar orientando" value={busca} onChange={(e) => setBusca(e.target.value)} />
+      </div>
+      {!visiveis.length ? (
+        <p className="ajuda">{termo ? 'Ninguém com esse nome.' : filtro === 'atraso' ? 'Ninguém com atraso. 🎉' : filtro === 'encerrados' ? 'Nenhum trabalho concluído ou interrompido.' : 'Nenhum orientando em andamento.'}</p>
+      ) : (
+        <div className="ori-lista" role="list">
+          <div className="ori-lista-cab" aria-hidden="true">
+            <span>Orientando</span>
+            <span>Cronograma</span>
+            <span>Próximo prazo</span>
+            <span>Pendências</span>
+            <span>Último contato</span>
+            <span />
+          </div>
+          {visiveis.map(({ t, o, e, s, vencidas, pend, ultima, feitas }) => (
+            <button key={t.id} type="button" role="listitem" className="ori-linha" onClick={() => aoAbrir(t.id)}>
+              <span className="ori-pessoa">
+                <Silhueta />
+                <span style={{ minWidth: 0 }}>
+                  <strong>{o?.nome ?? 'Orientando'}</strong>
+                  <span className="ori-sub">
+                    {t.tipo} · {t.titulo || 'sem título'}
+                  </span>
+                </span>
+              </span>
+              <span className="ori-progresso">
+                <span className="ori-barra">
+                  <i style={{ width: `${t.etapas.length ? (feitas / t.etapas.length) * 100 : 0}%` }} />
+                </span>
+                {feitas} de {t.etapas.length} etapas
+              </span>
+              <span className="ori-prazo-col">
+                {t.situacao !== 'andamento' ? (
+                  <span className="ori-sub">{t.situacao === 'concluido' ? 'concluído' : 'interrompido'}</span>
+                ) : e && s ? (
+                  <>
+                    <strong>{e.nome}</strong>
+                    <span className={`ori-quando ${s.tipo}`}>{s.tipo === 'futura' ? `${dataBR(e.prazo).slice(0, 5)} · ${rotuloDias(s.dias)}` : rotuloDias(s.dias)}</span>
+                  </>
+                ) : (
+                  <span className="ori-sub">cronograma cumprido ✓</span>
+                )}
+              </span>
+              <span className="ori-pend-col">
+                {vencidas > 0 && <span className="ori-ponto" />}
+                <strong>{pend}</strong>
+                <span className="ori-so-celular">{pend === 1 ? 'pendência' : 'pendências'}</span>
+                {vencidas > 0 && <span className="ori-sub"> · {vencidas} {vencidas === 1 ? 'vencida' : 'vencidas'}</span>}
+              </span>
+              <span className="ori-contato">
+                {ultima ? (
+                  <>
+                    {relativo(ultima.em, hoje)}
+                    <span className="ori-sub">{nomeCanal(ultima.canal).replace('Sessão de orientação', 'sessão')}</span>
+                  </>
+                ) : (
+                  <span className="ori-sub">nenhum</span>
+                )}
+              </span>
+              <span className="ori-seta" aria-hidden="true">
+                ›
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -356,82 +414,390 @@ function FormNovaOrientacao({ aoFechar, aoCriar }: { aoFechar: () => void; aoCri
 
 // ---------- Trabalho ----------
 
-type Aba = 'geral' | 'elementos' | 'conversas' | 'versoes' | 'pagina' | 'dados';
+type Aba = 'visao' | 'tempo' | 'trabalho' | 'ajustes';
 
 function TrabalhoDetalhe({ trabalho, orientando, aoVoltar, aoAbrir }: { trabalho: Trabalho; orientando?: Orientando; aoVoltar: () => void; aoAbrir: (id: string) => void }) {
-  const [aba, setAba] = useState<Aba>('geral');
+  const [aba, setAba] = useState<Aba>('visao');
+  const [tempo, setTempo] = useState<'conversas' | 'versoes'>('conversas');
   const [interacoes, setInteracoes] = useState<Interacao[]>([]);
   const [versoes, setVersoes] = useState<Versao[]>([]);
   const [registrando, setRegistrando] = useState<Interacao | null>(null);
-  const [relatorio, setRelatorio] = useState(false);
+  const [janela, setJanela] = useState<'' | 'relatorio' | 'compartilhar'>('');
+  const [menuRegistrar, setMenuRegistrar] = useState(false);
   const carregar = useCallback(() => {
     void listarInteracoes(trabalho.id).then(setInteracoes);
     void listarVersoes(trabalho.id).then(setVersoes);
   }, [trabalho.id]);
   useRecarga(carregar);
-  const pend = pendencias(interacoes);
   const registrar = (canal: Canal) => {
     setRegistrando(interacaoEmBranco(trabalho.id, canal, agoraLocal()));
-    setAba('conversas');
+    setTempo('conversas');
+    setAba('tempo');
+    setMenuRegistrar(false);
   };
+  const situacao = trabalho.situacao === 'andamento' ? 'em andamento' : trabalho.situacao === 'concluido' ? 'concluído' : 'interrompido';
   return (
-    <Pagina
-      caminho="Orientação"
-      titulo={orientando?.nome ?? 'Orientando'}
-      descricao={
-        <>
-          {trabalho.tipo} · {trabalho.titulo || 'sem título'}
-          {trabalho.defesa ? ` · defesa prevista em ${dataBR(trabalho.defesa)}` : ''}
-        </>
-      }
-      acoes={
-        <>
-          <button className="botao" onClick={aoVoltar}>
-            ← Orientandos
+    <div className="pagina ori-detalhe">
+      <button type="button" className="ori-voltar" onClick={aoVoltar}>
+        ‹ Orientandos
+      </button>
+      <header className="ori-cab">
+        <Silhueta tamanho={52} />
+        <div className="ori-cab-texto">
+          <h1>{orientando?.nome ?? 'Orientando'}</h1>
+          <div className="ori-cab-linha">
+            <span className="ori-selo">{trabalho.tipo}</span>
+            <span className={`ori-selo ${trabalho.situacao}`}>{situacao}</span>
+            <span className="ori-cab-titulo">
+              {trabalho.titulo || 'sem título'}
+              {trabalho.defesa ? ` · defesa em ${dataBR(trabalho.defesa).slice(0, 5)}` : ''}
+            </span>
+          </div>
+        </div>
+        <div className="ori-cab-acoes">
+          <button type="button" className="botao" onClick={() => setJanela('compartilhar')}>
+            Compartilhar
           </button>
-          <button className="botao escuro" onClick={() => registrar('sessao')}>
-            Registrar sessão
-          </button>
-          <button className="botao" onClick={() => registrar('whatsapp')}>
-            Registrar comunicação
-          </button>
-          <button className={`botao${relatorio ? ' escuro' : ''}`} onClick={() => setRelatorio(!relatorio)}>
-            Relatório em PDF
-          </button>
-        </>
-      }
-    >
-      {relatorio && <PainelRelatorio trabalho={trabalho} orientando={orientando} interacoes={interacoes} versoes={versoes} aoFechar={() => setRelatorio(false)} />}
-      <nav className="secoes-questoes" aria-label="Partes da orientação">
+          <span className="ori-split">
+            <button type="button" className="botao escuro" onClick={() => registrar('sessao')}>
+              + Registrar sessão
+            </button>
+            <button type="button" className="botao escuro" aria-label="Outras formas de registrar" aria-expanded={menuRegistrar} onClick={() => setMenuRegistrar(!menuRegistrar)}>
+              ▾
+            </button>
+            {menuRegistrar && (
+              <Menu aoFechar={() => setMenuRegistrar(false)} itens={[{ rotulo: 'Registrar comunicação', desc: 'WhatsApp, e-mail, telefone', aoClicar: () => registrar('whatsapp') }]} />
+            )}
+          </span>
+          <MenuMais
+            itens={[
+              { rotulo: 'Relatório em PDF', aoClicar: () => setJanela('relatorio') },
+              { rotulo: 'Modelos deste orientando', aoClicar: () => setAba('ajustes') },
+              { rotulo: 'Voltar à lista', aoClicar: aoVoltar },
+            ]}
+          />
+        </div>
+      </header>
+      <nav className="ori-abas" aria-label="Partes da orientação">
         {(
           [
-            ['geral', pend.length ? `Cronograma e pendências (${pend.length})` : 'Cronograma e pendências'],
-            ['elementos', 'Elementos do trabalho'],
-            ['conversas', `Sessões e comunicações (${interacoes.length})`],
-            ['versoes', `Versões (${versoes.length})`],
-            ['pagina', trabalho.publicacao ? 'Página do orientando ✓' : 'Página do orientando'],
-            ['dados', 'Dados'],
-          ] as [Aba, string][]
-        ).map(([a, r]) => (
-          <button key={a} className={`botao pequeno${aba === a ? ' escuro' : ''}`} onClick={() => setAba(a)}>
+            ['visao', 'Visão geral', 0],
+            ['tempo', 'Linha do tempo', interacoes.length + versoes.length],
+            ['trabalho', 'Trabalho', 0],
+            ['ajustes', 'Ajustes', 0],
+          ] as [Aba, string, number][]
+        ).map(([a, r, n]) => (
+          <button key={a} type="button" className={`ori-aba${aba === a ? ' atual' : ''}`} aria-current={aba === a ? 'page' : undefined} onClick={() => setAba(a)}>
             {r}
+            {n > 0 && <span className="ori-aba-n">{n}</span>}
           </button>
         ))}
       </nav>
-      {aba === 'geral' && (
+      {aba === 'visao' && (
+        <VisaoGeral
+          trabalho={trabalho}
+          interacoes={interacoes}
+          versoes={versoes}
+          aoRegistrar={() => registrar('sessao')}
+          aoLinhaDoTempo={() => setAba('tempo')}
+          aoCompartilhar={() => setJanela('compartilhar')}
+        />
+      )}
+      {aba === 'tempo' && (
         <>
-          <Cronograma trabalho={trabalho} />
-          <ListaPendencias pend={pend} aoRegistrar={() => registrar('sessao')} />
+          <div className="ori-filtros">
+            <button type="button" className={`ori-chip${tempo === 'conversas' ? ' ativo' : ''}`} onClick={() => setTempo('conversas')}>
+              Sessões e comunicações <span className="ori-chip-n">{interacoes.length}</span>
+            </button>
+            <button type="button" className={`ori-chip${tempo === 'versoes' ? ' ativo' : ''}`} onClick={() => setTempo('versoes')}>
+              Versões <span className="ori-chip-n">{versoes.length}</span>
+            </button>
+          </div>
+          {tempo === 'conversas' ? (
+            <Conversas trabalho={trabalho} interacoes={interacoes} versoes={versoes} registrando={registrando} setRegistrando={setRegistrando} aoRegistrar={registrar} />
+          ) : (
+            <Versoes trabalho={trabalho} versoes={versoes} interacoes={interacoes} />
+          )}
         </>
       )}
-      {aba === 'elementos' && <ElementosTrabalho trabalho={trabalho} />}
-      {aba === 'conversas' && (
-        <Conversas trabalho={trabalho} interacoes={interacoes} versoes={versoes} registrando={registrando} setRegistrando={setRegistrando} aoRegistrar={registrar} />
+      {aba === 'trabalho' && (
+        <>
+          <ElementosTrabalho trabalho={trabalho} />
+          <PreProjetoCartao trabalho={trabalho} orientando={orientando} aoCompartilhar={() => setJanela('compartilhar')} />
+        </>
       )}
-      {aba === 'versoes' && <Versoes trabalho={trabalho} versoes={versoes} interacoes={interacoes} />}
-      {aba === 'pagina' && <PaginaDoOrientando trabalho={trabalho} orientando={orientando} />}
-      {aba === 'dados' && <Dados trabalho={trabalho} orientando={orientando} aoAbrir={aoAbrir} aoApagar={aoVoltar} />}
-    </Pagina>
+      {aba === 'ajustes' && (
+        <>
+          <Dados trabalho={trabalho} orientando={orientando} aoAbrir={aoAbrir} aoApagar={aoVoltar} />
+          <ModelosDoOrientando trabalho={trabalho} />
+        </>
+      )}
+      {janela === 'relatorio' && (
+        <Janela titulo="Relatório em PDF" aoFechar={() => setJanela('')}>
+          <PainelRelatorio trabalho={trabalho} orientando={orientando} interacoes={interacoes} versoes={versoes} aoFechar={() => setJanela('')} />
+        </Janela>
+      )}
+      {janela === 'compartilhar' && <JanelaCompartilhar trabalho={trabalho} orientando={orientando} aoFechar={() => setJanela('')} />}
+    </div>
+  );
+}
+
+// ---------- Visão geral ----------
+
+function VisaoGeral({
+  trabalho,
+  interacoes,
+  versoes,
+  aoRegistrar,
+  aoLinhaDoTempo,
+  aoCompartilhar,
+}: {
+  trabalho: Trabalho;
+  interacoes: Interacao[];
+  versoes: Versao[];
+  aoRegistrar: () => void;
+  aoLinhaDoTempo: () => void;
+  aoCompartilhar: () => void;
+}) {
+  const [editarCrono, setEditarCrono] = useState(false);
+  const [todas, setTodas] = useState(false);
+  const hoje = hojeISO();
+  const pend = pendencias(interacoes);
+  const e = etapaAtual(trabalho);
+  const s = e && situacaoEtapa(e, hoje);
+  const etapas = emOrdem(trabalho.etapas);
+  const feitas = etapas.filter((x) => x.concluida_em).length;
+  const atividades = [
+    ...interacoes.map((i) => ({ em: i.em, tipo: i.canal === 'sessao' ? 'S' : i.canal === 'whatsapp' ? 'W' : i.canal === 'email' ? 'E' : 'C', titulo: rotuloInteracao(i), detalhe: [i.encaminhamentos.length ? `${i.encaminhamentos.length} ${i.encaminhamentos.length === 1 ? 'tarefa' : 'tarefas'}` : '', i.transcricao?.trim() ? 'transcrita' : '', i.canal !== 'sessao' ? i.resumo.slice(0, 50) : ''].filter(Boolean).join(' · ') })),
+    ...versoes.map((v) => ({ em: `${v.recebida_em}T${v.criado_em.slice(11, 16) || '00:00'}`, tipo: 'V', titulo: v.rotulo, detalhe: v.nomeArquivo })),
+  ]
+    .sort((a, b) => b.em.localeCompare(a.em))
+    .slice(0, 4);
+  const pub = trabalho.publicacao;
+  return (
+    <div className="ori-painel">
+      <div className="ori-painel-col">
+        <section className="ori-card">
+          <h3 className="ori-card-titulo">Próximo prazo</h3>
+          {trabalho.situacao !== 'andamento' ? (
+            <p className="ori-calmo">Trabalho {trabalho.situacao === 'concluido' ? 'concluído' : 'interrompido'}.</p>
+          ) : e && s ? (
+            <div className="ori-proximo">
+              <div>
+                <div className="ori-proximo-nome">{e.nome}</div>
+                <div className="ori-calmo">prazo {dataBR(e.prazo)} · a etapa da vez no cronograma</div>
+              </div>
+              <span className={`ori-tag ${s.tipo}`}>{rotuloDias(s.dias)}</span>
+            </div>
+          ) : (
+            <p className="ori-calmo">Cronograma cumprido ✓</p>
+          )}
+        </section>
+
+        <section className="ori-card">
+          <div className="ori-card-cab">
+            <h3 className="ori-card-titulo">Pendências{pend.length ? ` · ${pend.length}` : ''}</h3>
+            {pend.length > 5 && (
+              <button type="button" className="ori-card-acao" onClick={() => setTodas(!todas)}>
+                {todas ? 'Ver menos' : 'Ver todas'}
+              </button>
+            )}
+          </div>
+          {!pend.length ? (
+            <p className="ori-calmo">
+              Nenhuma pendência em aberto.{' '}
+              <button type="button" className="ori-link" onClick={aoRegistrar}>
+                Registrar uma sessão
+              </button>{' '}
+              para anotar as tarefas do orientando.
+            </p>
+          ) : (
+            <ul className="ori-pend-lista">
+              {(todas ? pend : pend.slice(0, 5)).map((p) => {
+                const sp = p.enc.prazo ? situacaoEtapa({ id: '', nome: '', prazo: p.enc.prazo }, hoje) : null;
+                return (
+                  <li key={p.enc.id}>
+                    <input type="checkbox" aria-label={`Cumprido: ${p.enc.texto}`} onChange={() => void resolverPendencia(p, 'cumprido')} />
+                    <span className={`ori-tipo-enc ${p.enc.tipo}`}>{p.enc.tipo === 'comando' ? 'comando' : 'sugestão'}</span>
+                    <span className="ori-pend-texto" title={`${rotuloInteracao(p.interacao)} de ${dataBR(p.interacao.em)}`}>
+                      {p.enc.texto}
+                    </span>
+                    <span className={`ori-quando ${sp ? sp.tipo : 'futura'}`}>{sp ? rotuloDias(sp.dias) : 'sem prazo'}</span>
+                    <AcoesEnc
+                      e={p.enc}
+                      aoMarcar={() => void resolverPendencia(p, 'descartado')}
+                      aoApagar={async () => {
+                        if (await confirmarApagarEnc(p.enc.texto)) await salvarInteracao({ ...p.interacao, encaminhamentos: p.interacao.encaminhamentos.filter((x) => x.id !== p.enc.id) });
+                      }}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
+        <section className="ori-card">
+          <div className="ori-card-cab">
+            <h3 className="ori-card-titulo">
+              Cronograma · {feitas} de {etapas.length}
+            </h3>
+            <button type="button" className="ori-card-acao" onClick={() => setEditarCrono(!editarCrono)}>
+              {editarCrono ? 'Concluir' : 'Editar'}
+            </button>
+          </div>
+          {editarCrono ? (
+            <Cronograma trabalho={trabalho} embutido />
+          ) : !etapas.length ? (
+            <p className="ori-calmo">Sem etapas. Clique em Editar para montar o cronograma.</p>
+          ) : (
+            <div className="ori-marcos" style={{ ['--feito' as string]: `${etapas.length > 1 ? (Math.max(0, feitas - 1) / (etapas.length - 1)) * 100 : 0}%` }}>
+              {etapas.map((x) => {
+                const sx = situacaoEtapa(x, hoje);
+                return (
+                  <div key={x.id} className={`ori-marco ${sx.tipo}`} title={`${x.nome} · ${dataBR(x.prazo)} · ${sx.tipo === 'concluida' ? 'cumprida' : rotuloDias(sx.dias)}`}>
+                    <i />
+                    <span>{x.nome}</span>
+                    <small>{dataBR(x.prazo).slice(0, 5)}</small>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
+
+      <div className="ori-painel-col">
+        <section className="ori-card">
+          <div className="ori-card-cab">
+            <h3 className="ori-card-titulo">Últimas atividades</h3>
+            {atividades.length > 0 && (
+              <button type="button" className="ori-card-acao" onClick={aoLinhaDoTempo}>
+                Linha do tempo
+              </button>
+            )}
+          </div>
+          {!atividades.length ? (
+            <p className="ori-calmo">Nada registrado ainda.</p>
+          ) : (
+            <ul className="ori-ativ">
+              {atividades.map((x, k) => (
+                <li key={k}>
+                  <span className={`ori-ativ-ic t-${x.tipo}`}>{x.tipo}</span>
+                  <span style={{ minWidth: 0 }}>
+                    <strong>{x.titulo}</strong>
+                    <span className="ori-sub">
+                      {relativo(x.em, hoje)}
+                      {x.detalhe ? ` · ${x.detalhe}` : ''}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+        <section className="ori-card">
+          <div className="ori-card-cab">
+            <h3 className="ori-card-titulo">Página do orientando</h3>
+            <button type="button" className="ori-card-acao" onClick={aoCompartilhar}>
+              Compartilhar
+            </button>
+          </div>
+          {!pub ? (
+            <p className="ori-calmo">Ainda não compartilhada. Uma página só dele, com cronograma, pendências e modelos.</p>
+          ) : (
+            <>
+              <p className="ori-estado">
+                <span className="ori-ponto verde" /> Ativa · código <strong className="mono">{pub.pin}</strong>
+              </p>
+              <div className="ori-info">
+                <span>Formulário do pré-projeto</span>
+                <strong>{trabalho.preProjeto?.ativo ? 'ligado' : 'desligado'}</strong>
+              </div>
+              {trabalho.preProjeto?.ativo && (
+                <div className="ori-info">
+                  <span>Último envio</span>
+                  <strong>{pub.ultimoEnvio ? new Date(pub.ultimoEnvio).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'nenhum'}</strong>
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Menus e janelas ----------
+
+interface ItemMenu {
+  rotulo: string;
+  desc?: string;
+  aoClicar: () => void;
+}
+
+function Menu({ itens, aoFechar }: { itens: ItemMenu[]; aoFechar: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const fora = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && aoFechar();
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && aoFechar();
+    window.setTimeout(() => window.addEventListener('mousedown', fora), 0);
+    window.addEventListener('keydown', esc);
+    return () => {
+      window.removeEventListener('mousedown', fora);
+      window.removeEventListener('keydown', esc);
+    };
+  }, [aoFechar]);
+  return (
+    <div ref={ref} className="ori-menu" role="menu">
+      {itens.map((it) => (
+        <button
+          key={it.rotulo}
+          type="button"
+          role="menuitem"
+          onClick={() => {
+            aoFechar();
+            it.aoClicar();
+          }}
+        >
+          {it.rotulo}
+          {it.desc && <small>{it.desc}</small>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function MenuMais({ itens }: { itens: ItemMenu[] }) {
+  const [aberto, setAberto] = useState(false);
+  return (
+    <span className="ori-menu-caixa">
+      <button type="button" className="botao ori-mais" aria-label="Mais opções" aria-expanded={aberto} onClick={() => setAberto(!aberto)}>
+        ···
+      </button>
+      {aberto && <Menu itens={itens} aoFechar={() => setAberto(false)} />}
+    </span>
+  );
+}
+
+function Janela({ titulo, aoFechar, children }: { titulo: string; aoFechar: () => void; children: React.ReactNode }) {
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && aoFechar();
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [aoFechar]);
+  return (
+    <div className="modal-fundo" onMouseDown={(e) => e.target === e.currentTarget && aoFechar()}>
+      <div className="modal ori-janela" role="dialog" aria-label={titulo}>
+        <div className="ori-janela-cab">
+          <h2>{titulo}</h2>
+          <button type="button" className="ori-icone" aria-label="Fechar" onClick={aoFechar}>
+            <IcX tamanho={18} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -464,15 +830,16 @@ function useRascunho<T extends { id: string }>(valor: T, salvar: (v: T) => Promi
   return [atual, mudar];
 }
 
-function Cronograma({ trabalho }: { trabalho: Trabalho }) {
+function Cronograma({ trabalho, embutido = false }: { trabalho: Trabalho; embutido?: boolean }) {
   const [t, mudar] = useRascunho(trabalho, (v) => atualizarTrabalho(v.id, { etapas: v.etapas }));
   const hoje = hojeISO();
   const etapas = t.etapas;
   const mudarEtapa = (id: string, p: Partial<Trabalho['etapas'][number]>) => mudar({ ...t, etapas: etapas.map((e) => (e.id === id ? { ...e, ...p } : e)) });
   const ordenadas = emOrdem(etapas);
+  const Caixa = embutido ? 'div' : 'section';
   return (
-    <section className="cartao">
-      <h3 style={{ marginTop: 0 }}>Cronograma</h3>
+    <Caixa className={embutido ? undefined : 'cartao'}>
+      {!embutido && <h3 style={{ marginTop: 0 }}>Cronograma</h3>}
       {!etapas.length && <p className="ajuda">Nenhuma etapa. Acrescente as etapas com os prazos.</p>}
       <table className="ori-cronograma">
         <tbody>
@@ -515,60 +882,14 @@ function Cronograma({ trabalho }: { trabalho: Trabalho }) {
       >
         <IcMais tamanho={14} /> Etapa
       </button>
-      <p className="ajuda">Prazos em dias corridos. Marque a etapa quando o orientando a cumprir; a primeira em aberto aparece na lista de orientandos.</p>
-    </section>
+      <p className="ajuda">Prazos em dias corridos. Marque a etapa quando o orientando a cumprir.</p>
+    </Caixa>
   );
 }
 
 async function resolverPendencia(p: Pendencia, situacao: Encaminhamento['situacao']) {
   const i = p.interacao;
   await salvarInteracao({ ...i, encaminhamentos: i.encaminhamentos.map((e) => (e.id === p.enc.id ? { ...e, situacao, resolvido_em: situacao === 'pendente' ? null : hojeISO() } : e)) });
-}
-
-function ListaPendencias({ pend, aoRegistrar }: { pend: Pendencia[]; aoRegistrar: () => void }) {
-  return (
-    <section className="cartao" style={{ marginTop: 12 }}>
-      <h3 style={{ marginTop: 0 }}>Pendências do orientando</h3>
-      {!pend.length ? (
-        <p className="ajuda">
-          Nenhuma sugestão ou comando em aberto. Ao{' '}
-          <button className="link-discreto" style={{ margin: 0 }} onClick={aoRegistrar}>
-            registrar uma sessão
-          </button>
-          , anote o que o orientando deve fazer: as pendências aparecem aqui até serem cumpridas.
-        </p>
-      ) : (
-        <ul className="ori-pendencias">
-          {pend.map((p) => (
-            <li key={p.enc.id}>
-              <input type="checkbox" aria-label={`Cumprido: ${p.enc.texto}`} onChange={() => void resolverPendencia(p, 'cumprido')} />
-              <span className={`ori-tipo-enc ${p.enc.tipo}`}>{p.enc.tipo === 'comando' ? 'comando' : 'sugestão'}</span>
-              <span className="ori-pend-texto">
-                {p.enc.texto}
-                <span className="ajuda" style={{ margin: 0 }}>
-                  {' '}
-                  · {rotuloInteracao(p.interacao).toLowerCase()} de {dataBR(p.interacao.em)}
-                </span>
-                {p.enc.prazo && (
-                  <span className={situacaoEtapa({ id: '', nome: '', prazo: p.enc.prazo }).tipo === 'atrasada' ? 'ori-pend-vencida' : 'ajuda'} style={{ margin: 0 }}>
-                    {' '}
-                    · até {dataBR(p.enc.prazo)} ({rotuloDias(situacaoEtapa({ id: '', nome: '', prazo: p.enc.prazo }).dias)})
-                  </span>
-                )}
-              </span>
-              <AcoesEnc
-                e={p.enc}
-                aoMarcar={() => void resolverPendencia(p, 'descartado')}
-                aoApagar={async () => {
-                  if (await confirmarApagarEnc(p.enc.texto)) await salvarInteracao({ ...p.interacao, encaminhamentos: p.interacao.encaminhamentos.filter((x) => x.id !== p.enc.id) });
-                }}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
 }
 
 // ---------- Elementos do trabalho ----------
@@ -1541,16 +1862,83 @@ Código de acesso: ${pin}
 Lá você acompanha o cronograma (com quanto falta para cada etapa), as pendências combinadas nas nossas conversas e os elementos do trabalho, e baixa os modelos e orientações (manual de normalização, modelo do trabalho). A página se atualiza sozinha.`;
 }
 
-function PaginaDoOrientando({ trabalho, orientando }: { trabalho: Trabalho; orientando?: Orientando }) {
+/** Configuração do pré-projeto do trabalho (guardada com uma pausa curta). */
+function useConfigPreProjeto(trabalho: Trabalho, orientando?: Orientando): [ConfigPreProjeto, (p: Partial<ConfigPreProjeto>, ja?: boolean) => void] {
+  const [cfg, setCfg] = useState<ConfigPreProjeto>(() => ({ ...configPreProjetoPadrao(orientando, orientadorGuardado()), ...trabalho.preProjeto }));
+  const timer = useRef<number | null>(null);
+  const mudar = (p: Partial<ConfigPreProjeto>, ja = false) => {
+    const novo = { ...cfg, ...p };
+    setCfg(novo);
+    if (timer.current) window.clearTimeout(timer.current);
+    const gravar = () => void atualizarTrabalho(trabalho.id, { preProjeto: novo });
+    if (ja) gravar();
+    else timer.current = window.setTimeout(gravar, 800);
+  };
+  return [cfg, mudar];
+}
+
+/** Capa e folha de rosto do pré-projeto. */
+function CamposCapa({ cfg, mudar }: { cfg: ConfigPreProjeto; mudar: (p: Partial<ConfigPreProjeto>, ja?: boolean) => void }) {
+  return (
+    <div className="ori-capa">
+      <div className="grade-2">
+        <div className="campo">
+          <label htmlFor="pp-inst">Instituição (capa)</label>
+          <select id="pp-inst" className="seletor" value={cfg.instituicao} onChange={(e) => mudar({ instituicao: e.target.value as ConfigPreProjeto['instituicao'] }, true)}>
+            <option value="Uniftec">Uniftec (com o logotipo)</option>
+            <option value="Ftec">Ftec Faculdades</option>
+          </select>
+        </div>
+        <div className="campo">
+          <label htmlFor="pp-curso">Curso</label>
+          <input id="pp-curso" value={cfg.curso} onChange={(e) => mudar({ curso: e.target.value })} placeholder="ex.: Direito" />
+        </div>
+        <div className="campo">
+          <label htmlFor="pp-cidade">Cidade e ano</label>
+          <span className="linha-opcoes" style={{ flexWrap: 'nowrap' }}>
+            <input id="pp-cidade" value={cfg.cidade} onChange={(e) => mudar({ cidade: e.target.value })} style={{ flex: 1, minWidth: 0 }} />
+            <input aria-label="Ano" value={cfg.ano} onChange={(e) => mudar({ ano: e.target.value })} style={{ width: 70 }} />
+          </span>
+        </div>
+        <div className="campo">
+          <label htmlFor="pp-orient">Orientador(a), como sai na folha de rosto</label>
+          <input id="pp-orient" value={cfg.orientador} onChange={(e) => mudar({ orientador: e.target.value })} placeholder="ex.: Prof. Me. Fulano de Tal" />
+        </div>
+        <div className="campo">
+          <label htmlFor="pp-coorient">Coorientador(a) (se houver)</label>
+          <input id="pp-coorient" value={cfg.coorientador} onChange={(e) => mudar({ coorientador: e.target.value })} />
+        </div>
+      </div>
+      <div className="campo">
+        <label htmlFor="pp-natureza">Natureza do trabalho (folha de rosto)</label>
+        <textarea id="pp-natureza" rows={2} value={cfg.natureza} onChange={(e) => mudar({ natureza: e.target.value })} placeholder={naturezaPadrao(cfg)} />
+        <span className="ajuda" style={{ margin: 0 }}>
+          Em branco, vale o texto em cinza.
+        </span>
+      </div>
+      <div className="linha-opcoes">
+        <label className="ori-opcao">
+          <input type="checkbox" checked={cfg.resumo} onChange={(e) => mudar({ resumo: e.target.checked }, true)} /> Pedir resumo e palavras-chave
+        </label>
+        <label className="ori-opcao">
+          <input type="checkbox" checked={cfg.aprovacao} onChange={(e) => mudar({ aprovacao: e.target.checked }, true)} /> Incluir folha de aprovação
+        </label>
+      </div>
+    </div>
+  );
+}
+
+/** "Compartilhar": tudo sobre a página do orientando num lugar só. */
+function JanelaCompartilhar({ trabalho, orientando, aoFechar }: { trabalho: Trabalho; orientando?: Orientando; aoFechar: () => void }) {
   const [, recarregar] = useState(0);
   useEffect(() => assinarPublicacao(() => recarregar((n) => n + 1)), []);
-  const [gerais, setGerais] = useState(0);
-  const carregar = useCallback(() => void listarModelos().then((l) => setGerais(l.filter((m) => m.trabalhoId === null).length)), []);
-  useRecarga(carregar);
   const [criando, setCriando] = useState(false);
+  const [cfg, mudar] = useConfigPreProjeto(trabalho, orientando);
+  const [verCapa, setVerCapa] = useState(false);
   const pub = trabalho.publicacao;
   const estado = estadoPublicacao(trabalho.id);
   const nome = orientando?.nome ?? '';
+  const primeiro = nome.split(' ')[0] || 'o orientando';
   const tentar = async (op: () => Promise<unknown>, ok?: string) => {
     try {
       await op();
@@ -1560,78 +1948,183 @@ function PaginaDoOrientando({ trabalho, orientando }: { trabalho: Trabalho; orie
     }
   };
   return (
-    <>
-      <section className="cartao">
-        <h3 style={{ marginTop: 0 }}>Página do orientando</h3>
-        {!pub ? (
-          <>
-            <p className="ajuda">
-              Um link só de {nome || 'orientando'}, protegido por um código de 6 números. Lá ele vê o cronograma (com quanto falta para cada etapa), as pendências (sugestões e comandos
-              em aberto) e os elementos do trabalho, só para ler, e baixa os modelos e orientações. Não aparecem o e-mail, o telefone, as sessões, as conversas nem as versões. A página se
-              atualiza sozinha quando você muda algo aqui.
-            </p>
-            <button className="botao escuro" disabled={criando} onClick={() => (setCriando(true), void tentar(() => publicarOrientacao(trabalho.id), 'Página criada').finally(() => setCriando(false)))}>
-              {criando ? 'Criando…' : 'Criar a página do orientando'}
+    <Janela titulo={`Compartilhar com ${primeiro}`} aoFechar={aoFechar}>
+      <p className="ori-calmo" style={{ marginTop: 0 }}>
+        Uma página só {nome ? `de ${primeiro}` : 'do orientando'}: cronograma, pendências, elementos do trabalho e modelos para baixar. Atualiza sozinha. Não mostra e-mail, telefone,
+        conversas nem versões.
+      </p>
+      {!pub ? (
+        <button type="button" className="botao escuro" disabled={criando} onClick={() => (setCriando(true), void tentar(() => publicarOrientacao(trabalho.id), 'Página criada').finally(() => setCriando(false)))}>
+          {criando ? 'Criando…' : 'Criar a página'}
+        </button>
+      ) : (
+        <>
+          <div className="ori-link-caixa">
+            <input readOnly value={urlDoOrientando(pub.codigo)} aria-label="Link da página" onFocus={(e) => e.target.select()} />
+            <button type="button" className="botao" onClick={async () => avisar((await copiar(urlDoOrientando(pub.codigo))) ? 'Link copiado' : 'Este navegador não deixou copiar')}>
+              Copiar link
             </button>
-          </>
-        ) : (
-          <>
-            <div className="ori-pin">
-              <span>Código de acesso</span>
+            <a className="botao" href={urlDoOrientando(pub.codigo)} target="_blank" rel="noopener">
+              Abrir
+            </a>
+          </div>
+          <div className="ori-codigo">
+            <span className="ori-qr">
+              <QR url={urlDoOrientando(pub.codigo)} />
+            </span>
+            <span>
+              <span className="ori-calmo">Código de acesso</span>
               <strong className="mono">{pub.pin}</strong>
-            </div>
-            <LinkEQr url={urlDoOrientando(pub.codigo)} titulo={`Orientação · ${nome || trabalho.titulo}`} ajuda="Mande o link e o código ao orientando (de preferência por canais diferentes, ou pelo botão abaixo)." />
-            <div className="linha-opcoes" style={{ marginTop: 10 }}>
-              <button className="botao primario" onClick={async () => avisar((await copiar(mensagemConvite(nome, urlDoOrientando(pub.codigo), pub.pin))) ? 'Mensagem copiada: cole no WhatsApp ou no e-mail' : 'Este navegador não deixou copiar', 'ok')}>
-                Copiar mensagem para o orientando
+            </span>
+            <button
+              type="button"
+              className="botao pequeno"
+              style={{ marginLeft: 'auto' }}
+              onClick={async () => {
+                if (await confirmar({ titulo: 'Trocar o código de acesso?', texto: 'O código antigo deixa de funcionar. O link continua o mesmo.', botao: 'Trocar' }))
+                  await tentar(() => publicarOrientacao(trabalho.id, { trocarPin: true }), 'Código trocado');
+              }}
+            >
+              Trocar
+            </button>
+          </div>
+          <button
+            type="button"
+            className="botao escuro ori-largo"
+            onClick={async () => avisar((await copiar(mensagemConvite(nome, urlDoOrientando(pub.codigo), pub.pin))) ? 'Mensagem copiada: cole no WhatsApp ou no e-mail' : 'Este navegador não deixou copiar')}
+          >
+            Copiar mensagem para {primeiro} (link + código)
+          </button>
+          <p className={`ori-calmo${estado?.tipo === 'erro' ? ' ori-erro' : ''}`} style={{ fontSize: 13 }}>
+            {estado?.tipo === 'enviando'
+              ? 'Atualizando a página…'
+              : estado?.tipo === 'erro'
+                ? `A página não foi atualizada: ${estado.msg}`
+                : `Atualizada em ${new Date(pub.publicadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}.`}
+            {estado?.tipo === 'erro' && (
+              <button type="button" className="ori-link" onClick={() => void tentar(() => publicarOrientacao(trabalho.id), 'Página atualizada')}>
+                {' '}
+                Tentar de novo
               </button>
-              <a className="botao" href={urlDoOrientando(pub.codigo)} target="_blank" rel="noopener">
-                Abrir a página
-              </a>
-              <button className="botao" disabled={estado?.tipo === 'enviando'} onClick={() => void tentar(() => publicarOrientacao(trabalho.id), 'Página atualizada')}>
-                Atualizar agora
-              </button>
-            </div>
-            <p className={`ajuda${estado?.tipo === 'erro' ? ' ori-erro' : ''}`}>
-              {estado?.tipo === 'enviando'
-                ? 'Atualizando a página…'
-                : estado?.tipo === 'erro'
-                  ? `A página não foi atualizada: ${estado.msg}`
-                  : `Atualizada em ${new Date(pub.publicadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}. As mudanças aqui vão para a página sozinhas.`}
-            </p>
-            <div className="linha-opcoes">
-              <button
-                className="link-discreto"
-                style={{ marginLeft: 0 }}
-                onClick={async () => {
-                  if (await confirmar({ titulo: 'Trocar o código de acesso?', texto: 'O código antigo deixa de funcionar. O link continua o mesmo.', botao: 'Trocar' }))
-                    await tentar(() => publicarOrientacao(trabalho.id, { trocarPin: true }), 'Código trocado');
-                }}
-              >
-                trocar o código
-              </button>
-              <button
-                className="link-discreto"
-                onClick={async () => {
-                  if (await confirmar({ titulo: 'Desativar a página do orientando?', texto: 'O link deixa de funcionar. Tudo continua guardado aqui; dá para criar uma página nova depois (com outro link).', botao: 'Desativar', perigo: true }))
-                    await tentar(() => desativarOrientacao(trabalho.id), 'Página desativada');
-                }}
-              >
-                desativar a página
-              </button>
-            </div>
-          </>
+            )}
+          </p>
+        </>
+      )}
+      <div className="ori-alternar">
+        <div>
+          <strong>Formulário do pré-projeto</strong>
+          <span className="ori-calmo">Ele escreve e gera o PDF pelo manual; os envios chegam como versões</span>
+        </div>
+        <button type="button" role="switch" aria-checked={cfg.ativo} aria-label="Formulário do pré-projeto" className={`ori-toggle${cfg.ativo ? ' ligado' : ''}`} onClick={() => mudar({ ativo: !cfg.ativo }, true)} />
+      </div>
+      {cfg.ativo && (
+        <>
+          <button type="button" className="ori-link ori-capa-link" onClick={() => setVerCapa(!verCapa)} aria-expanded={verCapa}>
+            Capa e folha de rosto: {cfg.instituicao} · {cfg.curso || 'curso?'} · {cfg.cidade} · {cfg.ano} {verCapa ? '▴' : '›'}
+          </button>
+          {verCapa && <CamposCapa cfg={cfg} mudar={mudar} />}
+        </>
+      )}
+      <div className="modal-botoes ori-janela-pe">
+        {pub && (
+          <button
+            type="button"
+            className="ori-link perigo"
+            onClick={async () => {
+              if (await confirmar({ titulo: 'Desativar a página do orientando?', texto: 'O link deixa de funcionar. Tudo continua guardado aqui; dá para criar uma página nova depois (com outro link).', botao: 'Desativar', perigo: true }))
+                await tentar(() => desativarOrientacao(trabalho.id), 'Página desativada');
+            }}
+          >
+            Desativar a página
+          </button>
         )}
-      </section>
-      <ConfigPreProjetoForm trabalho={trabalho} orientando={orientando} />
-      <section className="cartao" style={{ marginTop: 12 }}>
-        <h3 style={{ marginTop: 0 }}>Modelos só deste orientando</h3>
-        <p className="ajuda">
-          Além dos {gerais} {gerais === 1 ? 'modelo geral' : 'modelos gerais'} (em Orientandos › Modelos e orientações), que aparecem para todos.
+        <button type="button" className="botao escuro" onClick={aoFechar}>
+          Pronto
+        </button>
+      </div>
+    </Janela>
+  );
+}
+
+/** Na aba Trabalho: o pré-projeto que o orientando escreve na página dele. */
+function PreProjetoCartao({ trabalho, orientando, aoCompartilhar }: { trabalho: Trabalho; orientando?: Orientando; aoCompartilhar: () => void }) {
+  const [ocupado, setOcupado] = useState('');
+  const pub = trabalho.publicacao;
+  const ativo = !!trabalho.preProjeto?.ativo;
+  return (
+    <section className="ori-card" style={{ marginTop: 18 }}>
+      <div className="ori-card-cab">
+        <h3 className="ori-card-titulo">Pré-projeto (TCC I)</h3>
+        <button type="button" className="ori-card-acao" onClick={aoCompartilhar}>
+          {ativo ? 'Configurar' : 'Ligar o formulário'}
+        </button>
+      </div>
+      {!ativo || !pub ? (
+        <p className="ori-calmo">
+          {!pub ? 'Compartilhe a página do orientando e ligue o formulário do pré-projeto: ele escreve lá e o Vide monta o PDF pelo manual.' : 'O formulário está desligado. Ligue em Compartilhar.'}
         </p>
-        <ModelosOrientacao trabalhoId={trabalho.id} />
-      </section>
-    </>
+      ) : (
+        <>
+          <div className="ori-info">
+            <span>Último envio</span>
+            <strong>{pub.ultimoEnvio ? new Date(pub.ultimoEnvio).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'nenhum ainda'}</strong>
+          </div>
+          <div className="linha-opcoes" style={{ marginTop: 10 }}>
+            <button
+              type="button"
+              className="botao"
+              disabled={!!ocupado}
+              onClick={async () => {
+                setOcupado('rascunho');
+                try {
+                  const { projeto } = await lerRascunho(trabalho.id);
+                  if (!projeto) avisar('O orientando ainda não escreveu nada no pré-projeto.', 'erro');
+                  else baixarArquivo(await pdfDoPreProjeto(trabalho, orientando, projeto), `Pre-projeto (rascunho) - ${(orientando?.nome ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '')}.pdf`);
+                } catch (e) {
+                  avisar((e as Error).message, 'erro');
+                } finally {
+                  setOcupado('');
+                }
+              }}
+            >
+              {ocupado === 'rascunho' ? 'Montando…' : 'Ver o rascunho atual (PDF)'}
+            </button>
+            <button
+              type="button"
+              className="botao"
+              disabled={!!ocupado}
+              onClick={async () => {
+                setOcupado('envios');
+                try {
+                  const n = await buscarEnvios(trabalho.id);
+                  avisar(n ? `${n === 1 ? 'Chegou 1 versão' : `Chegaram ${n} versões`} (Linha do tempo › Versões)` : 'Nenhum envio novo');
+                } finally {
+                  setOcupado('');
+                }
+              }}
+            >
+              {ocupado === 'envios' ? 'Buscando…' : 'Buscar envios agora'}
+            </button>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+/** Em Ajustes: os modelos que valem só para este orientando. */
+function ModelosDoOrientando({ trabalho }: { trabalho: Trabalho }) {
+  const [gerais, setGerais] = useState(0);
+  const carregar = useCallback(() => void listarModelos().then((l) => setGerais(l.filter((m) => m.trabalhoId === null).length)), []);
+  useRecarga(carregar);
+  return (
+    <section className="ori-card" style={{ marginTop: 18 }}>
+      <h3 className="ori-card-titulo">Modelos só deste orientando</h3>
+      <p className="ori-calmo">
+        Aparecem na página dele junto com os {gerais} {gerais === 1 ? 'modelo geral' : 'modelos gerais'} (em Orientandos › ··· › Modelos e orientações).
+      </p>
+      <ModelosOrientacao trabalhoId={trabalho.id} />
+    </section>
   );
 }
 
@@ -1644,125 +2137,6 @@ function orientadorGuardado(): string {
     return '';
   }
 }
-
-function ConfigPreProjetoForm({ trabalho, orientando }: { trabalho: Trabalho; orientando?: Orientando }) {
-  const [cfg, setCfg] = useState<ConfigPreProjeto>(() => ({ ...configPreProjetoPadrao(orientando, orientadorGuardado()), ...trabalho.preProjeto }));
-  const [ocupado, setOcupado] = useState('');
-  const timer = useRef<number | null>(null);
-  const mudar = (p: Partial<ConfigPreProjeto>, ja = false) => {
-    const novo = { ...cfg, ...p };
-    setCfg(novo);
-    if (timer.current) window.clearTimeout(timer.current);
-    const gravar = () => void atualizarTrabalho(trabalho.id, { preProjeto: novo });
-    if (ja) gravar();
-    else timer.current = window.setTimeout(gravar, 800);
-  };
-  const pub = trabalho.publicacao;
-  return (
-    <section className="cartao form-turma" style={{ marginTop: 12 }}>
-      <h3 style={{ marginTop: 0 }}>Pré-projeto (TCC I)</h3>
-      <label className="ori-opcao">
-        <input type="checkbox" checked={cfg.ativo} onChange={(e) => mudar({ ativo: e.target.checked }, true)} /> Mostrar o formulário <strong>"Meu pré-projeto"</strong> na página do orientando
-      </label>
-      <p className="ajuda">
-        O orientando escreve as partes do projeto de pesquisa (como no manual: introdução, problema, hipóteses, objetivos, justificativa, fundamentação teórica, metodologia, recursos e
-        referências), já começando com os elementos do trabalho que vocês definiram. O Vide monta o PDF com capa, folha de rosto, sumário e a formatação do manual; o cronograma vem
-        daqui. Cada "Enviar ao orientador" chega como uma versão (em PDF) na aba Versões.
-        {!pub && ' Crie a página do orientando acima para ele ver o formulário.'}
-      </p>
-      {cfg.ativo && (
-        <>
-          <div className="grade-3">
-            <div className="campo">
-              <label htmlFor="pp-inst">Instituição (capa)</label>
-              <select id="pp-inst" className="seletor" value={cfg.instituicao} onChange={(e) => mudar({ instituicao: e.target.value as ConfigPreProjeto['instituicao'] }, true)}>
-                <option value="Uniftec">Uniftec (com o logotipo)</option>
-                <option value="Ftec">Ftec Faculdades</option>
-              </select>
-            </div>
-            <div className="campo">
-              <label htmlFor="pp-curso">Curso</label>
-              <input id="pp-curso" value={cfg.curso} onChange={(e) => mudar({ curso: e.target.value })} placeholder="ex.: Direito" />
-            </div>
-            <div className="campo">
-              <label htmlFor="pp-cidade">Cidade e ano</label>
-              <span className="linha-opcoes" style={{ flexWrap: 'nowrap' }}>
-                <input id="pp-cidade" value={cfg.cidade} onChange={(e) => mudar({ cidade: e.target.value })} style={{ flex: 1, minWidth: 0 }} />
-                <input aria-label="Ano" value={cfg.ano} onChange={(e) => mudar({ ano: e.target.value })} style={{ width: 70 }} />
-              </span>
-            </div>
-            <div className="campo">
-              <label htmlFor="pp-orient">Orientador(a), como sai na folha de rosto</label>
-              <input id="pp-orient" value={cfg.orientador} onChange={(e) => mudar({ orientador: e.target.value })} placeholder="ex.: Prof. Me. Fulano de Tal" />
-            </div>
-            <div className="campo">
-              <label htmlFor="pp-coorient">Coorientador(a) (se houver)</label>
-              <input id="pp-coorient" value={cfg.coorientador} onChange={(e) => mudar({ coorientador: e.target.value })} />
-            </div>
-          </div>
-          <div className="campo">
-            <label htmlFor="pp-natureza">Natureza do trabalho (folha de rosto)</label>
-            <textarea id="pp-natureza" rows={2} value={cfg.natureza} onChange={(e) => mudar({ natureza: e.target.value })} placeholder={naturezaPadrao(cfg)} />
-            <span className="ajuda" style={{ margin: 0 }}>
-              Em branco, vale o texto acima (em cinza).
-            </span>
-          </div>
-          <div className="linha-opcoes">
-            <label className="ori-opcao">
-              <input type="checkbox" checked={cfg.resumo} onChange={(e) => mudar({ resumo: e.target.checked }, true)} /> Pedir resumo e palavras-chave
-            </label>
-            <label className="ori-opcao">
-              <input type="checkbox" checked={cfg.aprovacao} onChange={(e) => mudar({ aprovacao: e.target.checked }, true)} /> Incluir folha de aprovação
-            </label>
-          </div>
-          {pub && (
-            <div className="linha-opcoes" style={{ marginTop: 8 }}>
-              <button
-                type="button"
-                className="botao"
-                disabled={!!ocupado}
-                onClick={async () => {
-                  setOcupado('rascunho');
-                  try {
-                    const { projeto } = await lerRascunho(trabalho.id);
-                    if (!projeto) avisar('O orientando ainda não escreveu nada no pré-projeto.', 'erro');
-                    else baixarArquivo(await pdfDoPreProjeto({ ...trabalho, preProjeto: cfg }, orientando, projeto), `Pre-projeto (rascunho) - ${(orientando?.nome ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')}.pdf`);
-                  } catch (e) {
-                    avisar((e as Error).message, 'erro');
-                  } finally {
-                    setOcupado('');
-                  }
-                }}
-              >
-                {ocupado === 'rascunho' ? 'Montando…' : 'Ver o rascunho atual (PDF)'}
-              </button>
-              <button
-                type="button"
-                className="botao"
-                disabled={!!ocupado}
-                onClick={async () => {
-                  setOcupado('envios');
-                  try {
-                    const n = await buscarEnvios(trabalho.id);
-                    avisar(n ? `${n === 1 ? 'Chegou 1 versão' : `Chegaram ${n} versões`} (aba Versões)` : 'Nenhum envio novo');
-                  } finally {
-                    setOcupado('');
-                  }
-                }}
-              >
-                {ocupado === 'envios' ? 'Buscando…' : 'Buscar envios agora'}
-              </button>
-              <span className="ajuda" style={{ margin: 0 }}>
-                {pub.ultimoEnvio ? `Último envio recebido: ${new Date(pub.ultimoEnvio).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}` : 'Nenhum envio ainda.'}
-              </span>
-            </div>
-          )}
-        </>
-      )}
-    </section>
-  );
-}
-
 
 // ---------- Dados ----------
 

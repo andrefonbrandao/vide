@@ -41,7 +41,8 @@ export function CamadaAvisos() {
   const botao = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     const novoAviso = (a: Aviso) => {
-      setAvisos((l) => [...l.slice(-2), a]);
+      // Um aviso por vez: o novo substitui o anterior (não se empilham sobre o conteúdo).
+      setAvisos([a]);
       window.setTimeout(() => setAvisos((l) => l.filter((x) => x.id !== a.id)), a.tipo === 'erro' ? 6000 : 3200);
     };
     const novoPedido = (p: PedidoConfirmacao) => setPedido(p);
