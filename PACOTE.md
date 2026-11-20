@@ -24,12 +24,12 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 26** aberto em 2026-11-20, a partir da versão 0.41.0 (já publicada).
+**Pacote 26** aberto em 2026-11-20, a partir da versão 0.41.0 (já publicada). **Fechado e publicado como versão 0.42.0.**
 
 | # | Ideia | Situação |
 |---|-------|----------|
-| 1 | **Orientação reorganizada, parte 2:** **registrar sessão numa tela focada** (cobre a página): no alto, presencial/online e data; à esquerda, o editor com as abas **Anotações · Transcrição** (na comunicação, a conversa colada), "O que foi conversado" e **"Organizar com IA"** num botão só, que abre a janela em dois passos (copiar o pedido · colar a resposta); à direita, **Tarefas para o orientando** (com colar em bloco), **pendências anteriores** para marcar e a versão discutida; rodapé fixo com Cancelar e Registrar. **Linha do tempo unificada:** sessões, comunicações e versões numa lista só, por mês, com filtros (Tudo · Sessões · Comunicações · Versões) e "+ Comunicação" / "+ Versão" (em janela) | No pacote |
-| 2 | **Segurança do rascunho do pré-projeto:** (a) o Vide guarda uma **cópia do rascunho** do orientando no computador e no **Drive** (ao abrir a Orientação e a cada 5 minutos), visível na aba Trabalho com "ver (PDF)"; (b) **desativar a página** avisa que o rascunho será apagado do serviço e guarda a cópia antes; ao **criar uma página nova**, o rascunho volta para ela; (c) **dois aparelhos**: o serviço não grava por cima de um texto mais novo — o orientando vê "O texto foi alterado em outro aparelho" e escolhe qual manter; ao voltar para a aba, o texto mais novo é trazido sozinho | No pacote |
+| 1 | **Orientação reorganizada, parte 2:** **registrar sessão numa tela focada** (cobre a página): no alto, presencial/online e data; à esquerda, o editor com as abas **Anotações · Transcrição** (na comunicação, a conversa colada), "O que foi conversado" e **"Organizar com IA"** num botão só, que abre a janela em dois passos (copiar o pedido · colar a resposta); à direita, **Tarefas para o orientando** (com colar em bloco), **pendências anteriores** para marcar e a versão discutida; rodapé fixo com Cancelar e Registrar. **Linha do tempo unificada:** sessões, comunicações e versões numa lista só, por mês, com filtros (Tudo · Sessões · Comunicações · Versões) e "+ Comunicação" / "+ Versão" (em janela) | Publicada (0.42.0) |
+| 2 | **Segurança do rascunho do pré-projeto:** (a) o Vide guarda uma **cópia do rascunho** do orientando no computador e no **Drive** (ao abrir a Orientação e a cada 5 minutos), visível na aba Trabalho com "ver (PDF)"; (b) **desativar a página** avisa que o rascunho será apagado do serviço e guarda a cópia antes; ao **criar uma página nova**, o rascunho volta para ela; (c) **dois aparelhos**: o serviço não grava por cima de um texto mais novo — o orientando vê "O texto foi alterado em outro aparelho" e escolhe qual manter; ao voltar para a aba, o texto mais novo é trazido sozinho | Publicada (0.42.0) |
 
 ## Pacotes anteriores
 
