@@ -8,7 +8,7 @@ import { useContext, useEffect, useRef } from 'react';
 import { EditorSelection, EditorState, StateEffect, StateField, type Range } from '@codemirror/state';
 import { Decoration, EditorView, keymap, WidgetType, type DecorationSet } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
-import { separarTabelas, textoDaTabela, textoPuro } from '../orientacao/marcacao';
+import { ehLinhaDeGrupo, separarTabelas, textoDaTabela, textoPuro } from '../orientacao/marcacao';
 import { imagemDaPagina } from '../orientacao/imagens';
 import { ContextoPagina } from './contextoPagina';
 
@@ -131,13 +131,23 @@ class BlocoWidget extends WidgetType {
       legenda.textContent = `${t.tipo === 'quadro' ? 'Quadro' : 'Tabela'} – ${t.titulo || 'sem título'}`;
       const tab = document.createElement('table');
       tab.className = t.tipo === 'quadro' ? 'cm-quadro' : 'cm-tabela';
+      const ncol = Math.max(1, ...t.linhas.map((l) => l.length));
+      const fimCab = Math.max(0, t.linhas.findIndex((l) => !ehLinhaDeGrupo(l)));
       t.linhas.forEach((l, r) => {
         const tr = document.createElement('tr');
-        for (const c of l) {
-          const td = document.createElement(r === 0 ? 'th' : 'td');
-          td.textContent = textoPuro(c);
-          tr.appendChild(td);
-        }
+        if (ehLinhaDeGrupo(l)) {
+          // Título de grupo: uma célula na linha toda.
+          const th = document.createElement('th');
+          th.colSpan = ncol;
+          th.className = 'cm-grupo';
+          th.textContent = textoPuro(l[0]);
+          tr.appendChild(th);
+        } else
+          for (const c of l) {
+            const td = document.createElement(r <= fimCab ? 'th' : 'td');
+            td.textContent = textoPuro(c);
+            tr.appendChild(td);
+          }
         tab.appendChild(tr);
       });
       fonte.textContent = `Fonte: ${t.fonte || 'o autor.'}`;

@@ -232,12 +232,15 @@ export async function lerDocx(arquivo: Uint8Array): Promise<Docx> {
       .map((r) =>
         nos(r)
           .filter((c) => c.n === 'w:tc')
-          .map((c) =>
-            todos(c, 'w:p')
+          .flatMap((c) => {
+            const texto = todos(c, 'w:p')
               .map((p) => segParaMd(segmentos(p, estilos, notas, []).segs.map((s) => ({ ...s, b: false, i: false }))))
               .filter(Boolean)
-              .join(' '),
-          ),
+              .join(' ');
+            // Célula mesclada (ocupa várias colunas): o texto fica na primeira, as outras vazias.
+            const span = Math.max(1, Number(filho(filho(c, 'w:tcPr'), 'w:gridSpan')?.a['w:val'] ?? 1) || 1);
+            return [texto, ...Array.from({ length: span - 1 }, () => '')];
+          }),
       )
       .filter((l) => l.some((x) => x.trim()));
     if (linhas.length) elementos.push({ k: 'tab', linhas });

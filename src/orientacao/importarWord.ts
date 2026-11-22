@@ -3,7 +3,7 @@
 // Considerações finais, Referências, Apêndices e Anexos. Tabelas e figuras viram os blocos do Vide
 // (as imagens ficam marcadas com "@rId", para serem enviadas antes de gravar).
 import { tirarNumero, type Elemento } from './lerDocx';
-import { textoDaFigura, textoDaTabela } from './marcacao';
+import { ehLinhaDeGrupo, textoDaFigura, textoDaTabela } from './marcacao';
 import { FINAL_VAZIO, novaParte } from './trabalhoFinalEstrutura';
 import type { ParteNomeada, TextoFinal, TextoProjeto } from './tipos';
 
@@ -112,7 +112,9 @@ function paraTexto(els: Elemento[], c: Contagem, nivelBase = 2): string {
     } else if (e.k === 'tab') {
       const leg = ant?.k === 'leg' ? ant : undefined;
       const fonte = prox?.k === 'fonte' ? prox.texto : '';
-      out.push(textoDaTabela({ tipo: leg?.tipo === 'quadro' ? 'quadro' : 'tabela', titulo: leg?.titulo ?? '', fonte, linhas: e.linhas }));
+      // Primeira linha mesclada ("Inscrição indevida…" ocupando a linha toda) e sem legenda: vira o título.
+      const tituloNaTabela = !leg && e.linhas.length > 2 && ehLinhaDeGrupo(e.linhas[0]) ? e.linhas[0][0] : '';
+      out.push(textoDaTabela({ tipo: leg?.tipo === 'quadro' ? 'quadro' : 'tabela', titulo: leg?.titulo ?? tituloNaTabela, fonte, linhas: tituloNaTabela ? e.linhas.slice(1) : e.linhas }));
       c.tabelas++;
     } else if (e.k === 'img') {
       // Legenda em cima (ABNT) ou logo embaixo.

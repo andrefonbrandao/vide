@@ -186,3 +186,19 @@ export function ordenarReferencias(texto: string): string[] {
     .filter((l) => l && !SO_TITULO_REFERENCIAS.test(textoPuro(l).trim()))
     .sort((a, b) => textoPuro(a).localeCompare(textoPuro(b), 'pt-BR', { sensitivity: 'base' }));
 }
+
+/** Linha só com a primeira célula preenchida (título de grupo dentro da tabela): ocupa a linha toda. */
+export const ehLinhaDeGrupo = (l: string[]) => l.length > 1 && !!l[0]?.trim() && l.slice(1).every((x) => !x.trim());
+
+/** Larguras relativas das colunas: a palavra mais longa de cada coluna cabe inteira; o resto se reparte pelo
+ * tamanho médio do texto. As linhas de grupo não contam (ocupam a linha toda). */
+export function pesosDasColunas(linhas: string[][], ncol: number): number[] {
+  const uteis = linhas.filter((l) => !ehLinhaDeGrupo(l));
+  const base = uteis.length ? uteis : linhas;
+  return Array.from({ length: ncol }, (_, k) => {
+    const textos = base.map((l) => (l[k] ?? '').trim()).filter(Boolean);
+    const maiorPalavra = Math.max(3, ...textos.flatMap((t) => t.split(/\s+/).map((w) => w.length)));
+    const media = textos.length ? textos.reduce((s2, t) => s2 + t.length, 0) / textos.length : 3;
+    return Math.max(maiorPalavra + 1, Math.min(28, media));
+  });
+}

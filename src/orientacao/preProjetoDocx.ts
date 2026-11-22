@@ -5,7 +5,7 @@
 // folha de rosto; números de página no canto superior direito a partir da introdução
 // (contando desde a folha de rosto); referências em página nova.
 // Sem bibliotecas: o .docx (um ZIP de XMLs) é montado aqui.
-import { lerParagrafos, lerTrechos, textoPuro, type FiguraTexto, type TabelaTexto, type Trecho } from './marcacao';
+import { ehLinhaDeGrupo, lerParagrafos, lerTrechos, pesosDasColunas, textoPuro, type FiguraTexto, type TabelaTexto, type Trecho } from './marcacao';
 import { estruturaPreProjeto, type Bloco } from './preProjetoEstrutura';
 import { estruturaFinal, FINAL_VAZIO, finalDoPreProjeto, LISTAS, siglasDe } from './trabalhoFinalEstrutura';
 import type { Imagem } from './imagens';
@@ -94,6 +94,18 @@ export function zip(arquivos: { nome: string; dados: Uint8Array }[]): Uint8Array
   return out;
 }
 
+/** Marca (indicador) do Word num título ou legenda, para o sumário e as listas apontarem para ele
+ * (é o que o próprio Word faz: assim "Atualizar campo" funciona depois de editar o texto). */
+const marcar = (id: number, nome: string, conteudo: string) => `<w:bookmarkStart w:id="${id}" w:name="${nome}"/>${conteudo}<w:bookmarkEnd w:id="${id}"/>`;
+const ID_LEGENDA: Record<string, number> = { Tabela: 2000, Quadro: 3000, Figura: 4000, Grafico: 5000 };
+const marcaLegenda = (rotulo: string, numero: number) => ({ id: (ID_LEGENDA[seqDe(rotulo)] ?? 6000) + numero, nome: `_Toc${seqDe(rotulo)}${numero}` });
+/** Linha do sumário ou de uma lista: o texto e o número da página (campo PAGEREF), com link para o título. */
+function linhaDeSumario(estilo: string, texto: string, negrito: boolean, marca: string, pagina?: number): string {
+  const r = (x: string) => `<w:r>${negrito ? '<w:rPr><w:b/></w:rPr>' : ''}<w:t xml:space="preserve">${esc(x)}</w:t></w:r>`;
+  const campo = `<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF ${marca} \\h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>${r(pagina ? String(pagina) : '')}<w:r><w:fldChar w:fldCharType="end"/></w:r>`;
+  return `<w:p><w:pPr><w:pStyle w:val="${estilo}"/></w:pPr><w:hyperlink w:anchor="${marca}" w:history="1">${r(texto)}<w:r><w:tab/></w:r>${campo}</w:hyperlink></w:p>`;
+}
+
 /** Nome do campo SEQ do Word (sem acento): "Gráfico" → "Grafico". */
 const seqDe = (rotulo: string) => rotulo.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
@@ -102,21 +114,28 @@ function tabelaXml(tab: TabelaTexto, numero: number): string[] {
   const rotulo = tab.tipo === 'quadro' ? 'Quadro' : 'Tabela';
   const r = (x: string, b = false) => `<w:r>${b ? '<w:rPr><w:b/></w:rPr>' : ''}<w:t xml:space="preserve">${esc(x)}</w:t></w:r>`;
   // Legenda com o número como campo do Word (a lista de tabelas/quadros é montada a partir dele).
-  const legenda = `<w:p><w:pPr><w:pStyle w:val="Legenda"/><w:keepNext/></w:pPr>${r(`${rotulo} `, true)}<w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:b/></w:rPr><w:instrText xml:space="preserve"> SEQ ${rotulo} \\* ARABIC </w:instrText></w:r><w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r>${r(String(numero), true)}<w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="end"/></w:r>${r(` – ${tab.titulo.trim() || 'sem título'}`, true)}</w:p>`;
+  const ml = marcaLegenda(rotulo, numero);
+  const legenda = `<w:p><w:pPr><w:pStyle w:val="Legenda"/><w:keepNext/></w:pPr>${marcar(ml.id, ml.nome, `${r(`${rotulo} `, true)}<w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:b/></w:rPr><w:instrText xml:space="preserve"> SEQ ${rotulo} \\* ARABIC </w:instrText></w:r><w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r>${r(String(numero), true)}<w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="end"/></w:r>${r(` – ${tab.titulo.trim() || 'sem título'}`, true)}`)}</w:p>`;
   const ncol = Math.max(1, ...tab.linhas.map((l) => l.length));
   const linhas = (tab.linhas.length ? tab.linhas : [[]]).map((l) => Array.from({ length: ncol }, (_, k) => textoPuro(l[k] ?? '')));
-  const peso = Array.from({ length: ncol }, (_, k) => Math.min(40, Math.max(6, ...linhas.map((l) => l[k].length))));
+  const peso = pesosDasColunas(linhas, ncol);
   const total = peso.reduce((a, b) => a + b, 0);
   const larg = peso.map((p) => Math.round((LARGURA * p) / total));
+  // Linha de grupo (só a primeira célula preenchida): uma célula mesclada na linha toda.
+  const grupo = linhas.map((l) => ehLinhaDeGrupo(l));
+  const fimCab = Math.max(0, grupo.findIndex((g) => !g));
   const fio = (lado: string) => `<w:${lado} w:val="single" w:sz="6" w:space="0" w:color="000000"/>`;
   const quadro = tab.tipo === 'quadro';
   const bordas = quadro ? ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(fio).join('') : `${fio('top')}${fio('bottom')}`;
   const linhasXml = linhas.map((l, i) => {
-    const cab = i === 0;
+    const cab = i <= fimCab;
+    const borda = i === fimCab && !quadro ? `<w:tcBorders>${fio('bottom')}</w:tcBorders>` : '';
+    if (grupo[i])
+      return `<w:tr>${cab ? '<w:trPr><w:tblHeader/></w:trPr>' : ''}<w:tc><w:tcPr><w:tcW w:w="${LARGURA}" w:type="dxa"/><w:gridSpan w:val="${ncol}"/>${borda}</w:tcPr><w:p><w:pPr><w:pStyle w:val="Quadro"/></w:pPr>${r(l[0], true)}</w:p></w:tc></w:tr>`;
     const celulas = l
       .map(
         (txt, k) =>
-          `<w:tc><w:tcPr><w:tcW w:w="${larg[k]}" w:type="dxa"/>${cab && !quadro ? `<w:tcBorders>${fio('bottom')}</w:tcBorders>` : ''}</w:tcPr><w:p><w:pPr><w:pStyle w:val="Quadro"/>${cab || !quadro ? '<w:jc w:val="center"/>' : ''}</w:pPr>${r(txt, cab)}</w:p></w:tc>`,
+          `<w:tc><w:tcPr><w:tcW w:w="${larg[k]}" w:type="dxa"/>${borda}</w:tcPr><w:p><w:pPr><w:pStyle w:val="Quadro"/>${cab || !quadro ? '<w:jc w:val="center"/>' : ''}</w:pPr>${r(txt, cab)}</w:p></w:tc>`,
       )
       .join('');
     return `<w:tr>${cab ? '<w:trPr><w:tblHeader/></w:trPr>' : ''}${celulas}</w:tr>`;
@@ -285,7 +304,10 @@ export async function gerarPreProjetoDocx(e: EntradaDocx): Promise<Blob> {
       corpo.push(
         `<w:p><w:pPr><w:pStyle w:val="Sumrio1"/>${antes(360)}</w:pPr><w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\h \\z \\c "${rotulo}" </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>`,
       );
-      for (const it of l.itens) corpo.push(par('Sumrio2', run(it.titulo) + `<w:r><w:tab/></w:r>${run(String(it.pagina))}`));
+      for (const it of l.itens) {
+        const m = /^(\S+)\s+(\d+)/.exec(it.titulo);
+        corpo.push(linhaDeSumario('Sumrio2', it.titulo, false, m ? marcaLegenda(m[1], Number(m[2])).nome : '_TocLista', it.pagina));
+      }
       corpo.push('<w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>');
       quebra();
     }
@@ -312,7 +334,8 @@ export async function gerarPreProjetoDocx(e: EntradaDocx): Promise<Blob> {
   const figuraXml = (fig: FiguraTexto, numero: number): string[] => {
     const rotulo = fig.tipo === 'grafico' ? 'Gráfico' : 'Figura';
     const r = (x: string, b = false) => `<w:r>${b ? '<w:rPr><w:b/></w:rPr>' : ''}<w:t xml:space="preserve">${esc(x)}</w:t></w:r>`;
-    const legenda = `<w:p><w:pPr><w:pStyle w:val="Legenda"/><w:keepNext/></w:pPr>${r(`${rotulo} `, true)}<w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:b/></w:rPr><w:instrText xml:space="preserve"> SEQ ${seqDe(rotulo)} \\* ARABIC </w:instrText></w:r><w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r>${r(String(numero), true)}<w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="end"/></w:r>${r(` – ${fig.titulo.trim() || 'sem título'}`, true)}</w:p>`;
+    const ml = marcaLegenda(rotulo, numero);
+    const legenda = `<w:p><w:pPr><w:pStyle w:val="Legenda"/><w:keepNext/></w:pPr>${marcar(ml.id, ml.nome, `${r(`${rotulo} `, true)}<w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:b/></w:rPr><w:instrText xml:space="preserve"> SEQ ${seqDe(rotulo)} \\* ARABIC </w:instrText></w:r><w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r>${r(String(numero), true)}<w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="end"/></w:r>${r(` – ${fig.titulo.trim() || 'sem título'}`, true)}`)}</w:p>`;
     // Fonte alinhada à margem esquerda da imagem.
     const fonteAqui = (cx: number) => `<w:p><w:pPr><w:pStyle w:val="Quadro"/><w:spacing w:before="60" w:after="240"/><w:ind w:left="${Math.max(0, Math.round((LARGURA - cx / 635) / 2))}"/></w:pPr>${r(`Fonte: ${fig.fonte.trim() || 'o autor.'}`)}</w:p>`;
     const fonte = fonteAqui(LARGURA * 635);
@@ -342,14 +365,16 @@ export async function gerarPreProjetoDocx(e: EntradaDocx): Promise<Blob> {
     `<w:p><w:pPr><w:pStyle w:val="Sumrio1"/>${antes(360)}</w:pPr><w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h \\z \\u </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>`,
   );
   let k = 0;
-  const pagina = () => {
-    const x = paginas[k++];
-    return x ? `<w:r><w:tab/></w:r>${run(String(x.pagina))}` : '';
-  };
   const nomeTitulo = (b: { rotulo: string; texto: string; nivel: number }) => `${b.rotulo ? `${b.rotulo} ` : ''}${b.nivel <= 1 ? b.texto.toUpperCase() : b.texto}`;
+  // Cada título (na ordem) tem a sua marca; o sumário aponta para ela.
+  const marcaTitulo = (i: number) => ({ id: i + 1, nome: `_Toc${String(i + 1).padStart(6, '0')}` });
   for (const b of blocos) {
-    if (b.tipo === 'titulo') corpo.push(par(b.nivel <= 1 ? 'Sumrio1' : b.nivel === 2 ? 'Sumrio2' : 'Sumrio3', run(nomeTitulo(b), { b: b.nivel <= 1 }) + pagina()));
-    else if (b.tipo === 'referencias') corpo.push(par('Sumrio1', run('REFERÊNCIAS', { b: true }) + pagina()));
+    if (b.tipo !== 'titulo' && b.tipo !== 'referencias') continue;
+    const i = k;
+    const pg = paginas[k++]?.pagina;
+    if (b.tipo === 'titulo') {
+      corpo.push(linhaDeSumario(b.nivel <= 1 ? 'Sumrio1' : b.nivel === 2 ? 'Sumrio2' : 'Sumrio3', nomeTitulo(b), b.nivel <= 1, marcaTitulo(i).nome, pg));
+    } else corpo.push(linhaDeSumario('Sumrio1', 'REFERÊNCIAS', true, marcaTitulo(i).nome, pg));
   }
   corpo.push('<w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>');
   // Fim da parte sem números de página.
@@ -357,9 +382,12 @@ export async function gerarPreProjetoDocx(e: EntradaDocx): Promise<Blob> {
   corpo.push(`<w:p><w:pPr><w:sectPr>${margens}</w:sectPr></w:pPr></w:p>`);
 
   // ----- Parte textual -----
+  let t2 = 0;
   for (const b of blocos) {
-    if (b.tipo === 'titulo')
-      corpo.push(par(b.nivel <= 1 ? 'Ttulo1' : b.nivel === 2 ? 'Ttulo2' : 'Ttulo3', run(nomeTitulo(b)), `${b.novaPagina ? '<w:pageBreakBefore/>' : ''}${b.nivel === 0 ? '<w:jc w:val="center"/>' : ''}`));
+    if (b.tipo === 'titulo') {
+      const m = marcaTitulo(t2++);
+      corpo.push(par(b.nivel <= 1 ? 'Ttulo1' : b.nivel === 2 ? 'Ttulo2' : 'Ttulo3', marcar(m.id, m.nome, run(nomeTitulo(b))), `${b.novaPagina ? '<w:pageBreakBefore/>' : ''}${b.nivel === 0 ? '<w:jc w:val="center"/>' : ''}`));
+    }
     else if (b.tipo === 'tabela') corpo.push(...tabelaXml(b.tabela, b.numero));
     else if (b.tipo === 'figura') corpo.push(...figuraXml(b.figura, b.numero));
     else if (b.tipo === 'par') corpo.push(par(b.p.tipo === 'citacao' ? 'Citao' : 'Normal', runsDe(b.p.trechos)));
@@ -377,7 +405,8 @@ export async function gerarPreProjetoDocx(e: EntradaDocx): Promise<Blob> {
       corpo.push(par('Legenda', run('Fonte: o autor.'), '<w:spacing w:before="60" w:after="240"/>'));
     } else if (b.tipo === 'referencias') {
       // Referências: página nova, título sem número e centralizado.
-      corpo.push(par('Ttulo1', run('REFERÊNCIAS'), '<w:pageBreakBefore/><w:jc w:val="center"/>'));
+      const m = marcaTitulo(t2++);
+      corpo.push(par('Ttulo1', marcar(m.id, m.nome, run('REFERÊNCIAS')), '<w:pageBreakBefore/><w:jc w:val="center"/>'));
       for (const r of b.lista) corpo.push(par('Referncia', runsDe(lerTrechos(r))));
     }
   }
@@ -408,9 +437,9 @@ ${estilo('Simples', 'Texto simples', `${simples}${semRecuo}<w:jc w:val="both"/>`
 ${estilo('Natureza', 'Natureza do trabalho', `${simples}<w:ind w:left="${Math.round(7.5 * TW)}" w:firstLine="0"/><w:jc w:val="both"/>`)}
 ${estilo('Legenda', 'caption', `<w:spacing w:before="240" w:after="60" w:line="240" w:lineRule="auto"/>${semRecuo}<w:jc w:val="center"/>`, '<w:sz w:val="20"/><w:szCs w:val="20"/>')}
 ${estilo('Quadro', 'Texto do quadro', `${simples}${semRecuo}<w:jc w:val="left"/>`, '<w:sz w:val="20"/><w:szCs w:val="20"/>')}
-${estilo('Sumrio1', 'toc 1', `<w:tabs><w:tab w:val="right" w:leader="dot" w:pos="${LARGURA}"/></w:tabs><w:spacing w:line="360" w:lineRule="auto"/>${semRecuo}<w:jc w:val="left"/>`)}
-${estilo('Sumrio2', 'toc 2', `<w:tabs><w:tab w:val="right" w:leader="dot" w:pos="${LARGURA}"/></w:tabs><w:spacing w:line="360" w:lineRule="auto"/>${semRecuo}<w:jc w:val="left"/>`)}
-${estilo('Sumrio3', 'toc 3', `<w:tabs><w:tab w:val="right" w:leader="dot" w:pos="${LARGURA}"/></w:tabs><w:spacing w:line="360" w:lineRule="auto"/>${semRecuo}<w:jc w:val="left"/>`)}
+${estilo('Sumrio1', 'toc 1', `<w:tabs><w:tab w:val="right" w:leader="dot" w:pos="${LARGURA}"/></w:tabs><w:spacing w:line="360" w:lineRule="auto"/><w:ind w:left="${TW}" w:right="${TW}" w:hanging="${TW}"/><w:jc w:val="left"/>`)}
+${estilo('Sumrio2', 'toc 2', `<w:tabs><w:tab w:val="right" w:leader="dot" w:pos="${LARGURA}"/></w:tabs><w:spacing w:line="360" w:lineRule="auto"/><w:ind w:left="${TW}" w:right="${TW}" w:hanging="${TW}"/><w:jc w:val="left"/>`)}
+${estilo('Sumrio3', 'toc 3', `<w:tabs><w:tab w:val="right" w:leader="dot" w:pos="${LARGURA}"/></w:tabs><w:spacing w:line="360" w:lineRule="auto"/><w:ind w:left="${TW}" w:right="${TW}" w:hanging="${TW}"/><w:jc w:val="left"/>`)}
 ${estilo('TextodeNotadeRodap', 'footnote text', `${simples}${semRecuo}<w:jc w:val="both"/>`, '<w:sz w:val="20"/><w:szCs w:val="20"/>')}
 ${estilo('Cabealho', 'header', `${simples}${semRecuo}<w:jc w:val="right"/>`, '<w:sz w:val="20"/><w:szCs w:val="20"/>')}
 <w:style w:type="character" w:styleId="RefernciadeNotadeRodap"><w:name w:val="footnote reference"/><w:rPr><w:vertAlign w:val="superscript"/></w:rPr></w:style>

@@ -1974,3 +1974,4 @@ body:has(.ori-foco) .avisos-rapidos { bottom: 84px; }
 .imp-destinos li:first-child { border-top: none; }
 .imp-alerta { margin: 6px 0; padding: 8px 12px; border-radius: 10px; background: #fbf0d6; border: 1px solid #e6cf8f; color: #5c4a06; }
 .botao.desligado { opacity: 0.6; pointer-events: none; }
+.pp-editor .cm-bloco th.cm-grupo { text-align: left; }

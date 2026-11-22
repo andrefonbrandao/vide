@@ -86,3 +86,15 @@ test('modelo da Uniftec: "Resumo:" sem título vai para o resumo (não para os a
   expect(r.texto.consideracoes).toBe('Fim.');
   expect(r.destinos.map((x) => x.nome)).toEqual(['Resumo', 'Abstract', 'Siglas', '1 Introdução', 'Capítulo: O DANO MORAL', 'Considerações finais']);
 });
+
+test('Word: tabela com a primeira linha mesclada (título dentro da tabela) — o título vai para a legenda', async () => {
+  const { importarFinal: imp } = await import('./importarWord');
+  const els = [
+    { k: 'h', nivel: 1, texto: 'INTRODUÇÃO', deEstilo: true },
+    { k: 'p', md: 'Texto.', cit: false, notas: 0 },
+    { k: 'h', nivel: 1, texto: 'ANÁLISE', deEstilo: true },
+    { k: 'tab', linhas: [['Inscrição indevida', '', ''], ['Processo', 'Câmara', 'Valor'], ['123', '13ª', '5 mil']] },
+  ] as Parameters<typeof imp>[0];
+  const t = imp(els, FINAL_VAZIO, true).texto;
+  expect(t.capitulos[0].texto).toBe('::: Tabela – Inscrição indevida\nProcesso | Câmara | Valor\n123 | 13ª | 5 mil\nFonte: o autor.\n:::');
+});

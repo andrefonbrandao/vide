@@ -26,13 +26,19 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 38** aberto em 2026-11-22, a partir da versão 0.53.0 (já publicada). **Fechado e publicado como versão 0.54.0.**
+**Pacote 39** aberto em 2026-11-22, a partir da versão 0.54.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|---|---|
+| 1 | **Tabelas e sumário do Word (caso real).** (a) **Tabela truncada**: no Word do aluno, a primeira linha era uma célula mesclada com o título ("Inscrição indevida em bancos de dados…" ocupando as 6 colunas); o Vide a lia como uma célula e dava quase toda a largura à primeira coluna ("Câ-mar-a", "Recur-so"). Agora: ao importar, a célula mesclada que ocupa a linha toda vira o título da tabela; ao desenhar (PDF, Word e editor), uma linha só com a primeira célula preenchida sai como faixa mesclada; e a largura das colunas garante que a palavra mais longa de cada coluna caiba inteira. (b) **Sumário do Word desregulado ao editar**: as linhas do sumário eram texto fixo; agora cada título tem uma marca (indicador) e cada linha do sumário é um link para ela, com o número da página como campo (PAGEREF), como o próprio Word faz — "Atualizar campo" funciona depois de editar; o mesmo nas listas de tabelas, quadros, figuras e gráficos. Linhas longas do sumário quebram alinhadas (recuo de 1 cm) | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 38 (publicado como 0.54.0 em 2026-11-22)
 
 | # | Ideia | Situação |
 |---|---|---|
 | 1 | **Importar do Word: correções do primeiro caso real** (TCC no modelo da Uniftec). (a) O **resumo ia para os agradecimentos**: no modelo, o resumo fica numa página com título, autor e orientador e começa com "Resumo:" dentro do parágrafo, sem um título "RESUMO". Agora "Resumo:"/"Palavras-chave:" e "Abstract:"/"Keywords:" são reconhecidos onde estiverem (o abstract todo em itálico perde o itálico), e os agradecimentos param quando o título do trabalho (que já apareceu na capa) se repete — agradecimentos sem texto ficam de fora. (b) **Linhas do sumário** ("INTRODUÇÃO 9") e títulos sem texto não aparecem mais na conferência (antes, "Introdução" e "Considerações finais" apareciam repetidas). (c) **Siglas** separadas por tabulação ("CC  Código Civil") viram "CC – Código Civil", sem a linha de cabeçalho ("Sigla  Significado") | Publicada (0.54.0) |
-
-## Pacotes anteriores
 
 ### Pacote 37 (publicado como 0.53.0 em 2026-11-22)
 

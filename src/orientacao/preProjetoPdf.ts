@@ -10,7 +10,7 @@ import { lerParagrafos, lerTrechos, type Paragrafo, type Trecho } from './marcac
 import { estruturaPreProjeto, type Bloco } from './preProjetoEstrutura';
 import { estruturaFinal, FINAL_VAZIO, finalDoPreProjeto, legendaFigura, legendaTabela, LISTAS, siglasDe, type TipoIlustracao } from './trabalhoFinalEstrutura';
 import type { Imagem } from './imagens';
-import { textoPuro, type FiguraTexto, type TabelaTexto } from './marcacao';
+import { ehLinhaDeGrupo, pesosDasColunas, textoPuro, type FiguraTexto, type TabelaTexto } from './marcacao';
 import { rotuloPrazo } from './prazos';
 import type { ConfigPreProjeto, Etapa, TextoProjeto } from './tipos';
 import { naturezaDe, naturezaPadrao } from './campos';
@@ -330,15 +330,22 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (iten
     const ncol = Math.max(1, ...tab.linhas.map((l) => l.length));
     const linhas = tab.linhas.map((l) => Array.from({ length: ncol }, (_, k) => seguro(textoPuro(l[k] ?? ''))));
     if (!linhas.length) linhas.push(Array.from({ length: ncol }, () => ''));
-    // Larguras pelo tamanho do conteúdo (com um mínimo), somando a largura útil.
-    const peso = Array.from({ length: ncol }, (_, k) => Math.min(40, Math.max(6, ...linhas.map((l) => l[k].length))));
+    // Larguras: a palavra mais longa de cada coluna cabe inteira; o resto pelo tamanho do texto.
+    const peso = pesosDasColunas(linhas, ncol);
     const total = peso.reduce((a, b) => a + b, 0);
     const larg = peso.map((p) => (LARG * p) / total);
     const PAD = 4;
-    const celulas = linhas.map((l, r) => l.map((txt, k) => quebrarSimples(txt, r === 0 ? f.b : f.n, PEQ.tam, larg[k] - 2 * PAD)));
+    // Linha de grupo (só a primeira célula preenchida): ocupa a linha toda, em negrito.
+    const grupo = linhas.map((l) => ehLinhaDeGrupo(l));
+    // Cabeçalho: até a primeira linha que não é de grupo (repete no alto de cada página).
+    const fimCab = Math.max(0, grupo.findIndex((g) => !g));
+    const negrito = (r: number) => r <= fimCab || grupo[r];
+    const celulas = linhas.map((l, r) => (grupo[r] ? [quebrarSimples(l[0], f.b, PEQ.tam, LARG - 2 * PAD)] : l.map((txt, k) => quebrarSimples(txt, negrito(r) ? f.b : f.n, PEQ.tam, larg[k] - 2 * PAD))));
     const altura = (r: number) => Math.max(1, ...celulas[r].map((x) => x.length)) * PEQ.linha + 2 * PAD - 2;
     const legendaLinhas = quebrarSimples(legenda, f.b, PEQ.tam, LARG);
-    const precisa = legendaLinhas.length * PEQ.linha + 10 + altura(0) + (linhas.length > 1 ? altura(1) : 0);
+    let alturaCab = 0;
+    for (let r = 0; r <= fimCab && r < linhas.length; r++) alturaCab += altura(r);
+    const precisa = legendaLinhas.length * PEQ.linha + 10 + alturaCab + (linhas.length > fimCab + 1 ? altura(fimCab + 1) : 0);
     if (y - precisa < M.base + alturaNotas) novaPagina();
     if (!topoDaPagina()) y -= 10;
     aoComecar(pdf.getPageCount() - 1);
@@ -354,12 +361,17 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (iten
       const topo = y;
       y -= h;
       let x = M.esq;
+      if (grupo[r]) {
+        if (quadro) pagina.drawRectangle({ x, y, width: LARG, height: h, borderColor: preto, borderWidth: 0.6 });
+        celulas[r][0].forEach((t2, j) => pagina.drawText(t2, { x: x + PAD, y: topo - PAD - (j + 1) * PEQ.linha + 3, size: PEQ.tam, font: f.b, color: preto }));
+        return topo;
+      }
       celulas[r].forEach((ls, k) => {
         if (quadro) pagina.drawRectangle({ x, y, width: larg[k], height: h, borderColor: preto, borderWidth: 0.6 });
         ls.forEach((t2, j) => {
-          const fnt = r === 0 ? f.b : f.n;
+          const fnt = negrito(r) ? f.b : f.n;
           const w = fnt.widthOfTextAtSize(t2, PEQ.tam);
-          const xx = r === 0 || !quadro ? x + (larg[k] - w) / 2 : x + PAD;
+          const xx = r <= fimCab || !quadro ? x + (larg[k] - w) / 2 : x + PAD;
           pagina.drawText(t2, { x: xx, y: topo - PAD - (j + 1) * PEQ.linha + 3, size: PEQ.tam, font: fnt, color: preto });
         });
         x += larg[k];
@@ -367,14 +379,18 @@ export async function gerarPreProjetoPdf(e: EntradaPreProjeto, aoSumario?: (iten
       return topo;
     };
     const cabecalho = () => {
-      const topo = linha(0);
+      let topo = 0;
+      for (let r = 0; r <= fimCab && r < linhas.length; r++) {
+        const t = linha(r);
+        if (r === 0) topo = t;
+      }
       if (!quadro) {
         fio(topo);
         fio(y);
       }
     };
     cabecalho();
-    for (let r = 1; r < linhas.length; r++) {
+    for (let r = fimCab + 1; r < linhas.length; r++) {
       if (y - altura(r) < M.base + alturaNotas) {
         if (!quadro) fio(y);
         novaPagina();

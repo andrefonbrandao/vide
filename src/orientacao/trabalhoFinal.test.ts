@@ -149,3 +149,34 @@ test('figuras e gráficos: lidos do texto, numerados, no PDF e no Word (com a im
   expect(docx).toContain('TOC \\h \\z \\c "Figura"');
   expect(docx).toContain('[imagem não encontrada]');
 });
+
+test('Word: sumário com marcas e PAGEREF (o Word consegue atualizar); tabela com linha de grupo mesclada', async () => {
+  const { gerarPreProjetoDocx } = await import('./preProjetoDocx');
+  const final: TextoFinal = {
+    ...FINAL,
+    capitulos: [novaParte('Análise', '::: Tabela – Casos\nInscrição indevida em cadastros |  | \nProcesso | Câmara | Valor\n123 | 13ª | 5 mil\nFonte: TJRS.\n:::')],
+    apendices: [],
+    anexos: [],
+  };
+  const xml = new TextDecoder().decode(new Uint8Array(await (await gerarPreProjetoDocx({ nome: 'A', config: CFG, texto: { ...TEXTO_VAZIO, final }, etapas: [] })).arrayBuffer()));
+  expect(xml).toContain('<w:bookmarkStart w:id="1" w:name="_Toc000001"/>');
+  expect(xml).toContain('<w:hyperlink w:anchor="_Toc000001" w:history="1">');
+  expect(xml).toContain('PAGEREF _Toc000001 \\h');
+  expect(xml).toContain('w:name="_TocTabela1"');
+  expect(xml).toMatch(/<w:gridSpan w:val="3"\/>.*Inscrição indevida em cadastros/);
+});
+
+test('larguras das colunas: a palavra mais longa cabe; linha de grupo não conta', async () => {
+  const { pesosDasColunas } = await import('./marcacao');
+  const p = pesosDasColunas(
+    [
+      ['Inscrição indevida em bancos de dados restritivos de crédito', '', ''],
+      ['Processo', 'Câmara', 'Recurso'],
+      ['52211653520248210001', '13ª', 'Apelação'],
+    ],
+    3,
+  );
+  expect(p[0]).toBe(21);
+  expect(p[1]).toBeGreaterThanOrEqual(7);
+  expect(p[2]).toBeGreaterThanOrEqual(9);
+});
