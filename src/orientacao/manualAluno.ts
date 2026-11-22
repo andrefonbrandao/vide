@@ -91,6 +91,15 @@ export function manualDoAluno(formulario: 'pre' | 'final' | null): SecaoManual[]
           ],
         },
         {
+          p: 'Escrevo no Word (ou no Google Docs). Como trago o texto?',
+          r: [
+            'Use **Importar do Word**, no alto do formulário, e escolha o arquivo .docx (no Google Docs: Arquivo › Fazer download › Microsoft Word). O Vide distribui o texto pelas partes do formulário e traz junto as notas de rodapé, as citações recuadas, as tabelas e as figuras.',
+            'Antes, formate os títulos com os estilos do Word (**Título 1** para "1 INTRODUÇÃO", "REFERÊNCIAS"…; **Título 2** e **Título 3** para os subtítulos): é por eles que o Vide sabe onde começa cada parte. O botão "Saiba como" mostra o passo a passo.',
+            'Uma tela de conferência mostra para onde vai cada parte antes de importar. O texto importado substitui o do formulário; se não gostar, use **Desfazer a importação**.',
+            'Para trechos menores, copie no Word e cole no campo: negrito, itálico, tabelas, citações e notas vêm junto.',
+          ],
+        },
+        {
           p: 'Preciso salvar?',
           r: [
             'Não: o texto é salvo sozinho, alguns segundos depois de você parar de digitar. Confira o aviso "Salvo às…" no alto.',

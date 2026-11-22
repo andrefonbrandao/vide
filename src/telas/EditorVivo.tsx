@@ -8,7 +8,7 @@ import { useContext, useEffect, useRef } from 'react';
 import { EditorSelection, EditorState, StateEffect, StateField, type Range } from '@codemirror/state';
 import { Decoration, EditorView, keymap, WidgetType, type DecorationSet } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
-import { separarTabelas, textoPuro } from '../orientacao/marcacao';
+import { separarTabelas, textoDaTabela, textoPuro } from '../orientacao/marcacao';
 import { imagemDaPagina } from '../orientacao/imagens';
 import { ContextoPagina } from './contextoPagina';
 
@@ -262,7 +262,26 @@ const campoFoco = StateField.define<boolean>({
 // ---------- Colar do Word: negrito, itálico e parágrafos viram as marcações ----------
 export function htmlParaMarcacao(html: string): string {
   const doc = new DOMParser().parseFromString(html, 'text/html');
+  // Notas de rodapé coladas do Word ("#_ftn1") ou do Google Docs ("#ftnt1"): o texto fica no fim.
+  const notas = new Map<string, string>();
+  const limparNota = (t: string) => t.replace(/^\s*\[?\d+\]?\s*/, '').replace(/\s+/g, ' ').trim();
+  doc.querySelectorAll<HTMLElement>('div[id^="ftn"], div[id^="_ftn"]').forEach((d) => {
+    notas.set(d.id.replace(/^_/, ''), limparNota(d.textContent ?? ''));
+    d.remove();
+  });
+  doc.querySelectorAll<HTMLElement>('a[id^="ftnt"]:not([id^="ftnt_ref"])').forEach((a) => {
+    const par = a.closest('p, div') ?? a.parentElement;
+    if (!par) return;
+    notas.set(a.id, limparNota((par.textContent ?? '').replace(a.textContent ?? '', '')));
+    par.remove();
+  });
   let out = '';
+  const pts = (st: string) => {
+    const m = /margin-left\s*:\s*([\d.]+)\s*(cm|pt|px|in)/i.exec(st);
+    if (!m) return 0;
+    const v = Number(m[1]);
+    return m[2] === 'cm' ? v * 28.35 : m[2] === 'px' ? v * 0.75 : m[2] === 'in' ? v * 72 : v;
+  };
   const andar = (no: Node, b: boolean, i: boolean) => {
     if (no.nodeType === Node.TEXT_NODE) {
       const t = (no.textContent ?? '').replace(/\s+/g, ' ');
@@ -281,6 +300,25 @@ export function htmlParaMarcacao(html: string): string {
     if (!(no instanceof HTMLElement)) return;
     const tag = no.tagName.toLowerCase();
     if (['style', 'script', 'head', 'title', 'meta'].includes(tag)) return;
+    // Chamada de nota: vira [[texto da nota]].
+    if (tag === 'a') {
+      const href = no.getAttribute('href') ?? '';
+      const m = /^#_?(ftn\d+|ftnt\d+)$/.exec(href);
+      if (m) {
+        const t = notas.get(m[1]);
+        if (t) out += `[[${t}]]`;
+        return;
+      }
+    }
+    // Tabela: vira o bloco de tabela do Vide.
+    if (tag === 'table') {
+      const linhas = [...no.querySelectorAll('tr')].map((tr) => [...tr.querySelectorAll('td, th')].map((c) => (c.textContent ?? '').replace(/\s+/g, ' ').trim())).filter((l) => l.some(Boolean));
+      if (linhas.length) {
+        if (out && !out.endsWith('\n')) out += '\n';
+        out += `${textoDaTabela({ tipo: 'tabela', titulo: '', fonte: '', linhas })}\n`;
+      }
+      return;
+    }
     const st = no.getAttribute('style') ?? '';
     const nb = b || tag === 'b' || tag === 'strong' || /font-weight\s*:\s*(bold|[6-9]00)/i.test(st);
     const ni = i || tag === 'i' || tag === 'em' || /font-style\s*:\s*italic/i.test(st);
@@ -290,7 +328,10 @@ export function htmlParaMarcacao(html: string): string {
       return;
     }
     if (bloco && out && !out.endsWith('\n')) out += '\n';
-    if (/^h[1-6]$/.test(tag)) out += '## ';
+    if (/^h[12]$/.test(tag)) out += '## ';
+    else if (/^h[3-6]$/.test(tag)) out += '### ';
+    // Parágrafo recuado (como a citação longa, com 4 cm) ou marcado como citação.
+    else if ((tag === 'p' || tag === 'blockquote') && (tag === 'blockquote' || /quote|cita/i.test(no.className) || pts(st) >= 80)) out += '> ';
     // Títulos já são negrito por natureza: não marca de novo.
     no.childNodes.forEach((c) => andar(c, /^h[1-6]$/.test(tag) ? false : nb, ni));
     if (bloco && !out.endsWith('\n')) out += '\n';
@@ -301,6 +342,8 @@ export function htmlParaMarcacao(html: string): string {
     .replace(/\*\*(\s*)_([^_\n]*)_(\s*)\*\*/g, '$1**_$2_**$3')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{2,}/g, '\n')
+    .replace(/^(#{2,3}) (cap[íi]tulo\s+)?\d+(\.\d+)*\.?\s*[–—-]?\s*/gim, '$1 ')
+    .replace(/^> \s*$/gm, '')
     .trim();
 }
 
@@ -350,7 +393,7 @@ export default function EditorVivo({ id, rotulo, valor, aoMudar, linhas, subtitu
             },
             paste: (e, view) => {
               const html = e.clipboardData?.getData('text/html');
-              if (!html || !/<(b|strong|i|em|span|p)\b/i.test(html)) return false;
+              if (!html || !/<(b|strong|i|em|span|p|table|h[1-6])\b/i.test(html)) return false;
               const texto = htmlParaMarcacao(html);
               if (!texto) return false;
               e.preventDefault();

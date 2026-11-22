@@ -14,6 +14,7 @@ import { buscarImagens, imagemDaPagina, lembrarImagem, reduzirImagem } from '../
 import { finalDoPreProjeto, imagensDoFinal } from '../orientacao/trabalhoFinalEstrutura';
 import type { DadosOrientando, TextoFinal, TextoProjeto } from '../orientacao/tipos';
 import { CamposFinal } from './TrabalhoFinalForm';
+import { ImportarWord } from './ImportarWord';
 
 type Campo = Exclude<keyof TextoProjeto, 'atualizado_em' | 'final' | 'formatoEnvio'>;
 
@@ -641,6 +642,42 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
   /** O trabalho final começa com o texto do pré-projeto (que continua guardado ao lado). */
   const fin: TextoFinal | null = texto && final ? (texto.final ?? finalDoPreProjeto(texto)) : null;
   const pagina = useMemo(() => ({ codigo, cabecalho: { 'X-Vide-Pin': pin } }), [codigo, pin]);
+  // Importar do Word: o texto anterior fica guardado neste aparelho, para desfazer.
+  const chaveCopia = `vide.orientacao.antesImportar.${codigo}`;
+  const [importando, setImportando] = useState(false);
+  const [copia, setCopia] = useState<string | null>(() => {
+    try {
+      return (JSON.parse(localStorage.getItem(chaveCopia) ?? 'null') as { em: string } | null)?.em ?? null;
+    } catch {
+      return null;
+    }
+  });
+  const importarTexto = (novo: TextoProjeto) => {
+    if (texto) {
+      try {
+        const em = new Date().toISOString();
+        localStorage.setItem(chaveCopia, JSON.stringify({ em, texto }));
+        setCopia(em);
+      } catch {
+        /* sem espaço: segue sem a cópia */
+      }
+    }
+    aplicar(novo);
+    setImportando(false);
+    setEstado('Texto importado do Word. Confira cada parte.');
+  };
+  const desfazerImportacao = () => {
+    try {
+      const c = JSON.parse(localStorage.getItem(chaveCopia) ?? 'null') as { texto: TextoProjeto } | null;
+      if (!c || !window.confirm('Voltar ao texto de antes da importação? O texto importado (e o que você mudou depois dele) sai.')) return;
+      aplicar(c.texto);
+      localStorage.removeItem(chaveCopia);
+      setCopia(null);
+      setEstado('Importação desfeita: voltou o texto de antes.');
+    } catch {
+      /* ignore */
+    }
+  };
   // Apontamentos do orientador: lidos ao abrir e ao voltar para a aba.
   const [aponts, setAponts] = useState<Apontamento[]>([]);
   const [ativo, setAtivo] = useState<string | null>(null);
@@ -792,6 +829,27 @@ export function MeuPreProjeto({ codigo, pin, dados }: { codigo: string; pin: str
           {ultimoEnvio ? ` · Último envio: ${new Date(ultimoEnvio).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}` : ''}
         </span>
       </div>
+      <div className="imp-barra">
+        <span className="ajuda" style={{ margin: 0 }}>
+          Escreve no Word ou no Google Docs? Traga o arquivo: títulos, notas de rodapé, citações, tabelas e figuras vêm junto.
+        </span>
+        <button type="button" className="botao pequeno escuro" onClick={() => setImportando(true)}>
+          Importar do Word
+        </button>
+        {copia && (
+          <span className="imp-desfazer">
+            Importado em {new Date(copia).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}.{' '}
+            <button type="button" className="ori-link" onClick={desfazerImportacao}>
+              Desfazer a importação
+            </button>
+          </span>
+        )}
+      </div>
+      {importando && (
+        <ContextoPagina.Provider value={pagina}>
+          <ImportarWord final={final} texto={comFinal()} aoFechar={() => setImportando(false)} aoImportar={importarTexto} />
+        </ContextoPagina.Provider>
+      )}
       {erro && <p className="oa-erro">{erro}</p>}
       {conflito && (
         <div className="pp-conflito" role="alert">

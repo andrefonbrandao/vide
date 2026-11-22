@@ -26,13 +26,19 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 35** aberto em 2026-11-20, a partir da versão 0.50.0 (já publicada). **Fechado e publicado como versão 0.51.0.**
+**Pacote 36** aberto em 2026-11-22, a partir da versão 0.51.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|---|---|
+| 1 | **Importar do Word.** Botão **"Importar do Word"** no formulário do orientando (pré-projeto e trabalho final). Primeiro, uma janela lembra de formatar títulos e subtítulos com os **estilos de título do Word** (Título 1, 2, 3), com **"Saiba como"** (passo a passo no Word e no Google Docs). O Vide lê o .docx (sem bibliotecas: src/orientacao/lerDocx.ts) — títulos pelos estilos (ou, sem estilos, linhas curtas em negrito numeradas ou em maiúsculas), negrito e itálico, **notas de rodapé de verdade**, **citações** pelo recuo, **tabelas** e **figuras** (as imagens são reduzidas e enviadas), legendas ("Tabela 1 – …") e fontes ("Fonte: …") — e distribui pelo formulário (src/orientacao/importarWord.ts): resumo e palavras-chave, abstract, agradecimentos, siglas, introdução, objetivos (geral, específicos, justificativa), **cada título do desenvolvimento vira um capítulo com o mesmo nome**, considerações finais, referências, apêndices e anexos; no pré-projeto, problema, hipóteses, fundamentação, as quatro partes da metodologia e recursos. Os números dos títulos saem (o Vide numera). Capa, sumário e listas ficam de fora. Uma **tela de conferência** mostra para onde vai cada parte (parágrafos, subtítulos, tabelas, figuras, notas) e os avisos; o importado **substitui** o texto, com **"Desfazer a importação"** (cópia do texto anterior guardada no aparelho). **Colar melhorado**: tabelas coladas viram tabelas, parágrafos recuados viram citação longa, notas de rodapé do Word e do Google Docs vêm junto e os números dos títulos saem. Manual do aluno atualizado | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 35 (publicado como 0.51.0 em 2026-11-20)
 
 | # | Ideia | Situação |
 |---|---|---|
 | 1 | **Senha do professor (porteiro).** O endereço principal do Vide (o app do professor) só abre com a senha do professor: num aparelho novo aparece a tela "Vide — entrar"; acertando, o aparelho fica liberado por um ano (cookie assinado; trocar a senha desconecta todos). Continuam abertos, como antes: as páginas dos alunos (/j jogo, /t treino, /p processo, /o orientação), o controle pelo celular (QR da sala) e os arquivos do app. Criar treinos, processos e páginas de orientação também passa a exigir a sessão do professor. 8 senhas erradas seguidas (do mesmo endereço de internet) bloqueiam por 15 minutos. **A senha é o segredo SENHA_PROFESSOR, guardado no painel do Cloudflare** (sem ele, o porteiro fica desligado). /api/sair desconecta o aparelho | Publicada (0.51.0) |
-
-## Pacotes anteriores
 
 ### Pacote 34 (publicado como 0.50.0 em 2026-11-20)
 

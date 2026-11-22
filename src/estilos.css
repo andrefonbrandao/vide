@@ -1958,3 +1958,19 @@ body:has(.ori-foco) .avisos-rapidos { bottom: 84px; }
 .comb-aviso { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between; padding: 10px 14px; border-radius: 12px; background: #fff8e3; border: 1px solid #ecd98a; }
 .ori-combinado-pendente { color: #8a6d00; display: inline-flex; align-items: center; gap: 6px; }
 .ori-ponto.amarelo { background: #e2b93b; }
+
+/* Importar do Word */
+.imp-barra { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border: 1px dashed var(--linha); border-radius: 12px; background: #fff; }
+.imp-barra > .ajuda { flex: 1 1 260px; }
+.imp-desfazer { flex-basis: 100%; font-size: 13.5px; color: var(--tinta-2, #4a5550); }
+.imp { width: min(720px, 100%); }
+.imp-aviso { padding: 10px 14px; border-radius: 10px; background: #fff8e3; border: 1px solid #ecd98a; line-height: 1.5; }
+.imp-aviso .ori-link { display: inline; margin-left: 6px; font-weight: 700; }
+.imp-tutorial { margin-top: 10px; padding: 4px 14px 8px; border-radius: 10px; background: #fff; border: 1px solid var(--linha); }
+.imp-tutorial ol { margin: 4px 0 8px; padding-left: 20px; line-height: 1.55; }
+.imp-tutorial p { margin: 8px 0 2px; }
+.imp-destinos { list-style: none; margin: 0; padding: 0; max-height: 46vh; overflow: auto; border: 1px solid var(--linha); border-radius: 10px; background: #fff; }
+.imp-destinos li { display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; border-top: 1px solid #edf0ea; }
+.imp-destinos li:first-child { border-top: none; }
+.imp-alerta { margin: 6px 0; padding: 8px 12px; border-radius: 10px; background: #fbf0d6; border: 1px solid #e6cf8f; color: #5c4a06; }
+.botao.desligado { opacity: 0.6; pointer-events: none; }
