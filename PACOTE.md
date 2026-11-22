@@ -26,11 +26,11 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 37** aberto em 2026-11-22, a partir da versão 0.52.0 (já publicada).
+**Pacote 37** aberto em 2026-11-22, a partir da versão 0.52.0 (já publicada). **Fechado e publicado como versão 0.53.0.**
 
 | # | Ideia | Situação |
 |---|---|---|
-| 1 | **Proteção extra da senha:** o Vide passa a não apagar, ao publicar, as variáveis criadas no painel do Cloudflare ("keep_vars"). A senha do professor deve ser criada como **Secret** (assim ela nunca é apagada); na publicação da 0.52.0 ela tinha sido criada como texto e sumiu — recriada como Secret em 22/11 | No pacote |
+| 1 | **Proteção extra da senha:** o Vide passa a não apagar, ao publicar, as variáveis criadas no painel do Cloudflare ("keep_vars"). A senha do professor deve ser criada como **Secret** (assim ela nunca é apagada); na publicação da 0.52.0 ela tinha sido criada como texto e sumiu — recriada como Secret em 22/11 | Publicada (0.53.0) |
 
 ## Pacotes anteriores
 
