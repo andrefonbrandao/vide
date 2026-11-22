@@ -36,6 +36,8 @@
     // Porteiro do app do professor (conta os erros de senha por endereço de internet).
     { "tag": "v6", "new_sqlite_classes": ["Porteiro"] }
   ],
+  // Não apaga, ao publicar, as variáveis criadas no painel do Cloudflare (a senha é um segredo, que já fica).
+  "keep_vars": true,
   "workers_dev": true,
   "preview_urls": false
 }

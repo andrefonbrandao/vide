@@ -26,13 +26,19 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 36** aberto em 2026-11-22, a partir da versão 0.51.0 (já publicada). **Fechado e publicado como versão 0.52.0.**
+**Pacote 37** aberto em 2026-11-22, a partir da versão 0.52.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|---|---|
+| 1 | **Proteção extra da senha:** o Vide passa a não apagar, ao publicar, as variáveis criadas no painel do Cloudflare ("keep_vars"). A senha do professor deve ser criada como **Secret** (assim ela nunca é apagada); na publicação da 0.52.0 ela tinha sido criada como texto e sumiu — recriada como Secret em 22/11 | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 36 (publicado como 0.52.0 em 2026-11-22)
 
 | # | Ideia | Situação |
 |---|---|---|
 | 1 | **Importar do Word.** Botão **"Importar do Word"** no formulário do orientando (pré-projeto e trabalho final). Primeiro, uma janela lembra de formatar títulos e subtítulos com os **estilos de título do Word** (Título 1, 2, 3), com **"Saiba como"** (passo a passo no Word e no Google Docs). O Vide lê o .docx (sem bibliotecas: src/orientacao/lerDocx.ts) — títulos pelos estilos (ou, sem estilos, linhas curtas em negrito numeradas ou em maiúsculas), negrito e itálico, **notas de rodapé de verdade**, **citações** pelo recuo, **tabelas** e **figuras** (as imagens são reduzidas e enviadas), legendas ("Tabela 1 – …") e fontes ("Fonte: …") — e distribui pelo formulário (src/orientacao/importarWord.ts): resumo e palavras-chave, abstract, agradecimentos, siglas, introdução, objetivos (geral, específicos, justificativa), **cada título do desenvolvimento vira um capítulo com o mesmo nome**, considerações finais, referências, apêndices e anexos; no pré-projeto, problema, hipóteses, fundamentação, as quatro partes da metodologia e recursos. Os números dos títulos saem (o Vide numera). Capa, sumário e listas ficam de fora. Uma **tela de conferência** mostra para onde vai cada parte (parágrafos, subtítulos, tabelas, figuras, notas) e os avisos; o importado **substitui** o texto, com **"Desfazer a importação"** (cópia do texto anterior guardada no aparelho). **Colar melhorado**: tabelas coladas viram tabelas, parágrafos recuados viram citação longa, notas de rodapé do Word e do Google Docs vêm junto e os números dos títulos saem. Manual do aluno atualizado | Publicada (0.52.0) |
-
-## Pacotes anteriores
 
 ### Pacote 35 (publicado como 0.51.0 em 2026-11-20)
 
