@@ -26,11 +26,11 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 38** aberto em 2026-11-22, a partir da versão 0.53.0 (já publicada).
+**Pacote 38** aberto em 2026-11-22, a partir da versão 0.53.0 (já publicada). **Fechado e publicado como versão 0.54.0.**
 
 | # | Ideia | Situação |
 |---|---|---|
-| 1 | **Importar do Word: correções do primeiro caso real** (TCC no modelo da Uniftec). (a) O **resumo ia para os agradecimentos**: no modelo, o resumo fica numa página com título, autor e orientador e começa com "Resumo:" dentro do parágrafo, sem um título "RESUMO". Agora "Resumo:"/"Palavras-chave:" e "Abstract:"/"Keywords:" são reconhecidos onde estiverem (o abstract todo em itálico perde o itálico), e os agradecimentos param quando o título do trabalho (que já apareceu na capa) se repete — agradecimentos sem texto ficam de fora. (b) **Linhas do sumário** ("INTRODUÇÃO 9") e títulos sem texto não aparecem mais na conferência (antes, "Introdução" e "Considerações finais" apareciam repetidas). (c) **Siglas** separadas por tabulação ("CC  Código Civil") viram "CC – Código Civil", sem a linha de cabeçalho ("Sigla  Significado") | No pacote |
+| 1 | **Importar do Word: correções do primeiro caso real** (TCC no modelo da Uniftec). (a) O **resumo ia para os agradecimentos**: no modelo, o resumo fica numa página com título, autor e orientador e começa com "Resumo:" dentro do parágrafo, sem um título "RESUMO". Agora "Resumo:"/"Palavras-chave:" e "Abstract:"/"Keywords:" são reconhecidos onde estiverem (o abstract todo em itálico perde o itálico), e os agradecimentos param quando o título do trabalho (que já apareceu na capa) se repete — agradecimentos sem texto ficam de fora. (b) **Linhas do sumário** ("INTRODUÇÃO 9") e títulos sem texto não aparecem mais na conferência (antes, "Introdução" e "Considerações finais" apareciam repetidas). (c) **Siglas** separadas por tabulação ("CC  Código Civil") viram "CC – Código Civil", sem a linha de cabeçalho ("Sigla  Significado") | Publicada (0.54.0) |
 
 ## Pacotes anteriores
 
