@@ -22,6 +22,48 @@ interface Secao {
   elementos: Elemento[];
 }
 
+const puro = (md: string) => md.replace(/\*\*|_|\[\[[^\]]*\]\]/g, '').trim();
+
+/** "Resumo:" e "Abstract:" dentro do parágrafo (modelo da Uniftec: página com título, autor e o resumo,
+ * sem um título "RESUMO"): tira do meio do texto e devolve à parte, com as palavras-chave. */
+export function extrairResumos(elementos: Elemento[]): { resto: Elemento[]; resumo?: { texto: string; palavras: string }; abstract?: { texto: string; palavras: string } } {
+  const resto: Elemento[] = [];
+  const out: { resumo?: { texto: string; palavras: string }; abstract?: { texto: string; palavras: string } } = {};
+  let atual: { texto: string; palavras: string } | null = null;
+  for (const e of elementos) {
+    if (e.k === 'p') {
+      const pu = puro(e.md);
+      const r = /^(resumo|abstract)\s*:\s*/i.exec(pu);
+      if (r) {
+        // Abstract em itálico por inteiro: tira o itálico (é a língua do texto, não destaque).
+        let md = e.md;
+        if (/^abstract/i.test(r[1])) md = md.replace(/^\*\*_(.*)_\*\*$/s, '**$1**').replace(/^_(.*)_$/s, '$1');
+        md = md.replace(/^\*\*_?(resumo|abstract)\s*:?\s*_?\*\*\s*:?\s*/i, '').replace(/^\*\*(resumo|abstract)\s*:\s*/i, '**').replace(/^_?(resumo|abstract)\s*:?_?\s*/i, '');
+        // Rótulo e texto no mesmo negrito: o texto do resumo não é negrito.
+        md = md.replace(/^\*\*\*\*/, '').trim().replace(/^\*\*([^*]*)\*\*$/, '$1');
+        // Abstract todo em itálico (em vários pedaços): tira as marcas de itálico.
+        if (/^abstract/i.test(r[1]) && /^(\*\*)?_/.test(md)) md = md.replace(/(^|\s|\*\*)_/g, '$1').replace(/_(?=$|\s|\*\*|[.,;:)])/g, '').replace(/\*\*\s*\*\*/g, ' ').replace(/^\*\*([^*]*)\*\*$/, '$1').trim();
+        atual = { texto: md, palavras: '' };
+        if (/^resumo/i.test(r[1])) out.resumo = atual;
+        else out.abstract = atual;
+        continue;
+      }
+      const pc = /^(palavras?[- ]chave|key[- ]?words?)\s*:\s*/i.exec(pu);
+      if (pc && atual) {
+        atual.palavras = pu.replace(pc[0], '').trim();
+        atual = null;
+        continue;
+      }
+    }
+    if (e.k === 'h') atual = null;
+    resto.push(e);
+  }
+  return { resto, ...out };
+}
+
+/** Linhas do sumário ("INTRODUÇÃO 7", "2.1 Objetivos ........ 9") reconhecidas como título: saem. */
+const ehLinhaDeSumario = (e: Elemento) => e.k === 'h' && !e.deEstilo && /(\.{3,}|\s)\d{1,3}$/.test(e.texto);
+
 /** Separa por títulos de nível 1 (o que vem antes do primeiro fica em "preambulo"). */
 function secoes(elementos: Elemento[]): { preambulo: Elemento[]; lista: Secao[] } {
   const lista: Secao[] = [];
@@ -124,8 +166,16 @@ function resumoEPalavras(els: Elemento[], rotulo: RegExp): { texto: string; pala
   return { texto: ps.join('\n'), palavras };
 }
 
-export function importarFinal(elementos: Elemento[], atual: TextoFinal, temEstilos: boolean): ResultadoImportacao<TextoFinal> {
-  const { lista } = secoes(elementos);
+export function importarFinal(todosEls: Elemento[], atual: TextoFinal, temEstilos: boolean): ResultadoImportacao<TextoFinal> {
+  const ext = extrairResumos(todosEls.filter((e) => !ehLinhaDeSumario(e)));
+  const { preambulo, lista } = secoes(ext.resto);
+  // Textos que já apareceram (capa, folha de rosto…): quando se repetem num elemento pré-textual
+  // (agradecimentos, dedicatória), é o começo da página do resumo, e não mais o agradecimento.
+  const vistos = new Set(preambulo.flatMap((e) => (e.k === 'p' ? [puro(e.md)] : [])));
+  const preTextualCom = (els: Elemento[], antes: Set<string>) => {
+    const k = els.findIndex((e) => e.k === 'p' && antes.has(puro(e.md)));
+    return (k >= 0 ? els.slice(0, k) : els).filter((e) => !(e.k === 'p' && /^(autor|author|orientador\s*\(?a?\)?|advisor|teacher)$|@/i.test(puro(e.md))));
+  };
   const t: TextoFinal = { ...FINAL_VAZIO, titulo: atual.titulo, subtitulo: atual.subtitulo, tituloIngles: atual.tituloIngles, subtituloIngles: atual.subtituloIngles, email: atual.email };
   const destinos: Destino[] = [];
   const ignorados: string[] = [];
@@ -136,9 +186,26 @@ export function importarFinal(elementos: Elemento[], atual: TextoFinal, temEstil
   let fase: 'pre' | 'texto' | 'pos' = 'pre';
   const temIntroducao = lista.some((x) => casa(x.chave, 'introducao'));
   const reg = (nome: string, c: Contagem) => destinos.push({ nome, contagem: c });
+  if (ext.resumo) {
+    t.resumo = ext.resumo.texto;
+    t.palavrasChave = ext.resumo.palavras;
+    reg('Resumo', { ...zero(), paragrafos: 1 });
+  }
+  if (ext.abstract) {
+    t.abstract = ext.abstract.texto;
+    t.keywords = ext.abstract.palavras;
+    reg('Abstract', { ...zero(), paragrafos: 1 });
+  }
   for (const s of lista) {
     const k = s.chave;
     const c = zero();
+    const soTitulo = !s.elementos.some((e) => e.k === 'p' || e.k === 'tab' || e.k === 'img');
+    const anteriores = new Set(vistos);
+    for (const e of s.elementos) if (e.k === 'p') vistos.add(puro(e.md));
+    if (soTitulo) {
+      if (!ignorados.includes(s.titulo)) ignorados.push(s.titulo);
+      continue;
+    }
     if (casa(k, 'resumo')) {
       const r = resumoEPalavras(s.elementos, /^palavras?[- ]chave\s*:?\s*/i);
       t.resumo = r.texto;
@@ -151,17 +218,25 @@ export function importarFinal(elementos: Elemento[], atual: TextoFinal, temEstil
       t.keywords = r.palavras;
       c.paragrafos = r.texto.split('\n').filter(Boolean).length;
       reg('Abstract', c);
-    } else if (casa(k, 'agradecimento', 'agradecimentos')) {
-      t.agradecimentos = paraTexto(s.elementos, c);
-      reg('Agradecimentos', c);
-    } else if (casa(k, 'dedicatoria')) {
-      t.dedicatoria = paraTexto(s.elementos, c);
-      reg('Dedicatória', c);
-    } else if (casa(k, 'epigrafe')) {
-      t.epigrafe = paraTexto(s.elementos, c);
-      reg('Epígrafe', c);
+    } else if (casa(k, 'agradecimento', 'agradecimentos', 'dedicatoria', 'epigrafe')) {
+      const els = preTextualCom(s.elementos, anteriores);
+      const nome = casa(k, 'dedicatoria') ? 'Dedicatória' : casa(k, 'epigrafe') ? 'Epígrafe' : 'Agradecimentos';
+      if (!els.some((e) => e.k === 'p')) {
+        ignorados.push(`${s.titulo} (sem texto)`);
+        continue;
+      }
+      const v = paraTexto(els, c);
+      if (nome === 'Dedicatória') t.dedicatoria = v;
+      else if (nome === 'Epígrafe') t.epigrafe = v;
+      else t.agradecimentos = v;
+      reg(nome, c);
     } else if (/^lista de (abreviaturas|siglas)/.test(k) || casa(k, 'siglas', 'abreviaturas')) {
-      t.siglas = linhasSimples(s.elementos).join('\n');
+      // "CC Código Civil" (separados por tabulação no Word) vira "CC – Código Civil"; o cabeçalho sai.
+      t.siglas = linhasSimples(s.elementos)
+        .map((l) => l.replace(/\*\*|_/g, '').trim())
+        .filter((l) => l && !/^siglas?\s*(e\s+abreviaturas?)?\s*[–—-]?\s*(significados?|descri[çc][ãa]o|nome)?$/i.test(l))
+        .map((l) => (/\s[–—:-]\s|:/.test(l) ? l : l.replace(/^(\S+)\s+/, '$1 – ')))
+        .join('\n');
       c.paragrafos = t.siglas.split('\n').filter(Boolean).length;
       reg('Siglas', c);
     } else if (/^(sumario|lista de|indice)/.test(k)) {
@@ -245,8 +320,10 @@ function* paraTodos(t: TextoFinal): Generator<string> {
 }
 
 /** Pré-projeto: os campos do projeto de pesquisa, pelos títulos e subtítulos. */
-export function importarPre(elementos: Elemento[], atual: TextoProjeto, temEstilos: boolean): ResultadoImportacao<TextoProjeto> {
-  const { lista } = secoes(elementos);
+export function importarPre(todosEls: Elemento[], atual: TextoProjeto, temEstilos: boolean): ResultadoImportacao<TextoProjeto> {
+  const ext = extrairResumos(todosEls.filter((e) => !ehLinhaDeSumario(e)));
+  const { lista: todas } = secoes(ext.resto);
+  const lista = todas.filter((x) => x.elementos.some((e) => e.k === 'p' || e.k === 'tab' || e.k === 'img'));
   const t: TextoProjeto = { ...atual, resumo: '', palavrasChave: '', introducao: '', problema: '', hipoteses: '', objetivoGeral: '', objetivosEspecificos: '', justificativa: '', fundamentacao: '', metodo: '', populacao: '', coleta: '', analise: '', recursos: '', referencias: '' };
   const destinos: Destino[] = [];
   const ignorados: string[] = [];
@@ -260,6 +337,11 @@ export function importarPre(elementos: Elemento[], atual: TextoProjeto, temEstil
     reg(rotulo, c);
   };
   let fundamentacaoExtra = 0;
+  if (ext.resumo) {
+    t.resumo = ext.resumo.texto;
+    t.palavrasChave = ext.resumo.palavras;
+    reg('Resumo', { ...zero(), paragrafos: 1 });
+  }
   for (const s of lista) {
     const k = s.chave;
     const { antes, subs } = subsecoes(s.elementos);

@@ -71,3 +71,18 @@ test('ida e volta: o Word gerado pelo Vide volta para os mesmos campos (com nota
   expect(t.consideracoes).toBe('Fim.');
   expect(t.referencias).toBe('A, a.\nB, b.');
 });
+
+test('modelo da Uniftec: "Resumo:" sem título vai para o resumo (não para os agradecimentos); siglas e sumário', async () => {
+  const d = await lerDocx(abrir('modelo-uniftec.docx'));
+  const r = importarFinal(d.elementos, FINAL_VAZIO, d.temEstilos);
+  expect(r.texto.agradecimentos).toBe('');
+  expect(r.texto.resumo).toBe('Este trabalho analisa o método bifásico.');
+  expect(r.texto.palavrasChave).toBe('dano moral. método bifásico.');
+  expect(r.texto.abstract).toBe('This study analyzes the method.');
+  expect(r.texto.keywords).toBe('moral damages; method.');
+  expect(r.texto.siglas).toBe('CC – Código Civil\nSTJ – Superior Tribunal de Justiça');
+  expect(r.texto.introducao).toBe('Texto da introdução.');
+  expect(r.texto.capitulos.map((c) => c.titulo)).toEqual(['O DANO MORAL']);
+  expect(r.texto.consideracoes).toBe('Fim.');
+  expect(r.destinos.map((x) => x.nome)).toEqual(['Resumo', 'Abstract', 'Siglas', '1 Introdução', 'Capítulo: O DANO MORAL', 'Considerações finais']);
+});

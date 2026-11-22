@@ -26,13 +26,19 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 37** aberto em 2026-11-22, a partir da versão 0.52.0 (já publicada). **Fechado e publicado como versão 0.53.0.**
+**Pacote 38** aberto em 2026-11-22, a partir da versão 0.53.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|---|---|
+| 1 | **Importar do Word: correções do primeiro caso real** (TCC no modelo da Uniftec). (a) O **resumo ia para os agradecimentos**: no modelo, o resumo fica numa página com título, autor e orientador e começa com "Resumo:" dentro do parágrafo, sem um título "RESUMO". Agora "Resumo:"/"Palavras-chave:" e "Abstract:"/"Keywords:" são reconhecidos onde estiverem (o abstract todo em itálico perde o itálico), e os agradecimentos param quando o título do trabalho (que já apareceu na capa) se repete — agradecimentos sem texto ficam de fora. (b) **Linhas do sumário** ("INTRODUÇÃO 9") e títulos sem texto não aparecem mais na conferência (antes, "Introdução" e "Considerações finais" apareciam repetidas). (c) **Siglas** separadas por tabulação ("CC  Código Civil") viram "CC – Código Civil", sem a linha de cabeçalho ("Sigla  Significado") | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 37 (publicado como 0.53.0 em 2026-11-22)
 
 | # | Ideia | Situação |
 |---|---|---|
 | 1 | **Proteção extra da senha:** o Vide passa a não apagar, ao publicar, as variáveis criadas no painel do Cloudflare ("keep_vars"). A senha do professor deve ser criada como **Secret** (assim ela nunca é apagada); na publicação da 0.52.0 ela tinha sido criada como texto e sumiu — recriada como Secret em 22/11 | Publicada (0.53.0) |
-
-## Pacotes anteriores
 
 ### Pacote 36 (publicado como 0.52.0 em 2026-11-22)
 
