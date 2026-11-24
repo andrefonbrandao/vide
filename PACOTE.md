@@ -26,13 +26,19 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 39** aberto em 2026-11-22, a partir da versão 0.54.0 (já publicada). **Fechado e publicado como versão 0.55.0.**
+**Pacote 40** aberto em 2026-11-24, a partir da versão 0.55.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|---|---|
+| 1 | **Correção: botões do processo escondidos na Aula.** Em telas mais baixas, a barra de botões do processo (Liberar…, Mostrar os vícios, **Mostrar/Esconder o QR, Ampliar o QR**) quebrava para uma segunda linha que ficava escondida embaixo. Agora a prévia do processo encolhe (mínimo menor) e a barra de botões fica sempre inteira à vista | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 39 (publicado como 0.55.0 em 2026-11-22)
 
 | # | Ideia | Situação |
 |---|---|---|
 | 1 | **Tabelas e sumário do Word (caso real).** (a) **Tabela truncada**: no Word do aluno, a primeira linha era uma célula mesclada com o título ("Inscrição indevida em bancos de dados…" ocupando as 6 colunas); o Vide a lia como uma célula e dava quase toda a largura à primeira coluna ("Câ-mar-a", "Recur-so"). Agora: ao importar, a célula mesclada que ocupa a linha toda vira o título da tabela; ao desenhar (PDF, Word e editor), uma linha só com a primeira célula preenchida sai como faixa mesclada; e a largura das colunas garante que a palavra mais longa de cada coluna caiba inteira. (b) **Sumário do Word desregulado ao editar**: as linhas do sumário eram texto fixo; agora cada título tem uma marca (indicador) e cada linha do sumário é um link para ela, com o número da página como campo (PAGEREF), como o próprio Word faz — "Atualizar campo" funciona depois de editar; o mesmo nas listas de tabelas, quadros, figuras e gráficos. Linhas longas do sumário quebram alinhadas (recuo de 1 cm) | Publicada (0.55.0) |
-
-## Pacotes anteriores
 
 ### Pacote 38 (publicado como 0.54.0 em 2026-11-22)
 
