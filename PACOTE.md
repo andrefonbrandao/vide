@@ -26,11 +26,11 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 40** aberto em 2026-11-24, a partir da versão 0.55.0 (já publicada).
+**Pacote 40** aberto em 2026-11-24, a partir da versão 0.55.0 (já publicada). **Fechado e publicado como versão 0.56.0.**
 
 | # | Ideia | Situação |
 |---|---|---|
-| 1 | **Correção: botões do processo escondidos na Aula.** Em telas mais baixas, a barra de botões do processo (Liberar…, Mostrar os vícios, **Mostrar/Esconder o QR, Ampliar o QR**) quebrava para uma segunda linha que ficava escondida embaixo. Agora a prévia do processo encolhe (mínimo menor) e a barra de botões fica sempre inteira à vista | No pacote |
+| 1 | **Correção: botões do processo escondidos na Aula.** Em telas mais baixas, a barra de botões do processo (Liberar…, Mostrar os vícios, **Mostrar/Esconder o QR, Ampliar o QR**) quebrava para uma segunda linha que ficava escondida embaixo. Agora a prévia do processo encolhe (mínimo menor) e a barra de botões fica sempre inteira à vista | Publicada (0.56.0) |
 
 ## Pacotes anteriores
 
