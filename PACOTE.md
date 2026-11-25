@@ -30,7 +30,9 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 | # | Ideia | Situação |
 |---|---|---|
-| 1 | **Plano de ensino guardado no Vide (Turmas → botão "Plano de ensino" em cada turma, ao lado do "Plano de aula").** Fica na **disciplina** e serve para todas as turmas dela: carga horária, professor(a), coordenador(a), ementa, competências, habilidades, conteúdo programático (unidades e itens, a numeração 1., 1.1… sai sozinha), estratégias de avaliação com o quadro dos Graus A, B e C, ações para a melhoria da aprendizagem, bibliografia básica e complementar (o que ficar entre ** sai em negrito) e a cidade. Da **turma** vêm o horário, o ano/semestre e a data do documento. As regras de aprovação da instituição (médias, Grau C, 75% de frequência) entram sozinhas. **"Importar do Word"** lê o plano no modelo da instituição (e conserta endereços da internet partidos por espaços no original); **"Baixar Word"** e **"Baixar PDF"** saem no desenho da instituição (cabeçalho com o logotipo, faixas azuis, quadros, assinaturas, "Revisão 00"). Salva sozinho | No pacote |
+| 1 | **Plano de ensino guardado no Vide (Turmas → botão "Plano de ensino" em cada turma, ao lado do "Plano de aula").** Fica na **disciplina** e serve para todas as turmas dela: carga horária, professor(a), coordenador(a), ementa, competências, habilidades, conteúdo programático (unidades e itens, a numeração 1., 1.1… sai sozinha), estratégias de avaliação com o quadro dos Graus A, B e C, ações para a melhoria da aprendizagem, bibliografia básica e complementar (o que ficar entre ** sai em negrito) e a cidade. Da **turma** vêm o horário, o ano/semestre e a data do documento. As regras de aprovação da instituição (médias, Grau C, 75% de frequência) entram sozinhas. **"Importar do Word"** lê o plano no modelo da instituição (e conserta endereços da internet partidos por espaços no original); **"Baixar Word"** e **"Baixar PDF"** saem no desenho da instituição (cabeçalho com o logotipo, faixas azuis, quadros, assinaturas, "Revisão 00"). Salva sozinho | Publicada (0.58.0) |
+
+**Fechado e publicado como versão 0.58.0.**
 
 ## Pacotes anteriores
 
