@@ -2001,3 +2001,34 @@ body:has(.ori-foco) .avisos-rapidos { bottom: 84px; }
 .deb-fim { align-items: center; justify-content: center; text-align: center; }
 .deb-fim strong { font-size: 6cqw; }
 .deb-fim span { font-size: 3cqw; color: var(--tinta-2); }
+
+/* Plano de aula (Turmas) */
+.pa .pa-corpo { flex: 1; min-height: 0; overflow: auto; padding: 18px 28px 40px; display: flex; flex-direction: column; gap: 14px; max-width: 1000px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+.pa-nota { margin: 0; }
+.pa-secao h3 { margin: 0 0 10px; }
+.pa-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 14px; }
+.pa-resumo { margin: 4px 0 8px; font-weight: 700; }
+.pa-resumo.alerta { color: #8a5a00; }
+.pa-dias { margin: 0 0 8px; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.pa-dias .ori-link { margin-left: 8px; }
+.pa-sem { font-weight: 700; color: #b5492b; }
+.pa-tem { font-weight: 700; color: #3d7a5c; }
+.pa-nova-exc input:not([type=date]) { flex: 1 1 200px; }
+.pa-aulas { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.pa-aula { border: 1px solid var(--linha); border-radius: 10px; padding: 8px 10px; background: #fff; display: flex; flex-direction: column; gap: 6px; }
+.pa-aula-cab { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pa-aula-cab strong { color: #2e5395; min-width: 64px; }
+.pa-aula input, .pa-aula textarea, .pa-aula select { font: inherit; font-size: 14px; }
+.pa-aula textarea { width: 100%; border: 1px solid var(--linha); border-radius: 8px; padding: 6px 8px; box-sizing: border-box; }
+.pa-destaque { font-weight: 700 !important; border: 1px solid var(--linha); border-radius: 8px; padding: 5px 8px; }
+.pa-data-mao { outline: 2px solid #e2c23b; }
+.pa-grau { border-top: 1px solid #edf0ea; padding-top: 8px; margin-top: 8px; }
+.pa-grau h4 { margin: 0 0 6px; color: #2e5395; }
+.pa-tabela { width: 100%; border-collapse: collapse; margin-top: 6px; }
+.pa-tabela th { text-align: left; font-size: 13px; padding: 4px; }
+.pa-tabela td { padding: 2px 4px; }
+.pa-tabela input { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; }
+@media (max-width: 640px) { .pa .pa-corpo { padding: 12px; } }
+/* Confirmações e avisos sempre por cima das telas cheias (orientação, plano de aula…). */
+.modal-fundo:has(> .confirmacao) { z-index: 300; }
+.avisos-rapidos { z-index: 310; }

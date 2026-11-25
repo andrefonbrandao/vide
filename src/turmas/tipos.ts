@@ -12,6 +12,46 @@ export interface Disciplina extends Sincronizavel {
   cor: string;
   /** Lei principal da disciplina (sigla do acervo: "cpc", "cf"…). Vale na aula no modo da turma. */
   leiPrincipal: string;
+  /** O que se repete no plano de aula (temas, avaliações); as datas ficam na turma. */
+  planoAula?: PlanoAula;
+}
+
+/** Uma aula do plano: o tema e, se houver, o destaque ("AVALIAÇÃO FORMATIVA A.1"). */
+export interface AulaPlano {
+  id: string;
+  tema: string;
+  destaque: string;
+  /** Depois desta aula entra o quadro do Grau (datas de aplicação e de postagem das notas). */
+  grau?: 'A' | 'B' | 'C';
+}
+
+export interface LinhaAvaliacao {
+  instrumento: string;
+  peso: string;
+  criterio: string;
+}
+
+export interface GrauPlano {
+  aplicacao: string;
+  postagem: string;
+  pontos: string;
+  linhas: LinhaAvaliacao[];
+}
+
+export interface PlanoAula {
+  cargaHoraria: string;
+  professor: string;
+  aulas: AulaPlano[];
+  graus: Record<'A' | 'B' | 'C', GrauPlano>;
+  recuperacao: string;
+}
+
+/** Calendário da turma para o plano de aula: dias sem aula (ou com aula extra) e datas trocadas à mão. */
+export interface CalendarioTurma {
+  /** Exceções ao calendário: aula = false (não há aula: semana acadêmica…) ou true (há aula num feriado ou num dia extra). */
+  excecoes: { data: string; aula: boolean; motivo?: string }[];
+  /** Data escolhida à mão para uma aula (id da aula → "AAAA-MM-DD"). */
+  datas: Record<string, string>;
 }
 
 /** Um horário semanal: dia (0 = domingo … 6 = sábado), início e fim "HH:MM". */
@@ -31,6 +71,8 @@ export interface Turma extends Sincronizavel {
   fim?: string;
   /** Turmas de semestres passados ficam guardadas, mas saem do seletor. */
   arquivada?: boolean;
+  /** Plano de aula: o calendário desta turma (as aulas e os temas vêm da disciplina). */
+  calendario?: CalendarioTurma;
 }
 
 /** O que liga um recurso de conteúdo (material, questão, questionário, caso) às disciplinas. */

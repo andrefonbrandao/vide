@@ -1,7 +1,7 @@
 // Minhas turmas: disciplinas (o que se repete todo semestre, com a lei principal) e turmas
 // (a disciplina num semestre, com os horários). Também o seletor do "modo da turma",
 // o aviso na hora da aula e a faixa do filtro nas listas.
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { avisar, confirmar } from '../comum/avisos';
 import { IcMais } from '../comum/Icones';
 import { irPara } from '../comum/navegacao';
@@ -18,6 +18,8 @@ import { Pagina } from './Pagina';
 import { useTurmas } from './TurmasDados';
 export { SeloTurma, useTurmas } from './TurmasDados';
 import { RecursosDaDisciplina } from './VincularRecursos';
+
+const PlanoAulaJanela = lazy(() => import('./PlanoAula').then((m) => ({ default: m.PlanoAulaJanela })));
 
 // ---------- Formulários ----------
 
@@ -182,6 +184,7 @@ export function MinhasTurmas() {
   const [editando, setEditando] = useState<{ tipo: 'disciplina'; d?: Disciplina } | { tipo: 'turma'; d: Disciplina; t?: Turma } | null>(null);
   const [verArquivadas, setVerArquivadas] = useState(false);
   const [recursos, setRecursos] = useState<string | null>(null);
+  const [plano, setPlano] = useState<{ d: Disciplina; t: Turma } | null>(null);
   const prox = proximaAula(turmas, new Date());
   return (
     <Pagina
@@ -268,6 +271,9 @@ export function MinhasTurmas() {
                             </button>
                           )
                         )}
+                        <button className="botao pequeno" onClick={() => setPlano({ d, t })} title="Plano de aula desta turma: datas pelo calendário, temas da disciplina; baixa em Word e PDF">
+                          Plano de aula
+                        </button>
                         <button className="link-discreto" onClick={() => setEditando({ tipo: 'turma', d, t })}>
                           editar
                         </button>
@@ -299,6 +305,11 @@ export function MinhasTurmas() {
             </button>
           )}
         </div>
+      )}
+      {plano && (
+        <Suspense fallback={null}>
+          <PlanoAulaJanela disciplina={disciplinas.find((x) => x.id === plano.d.id) ?? plano.d} turma={turmas.find((x) => x.id === plano.t.id) ?? plano.t} aoFechar={() => setPlano(null)} />
+        </Suspense>
       )}
     </Pagina>
   );
