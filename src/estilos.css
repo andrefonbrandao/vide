@@ -2032,3 +2032,12 @@ body:has(.ori-foco) .avisos-rapidos { bottom: 84px; }
 /* Confirmações e avisos sempre por cima das telas cheias (orientação, plano de aula…). */
 .modal-fundo:has(> .confirmacao) { z-index: 300; }
 .avisos-rapidos { z-index: 310; }
+/* Plano de ensino (usa a moldura do plano de aula). */
+.pa-secao > textarea, .pa .campo textarea, .pa-tabela textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; border: 1px solid var(--linha); border-radius: 8px; padding: 6px 8px; }
+.pe-lista { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.pe-item { display: flex; gap: 6px; align-items: flex-start; width: 100%; }
+.pe-item textarea { flex: 1; font: inherit; font-size: 14px; border: 1px solid var(--linha); border-radius: 8px; padding: 6px 8px; box-sizing: border-box; resize: vertical; }
+.pe-item-botoes { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
+.pe-unidades { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.pe-titulo { flex: 1 1 260px; font-weight: 700 !important; border: 1px solid var(--linha); border-radius: 8px; padding: 5px 8px; }
+.pa-tabela td { vertical-align: top; }

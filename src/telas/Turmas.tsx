@@ -20,6 +20,7 @@ export { SeloTurma, useTurmas } from './TurmasDados';
 import { RecursosDaDisciplina } from './VincularRecursos';
 
 const PlanoAulaJanela = lazy(() => import('./PlanoAula').then((m) => ({ default: m.PlanoAulaJanela })));
+const PlanoEnsinoJanela = lazy(() => import('./PlanoEnsino').then((m) => ({ default: m.PlanoEnsinoJanela })));
 
 // ---------- Formulários ----------
 
@@ -184,7 +185,7 @@ export function MinhasTurmas() {
   const [editando, setEditando] = useState<{ tipo: 'disciplina'; d?: Disciplina } | { tipo: 'turma'; d: Disciplina; t?: Turma } | null>(null);
   const [verArquivadas, setVerArquivadas] = useState(false);
   const [recursos, setRecursos] = useState<string | null>(null);
-  const [plano, setPlano] = useState<{ d: Disciplina; t: Turma } | null>(null);
+  const [plano, setPlano] = useState<{ d: Disciplina; t: Turma; tipo: 'aula' | 'ensino' } | null>(null);
   const prox = proximaAula(turmas, new Date());
   return (
     <Pagina
@@ -271,7 +272,10 @@ export function MinhasTurmas() {
                             </button>
                           )
                         )}
-                        <button className="botao pequeno" onClick={() => setPlano({ d, t })} title="Plano de aula desta turma: datas pelo calendário, temas da disciplina; baixa em Word e PDF">
+                        <button className="botao pequeno" onClick={() => setPlano({ d, t, tipo: 'ensino' })} title="Plano de ensino: ementa, competências, conteúdo, avaliação e bibliografia da disciplina; baixa em Word e PDF">
+                          Plano de ensino
+                        </button>
+                        <button className="botao pequeno" onClick={() => setPlano({ d, t, tipo: 'aula' })} title="Plano de aula desta turma: datas pelo calendário, temas da disciplina; baixa em Word e PDF">
                           Plano de aula
                         </button>
                         <button className="link-discreto" onClick={() => setEditando({ tipo: 'turma', d, t })}>
@@ -308,7 +312,11 @@ export function MinhasTurmas() {
       )}
       {plano && (
         <Suspense fallback={null}>
-          <PlanoAulaJanela disciplina={disciplinas.find((x) => x.id === plano.d.id) ?? plano.d} turma={turmas.find((x) => x.id === plano.t.id) ?? plano.t} aoFechar={() => setPlano(null)} />
+          {plano.tipo === 'ensino' ? (
+            <PlanoEnsinoJanela disciplina={disciplinas.find((x) => x.id === plano.d.id) ?? plano.d} turma={turmas.find((x) => x.id === plano.t.id) ?? plano.t} aoFechar={() => setPlano(null)} />
+          ) : (
+            <PlanoAulaJanela disciplina={disciplinas.find((x) => x.id === plano.d.id) ?? plano.d} turma={turmas.find((x) => x.id === plano.t.id) ?? plano.t} aoFechar={() => setPlano(null)} />
+          )}
         </Suspense>
       )}
     </Pagina>

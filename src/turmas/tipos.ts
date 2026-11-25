@@ -14,6 +14,35 @@ export interface Disciplina extends Sincronizavel {
   leiPrincipal: string;
   /** O que se repete no plano de aula (temas, avaliações); as datas ficam na turma. */
   planoAula?: PlanoAula;
+  /** O que se repete no plano de ensino (ementa, competências, conteúdo, avaliação, bibliografia). */
+  planoEnsino?: PlanoEnsino;
+}
+
+/** Uma unidade do conteúdo programático ("Etapa postulatória") e os seus itens. */
+export interface UnidadeConteudo {
+  titulo: string;
+  itens: string[];
+}
+
+export interface PlanoEnsino {
+  cargaHoraria: string;
+  professor: string;
+  coordenador: string;
+  ementa: string;
+  competencias: string[];
+  habilidades: string[];
+  conteudo: UnidadeConteudo[];
+  /** O parágrafo que abre as estratégias de avaliação. */
+  estrategias: string;
+  /** Quadro "Instrumento avaliativo / Peso" de cada Grau. */
+  graus: Record<'A' | 'B' | 'C', { descricao: string; peso: string }>;
+  /** Quadro das ações para a melhoria da aprendizagem. */
+  recuperacao: { descricao: string; estrategias: string };
+  /** Obras da bibliografia; o que estiver entre ** sai em negrito (o título). */
+  bibliografiaBasica: string[];
+  bibliografiaComplementar: string[];
+  /** "Caxias do Sul", antes da data no fim do documento. */
+  cidade: string;
 }
 
 /** Uma aula do plano: o tema e, se houver, o destaque ("AVALIAÇÃO FORMATIVA A.1"). */
@@ -73,6 +102,8 @@ export interface Turma extends Sincronizavel {
   arquivada?: boolean;
   /** Plano de aula: o calendário desta turma (as aulas e os temas vêm da disciplina). */
   calendario?: CalendarioTurma;
+  /** Data que vai no fim do plano de ensino ("AAAA-MM-DD"); sem ela, a data de hoje. */
+  dataPlanoEnsino?: string;
 }
 
 /** O que liga um recurso de conteúdo (material, questão, questionário, caso) às disciplinas. */

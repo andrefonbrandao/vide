@@ -26,17 +26,20 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 41** aberto em 2026-11-25, a partir da versão 0.56.0 (já publicada).
+**Pacote 42** aberto em 2026-11-25, a partir da versão 0.57.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|---|---|
+| 1 | **Plano de ensino guardado no Vide (Turmas → botão "Plano de ensino" em cada turma, ao lado do "Plano de aula").** Fica na **disciplina** e serve para todas as turmas dela: carga horária, professor(a), coordenador(a), ementa, competências, habilidades, conteúdo programático (unidades e itens, a numeração 1., 1.1… sai sozinha), estratégias de avaliação com o quadro dos Graus A, B e C, ações para a melhoria da aprendizagem, bibliografia básica e complementar (o que ficar entre ** sai em negrito) e a cidade. Da **turma** vêm o horário, o ano/semestre e a data do documento. As regras de aprovação da instituição (médias, Grau C, 75% de frequência) entram sozinhas. **"Importar do Word"** lê o plano no modelo da instituição (e conserta endereços da internet partidos por espaços no original); **"Baixar Word"** e **"Baixar PDF"** saem no desenho da instituição (cabeçalho com o logotipo, faixas azuis, quadros, assinaturas, "Revisão 00"). Salva sozinho | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 41 (publicado como 0.57.0 em 2026-11-25)
 
 | # | Ideia | Situação |
 |---|---|---|
 | 1 | **Nova atividade: "Questões para debate".** Na galeria de Atividades (ao lado do Jogo de perguntas): as questões aparecem uma por vez no projetor, em letra grande, **sem celular, sem relógio, sem QR e sem pontos**; a turma discute junta. Escolha das questões como no jogo (por assunto ou questionário pronto; todos os tipos). Na Aula: **clicar numa alternativa a risca** (a turma descartou; clicar de novo desfaz); **"Revelar a resposta"** destaca a correta com a explicação e o fundamento; **"Projetar o fundamento"** abre o artigo ao lado; **"Esconder a resposta"** retoma a discussão; **‹ Anterior / Próxima questão** (cada questão guarda seus riscos). No "Adivinhe o conceito", as dicas aparecem uma a uma e depois o conceito. Enter, clique, passador e o celular de controle avançam; a seta para a esquerda (ou o PageUp do passador) volta. "Ver a resposta (só na sua tela)" para o professor. O registro da aula guarda as questões debatidas | Publicada (0.57.0) |
 | 2 | **Plano de aula guardado no Vide (Turmas → botão "Plano de aula" em cada turma).** A parte fixa (temas das aulas, avaliações formativas, Graus, estratégias de avaliação e de recuperação, carga horária, professor) fica na **disciplina** e serve para todas as turmas dela; as **datas** ficam na **turma**. As datas são calculadas sozinhas pelos dias da semana da turma, do início ao fim do semestre, **pulando os feriados nacionais** (inclusive Carnaval, Sexta-feira Santa e Corpus Christi); o professor marca outros dias sem aula (com o motivo) ou aulas extras, e pode trocar a data de uma aula à mão. Avisa quando faltam ou sobram datas. **"Importar do Word"** lê o plano no modelo da instituição (o do semestre anterior), para não digitar de novo. **"Baixar Word"** e **"Baixar PDF"** saem no desenho da instituição (cabeçalho com os logos, etiquetas azuis "AULA n", quadros, Graus). Salva sozinho. Correção junto: as janelas de confirmação e os avisos agora aparecem **por cima** das telas cheias (antes podiam ficar escondidos atrás) | Publicada (0.57.0) |
-
-**Fechado e publicado como versão 0.57.0.**
-
-## Pacotes anteriores
-
 ### Pacote 40 (publicado como 0.56.0 em 2026-11-24)
 
 | # | Ideia | Situação |
