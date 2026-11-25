@@ -26,13 +26,19 @@ sejam publicadas de uma vez só, quando o professor autorizar ("pode publicar").
 
 ## Situação
 
-**Pacote 40** aberto em 2026-11-24, a partir da versão 0.55.0 (já publicada). **Fechado e publicado como versão 0.56.0.**
+**Pacote 41** aberto em 2026-11-25, a partir da versão 0.56.0 (já publicada).
+
+| # | Ideia | Situação |
+|---|---|---|
+| 1 | **Nova atividade: "Questões para debate".** Na galeria de Atividades (ao lado do Jogo de perguntas): as questões aparecem uma por vez no projetor, em letra grande, **sem celular, sem relógio, sem QR e sem pontos**; a turma discute junta. Escolha das questões como no jogo (por assunto ou questionário pronto; todos os tipos). Na Aula: **clicar numa alternativa a risca** (a turma descartou; clicar de novo desfaz); **"Revelar a resposta"** destaca a correta com a explicação e o fundamento; **"Projetar o fundamento"** abre o artigo ao lado; **"Esconder a resposta"** retoma a discussão; **‹ Anterior / Próxima questão** (cada questão guarda seus riscos). No "Adivinhe o conceito", as dicas aparecem uma a uma e depois o conceito. Enter, clique, passador e o celular de controle avançam; a seta para a esquerda (ou o PageUp do passador) volta. "Ver a resposta (só na sua tela)" para o professor. O registro da aula guarda as questões debatidas | No pacote |
+
+## Pacotes anteriores
+
+### Pacote 40 (publicado como 0.56.0 em 2026-11-24)
 
 | # | Ideia | Situação |
 |---|---|---|
 | 1 | **Correção: botões do processo escondidos na Aula.** Em telas mais baixas, a barra de botões do processo (Liberar…, Mostrar os vícios, **Mostrar/Esconder o QR, Ampliar o QR**) quebrava para uma segunda linha que ficava escondida embaixo. Agora a prévia do processo encolhe (mínimo menor) e a barra de botões fica sempre inteira à vista | Publicada (0.56.0) |
-
-## Pacotes anteriores
 
 ### Pacote 39 (publicado como 0.55.0 em 2026-11-22)
 

@@ -6,6 +6,7 @@ import { assuntosDasQuestoes, listarQuestionarios, listarQuestoes, questoesDo, s
 import { rotuloAvancar } from '../jogo/motor';
 import { OPCOES_VOTO_FORCA, VOTO_PADRAO_FORCA, type Questao, type QuestaoJogo, type Questionario } from '../jogo/tipos';
 import { IcCasos, IcForca, IcPerguntas, IcProcesso, IcSeta } from '../comum/Icones';
+import { debate } from '../debate/apresentador';
 import type { Expressao } from '../consulta/personagens';
 import { Figura } from './ConsultaTela';
 import { JogoTela } from './JogoTela';
@@ -21,7 +22,7 @@ export function useJogo() {
 type Modo = 'assunto' | 'questionario';
 const CHAVE_MODO = 'vide.jogoModo';
 /** Que jogo: perguntas (alternativas e conceito) ou forca (a turma toda). */
-type Jogo = 'perguntas' | 'forca' | 'consulta' | 'processo';
+type Jogo = 'perguntas' | 'debate' | 'forca' | 'consulta' | 'processo';
 const CHAVE_JOGO = 'vide.jogoTipo';
 const CHAVE_VOTO = 'vide.jogoVotoForca';
 
@@ -92,6 +93,16 @@ const ATIVIDADES: { id: Jogo; titulo: string; curto: string; longo: string; figu
     icone: <IcPerguntas tamanho={22} />,
   },
   {
+    id: 'debate',
+    titulo: 'Questões para debate',
+    curto: 'No projetor, sem celular e sem relógio.',
+    longo: 'As questões aparecem uma por vez no projetor e a turma discute junta: você risca as alternativas descartadas, mostra as dicas, revela a resposta com a explicação e passa (ou volta) quando quiser. Sem celular, sem tempo e sem pontos. Próximo passo: escolher as questões.',
+    figura: 'h3',
+    expressao: 'duvida',
+    cor: '#e6eef6',
+    icone: <IcPerguntas tamanho={22} />,
+  },
+  {
     id: 'forca',
     titulo: 'Forca',
     curto: 'A turma vota letras pelo celular.',
@@ -155,7 +166,7 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
   const [tiposEscolhidos, setTipos] = useState<FiltroTipo>('todos');
   const [jogo, setJogoEstado] = useState<Jogo>(() => {
     const j = lerPref<string>(CHAVE_JOGO, 'perguntas');
-    return j === 'forca' || j === 'consulta' || j === 'processo' ? j : 'perguntas';
+    return j === 'forca' || j === 'consulta' || j === 'processo' || j === 'debate' ? j : 'perguntas';
   });
   const setJogo = (j: Jogo) => (setJogoEstado(j), gravarPref(CHAVE_JOGO, j));
   const [passo, setPasso] = useState<1 | 2>(1);
@@ -209,7 +220,20 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
   const disponiveis = assunto === '*' ? doTipo.length : (assuntos.find((a) => a.assunto === assunto)?.total ?? 0);
   const vaiTer = Math.min(quantas, disponiveis);
 
+  const emDebate = jogo === 'debate';
   const abrir = async () => {
+    if (emDebate) {
+      if (modo === 'assunto') {
+        const sorteadas = sortearQuestoes(banco, assunto === '*' ? null : assunto, quantas, Math.random, tipos);
+        const n = sorteadas.length;
+        debate().iniciar(`${n} ${n === 1 ? 'questão' : 'questões'} · ${assunto === '*' ? 'todos os assuntos' : assunto}`, sorteadas);
+      } else {
+        const q = lista?.find((x) => x.id === escolhido);
+        if (!q) return;
+        debate().iniciar(q.nome, await questoesDo(q));
+      }
+      return aoFechar();
+    }
     if (modo === 'assunto') {
       const sorteadas = sortearQuestoes(banco, assunto === '*' ? null : assunto, quantas, Math.random, tipos);
       if (!sorteadas.length) return;
@@ -306,7 +330,9 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
         ) : (
         <>
         <p className="ajuda">
-          {forca
+          {emDebate
+            ? 'As questões aparecem uma por vez no projetor, sem relógio. Ninguém entra pelo celular: a turma discute junta e você conduz (riscar alternativas, dicas, revelar, anterior/próxima).'
+            : forca
             ? 'A palavra é o conceito das questões "Adivinhe o conceito". Os alunos entram pelo celular, só com um apelido, e votam numa letra; a mais votada entra. Quem souber a palavra pode digitá-la. Sem ranking: a turma joga junta, até 6 erros.'
             : 'Os alunos entram pelo celular (QR code ou código no projetor), só com um apelido, e respondem às questões.'}
         </p>
@@ -407,7 +433,7 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
                       ? `Só há ${disponiveis} ${disponiveis === 1 ? 'conceito' : 'conceitos'} deste assunto: a forca terá ${vaiTer} ${vaiTer === 1 ? 'palavra' : 'palavras'}.`
                       : `Serão sorteadas ${vaiTer} palavras (conceitos), em ordem aleatória.`
                     : disponiveis < quantas
-                      ? `Só há ${disponiveis} ${disponiveis === 1 ? 'questão' : 'questões'} deste assunto: o jogo terá ${vaiTer}.`
+                      ? `Só há ${disponiveis} ${disponiveis === 1 ? 'questão' : 'questões'} deste assunto: ${emDebate ? 'o debate' : 'o jogo'} terá ${vaiTer}.`
                       : `Serão sorteadas ${vaiTer} questões, em ordem aleatória.`}
                 </span>
               </div>
@@ -446,7 +472,7 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
             <span className="ajuda" style={{ margin: 0 }}>Se todos votarem antes, a letra sai na hora.</span>
           </div>
         )}
-        {lista !== null && !forca && (
+        {lista !== null && !forca && !emDebate && (
           <div className="grade-2 tempos-jogo">
             {(modo !== 'assunto' || tipos !== 'conceito') && (
               <div className="campo">
@@ -462,7 +488,7 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
             )}
           </div>
         )}
-        {!forca && (
+        {!forca && !emDebate && (
           <label className="caixa-marcar">
             <input type="checkbox" checked={ranking} onChange={(ev) => setRanking(ev.target.checked)} />
             Ranking com pontos e pódio
@@ -473,7 +499,7 @@ export function IniciarJogo({ aoFechar }: { aoFechar: () => void }) {
             Cancelar
           </button>
           <button className="botao primario" onClick={() => void abrir()} disabled={!podeAbrir}>
-            Abrir a sala
+            {emDebate ? 'Abrir no projetor' : 'Abrir a sala'}
           </button>
         </div>
         </>

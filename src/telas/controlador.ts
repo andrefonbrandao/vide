@@ -1,6 +1,7 @@
 // Controlador do modo aula: liga voz -> detector -> candidatos -> projeção,
 // e anota tudo no registro de teste. Fica fora do React para continuar
 // funcionando quando o professor troca de aba (Acervo, Registro).
+import { debate, rotuloAvancarDebate } from '../debate/apresentador';
 import { carregarIndice, listarDiplomas } from '../dados/db';
 import { abreviacaoDe, definirExtras, diplomaPrincipal, todosDiplomas, type DefDiploma } from '../dados/diplomas';
 import type { Item } from '../dados/modelo';
@@ -216,6 +217,7 @@ export class ControladorAula {
     this.ouvintes.add(() => this.agendarEnvioRemoto());
     anfitriao().assinar(() => this.agendarEnvioRemoto());
     apresentador().assinar(() => this.agendarEnvioRemoto());
+    debate().assinar(() => this.agendarEnvioRemoto());
   }
 
   // ---------- estado / React ----------
@@ -373,7 +375,8 @@ export class ControladorAula {
         else this.diminuirFonte('celular');
         break;
       case 'jogo-avancar':
-        if (apresentador().ativo) apresentador().avancar();
+        if (debate().ativo) debate().avancar();
+        else if (apresentador().ativo) apresentador().avancar();
         else anfitriao().avancar();
         break;
       case 'marcar':
@@ -410,6 +413,8 @@ export class ControladorAula {
       projecaoConectada: e.projecao.conectada,
       ultimaFala: (e.parcial ? `${ultimas} ${e.parcial}` : ultimas).slice(-240),
       jogo: (() => {
+        const d = debate().obter().tela;
+        if (d) return { fase: 'consulta', indice: d.indice, total: d.total, respondidas: 0, aResponder: 0, avancar: rotuloAvancarDebate(d) };
         const c = apresentador().obter().tela;
         if (c) return { fase: 'consulta', indice: c.indice, total: c.total, respondidas: 0, aResponder: 0, avancar: rotuloAvancarConsulta(c) };
         const j = anfitriao().obter().tela;
@@ -772,7 +777,7 @@ export class ControladorAula {
 
   private layoutAtual(): LayoutArtigo {
     // Com slide ou jogo de perguntas na tela, o artigo pode entrar ao lado.
-    return (this.estado.material && !this.estado.telaPreta) || anfitriao().ativo || apresentador().ativo || aulaProcesso().ativo ? this.estado.layoutArtigo : 'cheia';
+    return (this.estado.material && !this.estado.telaPreta) || anfitriao().ativo || apresentador().ativo || debate().ativo || aulaProcesso().ativo ? this.estado.layoutArtigo : 'cheia';
   }
 
   /**

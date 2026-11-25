@@ -17,6 +17,8 @@ import { IniciarJogo, PainelJogo, useJogo } from './PainelJogo';
 import { anfitriao } from '../jogo/anfitriao';
 import { apresentador } from '../consulta/apresentador';
 import { PainelConsulta, useConsulta } from './PainelConsulta';
+import { PainelDebate, useDebate } from './PainelDebate';
+import { debate } from '../debate/apresentador';
 import { PainelProcesso, useAulaProcesso } from './PainelProcesso';
 import type { StatusVoz } from '../voz/reconhecedor';
 import { obterConstrutor } from '../voz/reconhecedor';
@@ -193,7 +195,8 @@ export function Aula({ ativa }: { ativa: boolean }) {
         const card = ev.target instanceof Element ? ev.target.closest<HTMLElement>('[data-candidato]') : null;
         if (card?.dataset.candidato) return ctl.projetarCandidato(card.dataset.candidato);
         if (ehInterface(ev.target)) return;
-        if (apresentador().ativo) apresentador().avancar();
+        if (debate().ativo) debate().avancar();
+        else if (apresentador().ativo) apresentador().avancar();
         else if (anfitriao().ativo) anfitriao().avancar();
         else ctl.cliqueProjetar();
       }
@@ -206,10 +209,15 @@ export function Aula({ ativa }: { ativa: boolean }) {
       if (ehInterface(ev.target) && (ev.target as Element).matches('input, textarea')) return;
       const est = ctl.obter();
       const k = ev.key;
-      if ((anfitriao().ativo || apresentador().ativo) && (k === 'PageDown' || k === 'Enter' || k === ' ' || k === 'ArrowRight')) {
-        // Jogo de perguntas ou consulta: o passador e o Enter avançam.
+      if (debate().ativo && (k === 'PageUp' || k === 'ArrowLeft')) {
+        // Questões para debate: o passador (e a seta) voltam à questão anterior.
         ev.preventDefault();
-        if (apresentador().ativo) apresentador().avancar();
+        debate().voltar();
+      } else if ((anfitriao().ativo || apresentador().ativo || debate().ativo) && (k === 'PageDown' || k === 'Enter' || k === ' ' || k === 'ArrowRight')) {
+        // Jogo de perguntas, consulta ou debate: o passador e o Enter avançam.
+        ev.preventDefault();
+        if (debate().ativo) debate().avancar();
+        else if (apresentador().ativo) apresentador().avancar();
         else anfitriao().avancar();
       } else if (k === 'PageDown' || k === 'PageUp') {
         // Passador de slides: com material, sempre passa a página.
@@ -267,8 +275,9 @@ export function Aula({ ativa }: { ativa: boolean }) {
   const [verJogo, setVerJogo] = useState(false);
   const jogo = useJogo();
   const consulta = useConsulta();
+  const emDebate = useDebate();
   const processoAula = useAulaProcesso();
-  const atividade = jogo.ativo || consulta.ativo || processoAula.ativo;
+  const atividade = jogo.ativo || consulta.ativo || processoAula.ativo || emDebate.ativo;
   // Sem material nem atividade: a coluna da direita mostra o que está no projetor.
   const palco = !e.material && !atividade && !verTranscricao;
   const [carregando, setCarregando] = useState(false);
@@ -351,7 +360,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
           onClick={() => !atividade && setVerJogo(true)}
           title="Atividades: jogo de perguntas, forca, consulta ou processo da turma"
         >
-          <IcPerguntas /> {jogo.ativo ? `${jogo.tela?.modo === 'enquete' ? 'Votação aberta' : 'Jogo aberto'} · ${jogo.codigo}` : consulta.ativo ? 'Consulta aberta' : processoAula.ativo ? 'Processo aberto' : 'Atividades'}
+          <IcPerguntas /> {jogo.ativo ? `${jogo.tela?.modo === 'enquete' ? 'Votação aberta' : 'Jogo aberto'} · ${jogo.codigo}` : consulta.ativo ? 'Consulta aberta' : emDebate.ativo ? 'Debate aberto' : processoAula.ativo ? 'Processo aberto' : 'Atividades'}
         </button>
         <button className="botao so-icone" onClick={telaCheia} title="Tela cheia (nesta janela)" aria-label="Tela cheia">
           <IcTelaCheia />
@@ -472,7 +481,7 @@ export function Aula({ ativa }: { ativa: boolean }) {
         )}
       </div>
 
-      {jogo.ativo ? <PainelJogo ctl={ctl} /> : consulta.ativo ? <PainelConsulta ctl={ctl} /> : processoAula.ativo ? <PainelProcesso /> : e.material && <PainelMaterial e={e} ctl={ctl} />}
+      {jogo.ativo ? <PainelJogo ctl={ctl} /> : consulta.ativo ? <PainelConsulta ctl={ctl} /> : emDebate.ativo ? <PainelDebate ctl={ctl} /> : processoAula.ativo ? <PainelProcesso /> : e.material && <PainelMaterial e={e} ctl={ctl} />}
       {palco && (
         <section className="aula-palco" data-ui aria-label="No projetor agora">
           <span className="aula-palco-rotulo">No projetor agora</span>

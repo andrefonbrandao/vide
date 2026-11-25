@@ -8,6 +8,8 @@ import { ConsultaTela } from './ConsultaTela';
 import { buscarNoAcervo, VisaoProcesso } from './ProcessoAluno';
 import type { TelaProcesso } from '../processo/aula';
 import type { TelaConsulta } from '../consulta/apresentador';
+import type { TelaDebate } from '../debate/apresentador';
+import { DebateTela } from './DebateTela';
 import type { Projetavel } from '../comum/legislacao';
 import { CanvasMaterial } from '../material/CanvasMaterial';
 import { IcTelaCheia } from '../comum/Icones';
@@ -75,6 +77,7 @@ export function Projecao() {
   const [tela, setTela] = useState({ w: window.innerWidth, h: window.innerHeight });
   const [jogo, setJogo] = useState<TelaJogo | null>(null);
   const [consulta, setConsulta] = useState<TelaConsulta | null>(null);
+  const [debateTela, setDebateTela] = useState<TelaDebate | null>(null);
   const [processo, setProcesso] = useState<TelaProcesso | null>(null);
   const processoRef = useRef<HTMLDivElement>(null);
   /** Rolagem do processo projetado, acompanhando a tela do professor (fração de 0 a 1). */
@@ -125,6 +128,8 @@ export function Projecao() {
         setJogo(m.jogo);
       } else if (m.t === 'consulta') {
         setConsulta(m.consulta);
+      } else if (m.t === 'debate') {
+        setDebateTela(m.debate);
       } else if (m.t === 'processo') {
         setProcesso(m.processo);
         if (m.processo) rolarProcesso(m.processo.fracao);
@@ -244,7 +249,7 @@ export function Projecao() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // O jogo de perguntas (ou a consulta) fica por cima do material enquanto estiver aberto.
-  const atividade = !!jogo || !!consulta || !!processo;
+  const atividade = !!jogo || !!consulta || !!processo || !!debateTela;
   const comMaterial = !atividade && !!material.id && !material.preta && !!documento;
   const lateral = !!item && (comMaterial || atividade) && layout === 'lateral';
   const painelDentro = !!item && !saindo && !entrando;
@@ -282,12 +287,19 @@ export function Projecao() {
           </div>
         </div>
       )}
-      {processo && !jogo && !consulta && (
+      {processo && !jogo && !consulta && !debateTela && (
         <div className={`proj-jogo${lateral && painelDentro ? ' encolhido' : ''}${item && !lateral && painelDentro ? ' oculto' : ''}`}>
           <div className="proj-processo" ref={processoRef}>
             <VisaoProcesso dados={processo.dados} buscar={buscarNoAcervo} lendoControlado={processo.lendo} mostrarVicios={processo.vicios ? true : 'esconder'} />
           </div>
           {processo.url && processo.qr !== 'oculto' && <QrDoProcesso url={processo.url} grande={processo.qr === 'grande'} />}
+        </div>
+      )}
+      {debateTela && !jogo && !consulta && (
+        <div className={`proj-jogo${lateral && painelDentro ? ' encolhido' : ''}${item && !lateral && painelDentro ? ' oculto' : ''}`}>
+          <div className="jogo-quadro">
+            <DebateTela tela={debateTela} />
+          </div>
         </div>
       )}
       {consulta && !jogo && (

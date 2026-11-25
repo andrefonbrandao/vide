@@ -5,6 +5,7 @@ import type { Regiao } from '../material/regiao';
 import type { VisaoTela } from '../jogo/motor';
 
 import type { TelaConsulta } from '../consulta/apresentador';
+import type { TelaDebate } from '../debate/apresentador';
 import type { TelaProcesso } from '../processo/aula';
 
 /** O jogo de perguntas como a projeção o desenha. */
@@ -36,6 +37,7 @@ export type Mensagem =
   | { t: 'jogo'; jogo: TelaJogo | null }
   /** Jogo "Consulta" (casos com personagens) na tela (null = sem consulta). */
   | { t: 'consulta'; consulta: TelaConsulta | null }
+  | { t: 'debate'; debate: TelaDebate | null }
   /** Processo da turma projetado (null = fechado) e a rolagem dele. */
   | { t: 'processo'; processo: TelaProcesso | null }
   | { t: 'processo-rolar'; fracao: number }
